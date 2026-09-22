@@ -81,7 +81,7 @@ export function SectionFarm() {
           Niveau du perso
           <ChampNombre value={g.niveauJoueur} onChange={(v) => g.setNiveauJoueur(v ?? 1)} className="w-20" />
         </label>
-        <label className="flex flex-col gap-0.5" title="Taux de base = 100 pp. La mise à l'échelle linéaire avec la prospection est une approximation.">
+        <label className="flex flex-col gap-0.5" title="% de drop = % de l'objet × prospection / 100. Prospection de départ : 100.">
           Prospection
           <span className="flex items-center gap-1">
             <ChampNombre value={g.prospection} onChange={(v) => g.setProspection(v ?? 100)} className="w-20" />
@@ -176,8 +176,11 @@ export function SectionFarm() {
             </table>
           </div>
           <p className="text-xs text-encre-2">
-            Taux de drop issus des données du jeu (base 100 pp) ; la mise à l'échelle par la prospection est une approximation linéaire. Valeurs calculées avec tes
-            prix de runes, au coefficient supposé ({formatPct(g.coefSuppose, 0)}), jets moyens, taxe déduite.
+            Taux de drop issus des données du jeu, pour 100 de prospection ; ils sont multipliés par prospection ÷ 100 (source :{' '}
+            <a className="lien" href="https://dofus.jeuxonline.info/article/2084/prospection" target="_blank" rel="noreferrer">
+              JeuxOnLine
+            </a>
+            ). Valeurs calculées avec tes prix de runes, au coefficient supposé ({formatPct(g.coefSuppose, 0)}), jets moyens, taxe déduite.
           </p>
         </>
       )}

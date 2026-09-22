@@ -3,10 +3,10 @@
  * on brise les équipements lâchés.
  *
  * Les taux viennent de DofusDB (`percentDropForGradeN`, identiques pour tous les
- * grades dans les données observées le 2026-09-22). Ils correspondent au taux de
- * base ; en jeu la prospection les module — la mise à l'échelle linéaire
- * (taux × pp / 100) est une approximation, elle est signalée comme telle dans
- * l'interface et vaut 1 par défaut.
+ * grades dans les données observées le 2026-09-22) et correspondent au taux à
+ * 100 de prospection. La prospection les module linéairement :
+ *   % de drop = % de l'objet × (prospection / 100)
+ * Source : https://dofus.jeuxonline.info/article/2084/prospection
  */
 import type { Item, Monstre } from '../data/types.ts';
 import type { Contexte } from './types.ts';
@@ -33,7 +33,7 @@ export type MonstreEvalue = {
 
 export type OptionsFarm = {
   niveauJoueur: number;
-  /** Prospection du personnage (100 = taux de base). */
+  /** Prospection du personnage (100 = prospection de départ, taux de base). */
   prospection: number;
   /** Coefficient supposé au concasseur. */
   coefficient: number;

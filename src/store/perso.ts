@@ -12,12 +12,15 @@ type EtatPerso = {
   element: Element;
   objectif: Objectif;
   jet: JetChoisi;
+  /** Chance hors équipement : points de caractéristique investis + parchemins. */
+  chanceBase: number;
   /** Objets imposés : ceux qu'on possède déjà ou qu'on a choisis à la main. */
   epingles: number[];
   setClasse: (id: number | null) => void;
   setElement: (e: Element) => void;
   setObjectif: (o: Objectif) => void;
   setJet: (jet: JetChoisi) => void;
+  setChanceBase: (n: number) => void;
   basculerEpingle: (itemId: number) => void;
   ajouterEpingle: (itemId: number) => void;
   retirerEpingle: (itemId: number) => void;
@@ -29,6 +32,7 @@ const initial = {
   element: 'terre' as Element,
   objectif: 'prospection' as Objectif,
   jet: 'moyen' as JetChoisi,
+  chanceBase: 0,
   epingles: [] as number[],
 };
 
@@ -40,12 +44,13 @@ export const usePerso = create<EtatPerso>()(
       setElement: (element) => set({ element }),
       setObjectif: (objectif) => set({ objectif }),
       setJet: (jet) => set({ jet }),
+      setChanceBase: (chanceBase) => set({ chanceBase: Math.max(0, Math.round(chanceBase)) }),
       basculerEpingle: (itemId) =>
         set((s) => ({ epingles: s.epingles.includes(itemId) ? s.epingles.filter((i) => i !== itemId) : [...s.epingles, itemId] })),
       ajouterEpingle: (itemId) => set((s) => (s.epingles.includes(itemId) ? {} : { epingles: [...s.epingles, itemId] })),
       retirerEpingle: (itemId) => set((s) => ({ epingles: s.epingles.filter((i) => i !== itemId) })),
       reset: () => set({ ...initial }),
     }),
-    { name: 'brisage.perso', version: 2, migrate: () => ({ ...initial }) },
+    { name: 'brisage.perso', version: 3, migrate: (p) => ({ ...initial, ...(p as object) }) },
   ),
 );

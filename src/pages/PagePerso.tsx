@@ -5,7 +5,9 @@ import {
   alternatives,
   optimiser,
   poidsElement,
+  poidsProspection,
   progression,
+  prospectionTotale,
   scoreStats,
   statsItem,
   ELEMENTS,
@@ -135,7 +137,7 @@ export function PagePerso({ aller }: { aller: (o: Onglet) => void }) {
   const [voirProgression, setVoirProgression] = useState(true);
 
   const poids: Poids = useMemo(() => {
-    if (p.objectif === 'prospection') return { prospection: 1, vitalite: 0.02 };
+    if (p.objectif === 'prospection') return poidsProspection();
     if (p.objectif === 'mixte') return poidsElement(p.element, 60);
     return poidsElement(p.element);
   }, [p.objectif, p.element]);
@@ -148,7 +150,8 @@ export function PagePerso({ aller }: { aller: (o: Onglet) => void }) {
   const alt = useMemo(() => (choix ? alternatives(items, choix.slot, options, 15) : []), [choix, items, options]);
   const etapes = useMemo(() => progression(items, options).slice(0, 25), [items, options]);
 
-  const prospection = Math.round(build.totaux.prospection ?? 0);
+  const pp = prospectionTotale(build.totaux, p.chanceBase);
+  const prospection = pp.total;
   const objectif = OBJECTIFS.find((o) => o.id === p.objectif)!;
   const classe = classes.find((c) => c.id === p.classeId);
 
@@ -217,6 +220,13 @@ export function PagePerso({ aller }: { aller: (o: Onglet) => void }) {
               ))}
             </span>
           </span>
+          <label
+            className="flex flex-col gap-0.5 text-xs text-encre-2"
+            title="Chance venant de tes points de caractéristique et de tes parchemins (hors équipement) : 10 chance = 1 prospection"
+          >
+            Chance hors stuff
+            <ChampNombre value={p.chanceBase} onChange={(v) => p.setChanceBase(v ?? 0)} className="w-20" />
+          </label>
           <label className="flex flex-col gap-0.5 text-xs text-encre-2" title="Jets supposés des objets portés">
             Jets
             <select value={p.jet} onChange={(e) => p.setJet(e.target.value as 'min' | 'moyen' | 'max')} className="champ w-24">
@@ -240,10 +250,16 @@ export function PagePerso({ aller }: { aller: (o: Onglet) => void }) {
       <section className="carte p-4">
         <div className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <h2 className="text-base font-semibold">Équipement proposé</h2>
-          <span className="tnum text-sm">
+          <span
+            className="tnum text-sm"
+            title={`${pp.base} de base + ${pp.parChance} par la chance + ${pp.equipement} sur l'équipement`}
+          >
             <strong className="text-accent">{formatNombre(prospection)}</strong> <span className="text-encre-2">prospection</span>
+            <span className="ml-1 text-[11px] text-encre-2">
+              ({pp.base} base + {pp.parChance} chance + {pp.equipement} stuff)
+            </span>
           </span>
-          <button onClick={() => { g.setProspection(prospection); aller('guide'); }} className="btn btn-petit" disabled={prospection === 0}>
+          <button onClick={() => { g.setProspection(prospection); aller('guide'); }} className="btn btn-petit">
             Utiliser dans le farm →
           </button>
         </div>
@@ -328,8 +344,12 @@ export function PagePerso({ aller }: { aller: (o: Onglet) => void }) {
       </section>
 
       <p className="text-xs text-encre-2">
-        Le score est une somme pondérée des caractéristiques, pas la formule de dégâts du jeu (qui dépend de ta classe, de tes sorts et de la cible) : la classe sert
-        ici de repère, l'élément oriente les poids. Les bonus de panoplie sont cherchés par essais successifs, et la liste des prochains équipements les ignore.
+        La prospection vaut 100 de base, plus 1 point tous les 10 de chance, plus celle de l'équipement (source :{' '}
+        <a className="lien" href="https://dofus.jeuxonline.info/article/2084/prospection" target="_blank" rel="noreferrer">
+          JeuxOnLine
+        </a>
+        ) — l'objectif « prospection » tient donc compte de la chance. Le score de dégâts, lui, est une somme pondérée des caractéristiques, pas la formule du jeu
+        (qui dépend de ta classe, de tes sorts et de la cible) : la classe sert ici de repère, l'élément oriente les poids. Les bonus de panoplie sont cherchés par essais successifs, et la liste des prochains équipements les ignore.
         Aucune condition de quête n'est vérifiée : contrôle en jeu avant d'acheter.
       </p>
 

@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import type { Item, Panoplie } from '../data/types.ts';
-import { alternatives, bonusPanoplie, optimiser, poidsElement, progression, scoreStats, slotDe, statsItem, ELEMENTS, SLOTS } from './build.ts';
+import {
+  alternatives,
+  bonusPanoplie,
+  optimiser,
+  poidsElement,
+  poidsProspection,
+  progression,
+  prospectionTotale,
+  scoreStats,
+  slotDe,
+  statsItem,
+  CHANCE_PAR_PROSPECTION,
+  ELEMENTS,
+  PROSPECTION_BASE,
+  SLOTS,
+} from './build.ts';
 
 let id = 1;
 const obj = (type: string, stats: Item['stats'], niveau = 50, panoplieId?: number): Item => ({
@@ -159,5 +174,40 @@ describe('poidsElement', () => {
 
   it('peut mélanger prospection et dégâts', () => {
     expect(poidsElement('eau', 5).prospection).toBe(5);
+  });
+});
+
+describe('prospection réelle (base 100 + chance/10 + équipement)', () => {
+  it('cumule la base, la chance et la prospection de l’équipement', () => {
+    const d = prospectionTotale({ prospection: 45, chance: 120 });
+    expect(d.base).toBe(PROSPECTION_BASE);
+    expect(d.parChance).toBe(12);
+    expect(d.equipement).toBe(45);
+    expect(d.total).toBe(157);
+  });
+
+  it('arrondit la chance vers le bas : 19 chance = 1 prospection', () => {
+    expect(prospectionTotale({ chance: 19 }).parChance).toBe(1);
+    expect(prospectionTotale({ chance: 20 }).parChance).toBe(2);
+  });
+
+  it('compte la chance hors équipement (points investis, parchemins)', () => {
+    expect(prospectionTotale({ chance: 50 }, 150).parChance).toBe(20);
+  });
+
+  it('sans rien, la prospection vaut la base', () => {
+    expect(prospectionTotale({}).total).toBe(100);
+  });
+
+  it('l’objectif prospection pondère la chance à 1 pour 10', () => {
+    const p = poidsProspection();
+    expect(p.prospection).toBe(1);
+    expect(p.chance).toBeCloseTo(0.1, 10);
+    expect(CHANCE_PAR_PROSPECTION).toBe(10);
+  });
+
+  it('à score égal, 10 chance valent autant qu’1 prospection', () => {
+    const p = poidsProspection();
+    expect(scoreStats({ chance: 10 }, p)).toBeCloseTo(scoreStats({ prospection: 1 }, p), 10);
   });
 });

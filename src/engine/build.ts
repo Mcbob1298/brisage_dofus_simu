@@ -266,8 +266,10 @@ export const ELEMENTS: readonly { id: Element; label: string; stat: StatId; domm
  */
 export function poidsElement(element: Element, avecProspection = 0): Poids {
   const e = ELEMENTS.find((x) => x.id === element)!;
+  // En voie Eau, la chance sert deux fois : dégâts et prospection (1 pour 10).
+  const bonusChance = avecProspection > 0 ? avecProspection / 10 : 0;
   return {
-    [e.stat]: 1,
+    [e.stat]: 1 + (e.stat === 'chance' ? bonusChance : 0),
     [e.dommages]: 8,
     dommages: 10,
     puissance: 1,
@@ -280,7 +282,7 @@ export function poidsElement(element: Element, avecProspection = 0): Poids {
     pm: 40,
     portee: 5,
     vitalite: 0.02,
-    ...(avecProspection > 0 ? { prospection: avecProspection } : {}),
+    ...(avecProspection > 0 ? { prospection: avecProspection, chance: (ELEMENTS.find((x) => x.id === element)!.stat === 'chance' ? 0 : bonusChance) } : {}),
   };
 }
 
@@ -327,4 +329,49 @@ export function progression(items: readonly Item[], options: OptionsBuild, nivea
     }
   }
   return etapes.sort((a, b) => a.niveau - b.niveau || b.gain - a.gain);
+}
+
+/**
+ * Prospection de départ d'un personnage.
+ * Source : https://dofus.jeuxonline.info/article/2084/prospection
+ * « Vous possédez 100 points de prospection quand vous débutez ».
+ */
+export const PROSPECTION_BASE = 100;
+
+/**
+ * Points de chance nécessaires pour 1 point de prospection.
+ * Source : https://dofus.jeuxonline.info/article/2084/prospection
+ * « +1 point en prospection tous les 10 points de chance ».
+ */
+export const CHANCE_PAR_PROSPECTION = 10;
+
+export type DetailProspection = {
+  base: number;
+  /** Apport de la chance (équipement + points investis). */
+  parChance: number;
+  /** Prospection portée par l'équipement. */
+  equipement: number;
+  total: number;
+};
+
+/**
+ * Prospection réelle : base + chance/10 + prospection de l'équipement.
+ * `chanceHorsEquipement` couvre les points de caractéristique et les parchemins.
+ */
+export function prospectionTotale(
+  totaux: Partial<Record<StatId, number>>,
+  chanceHorsEquipement = 0,
+): DetailProspection {
+  const chance = (totaux.chance ?? 0) + chanceHorsEquipement;
+  const parChance = Math.floor(chance / CHANCE_PAR_PROSPECTION);
+  const equipement = Math.round(totaux.prospection ?? 0);
+  return { base: PROSPECTION_BASE, parChance, equipement, total: PROSPECTION_BASE + parChance + equipement };
+}
+
+/**
+ * Poids de l'objectif « prospection » : la chance compte, à raison de
+ * 1 prospection pour 10 chance (cf. CHANCE_PAR_PROSPECTION).
+ */
+export function poidsProspection(): Poids {
+  return { prospection: 1, chance: 1 / CHANCE_PAR_PROSPECTION, vitalite: 0.02 };
 }

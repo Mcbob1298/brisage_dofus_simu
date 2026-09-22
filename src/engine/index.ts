@@ -11,6 +11,10 @@ export {
   slotDe,
   bonusPanoplie,
   poidsElement,
+  poidsProspection,
+  prospectionTotale,
+  PROSPECTION_BASE,
+  CHANCE_PAR_PROSPECTION,
   SLOTS,
   PRESETS,
   ELEMENTS,
@@ -21,6 +25,7 @@ export {
   type OptionsBuild,
   type Element,
   type EtapeProgression,
+  type DetailProspection,
 } from './build.ts';
 export { evaluerItem, evaluerCatalogue, lignesDepuisItem, type EvaluationItem, type JetChoisi } from './explorateur.ts';
 export { repartirRunes, type Repartition } from './runes.ts';
