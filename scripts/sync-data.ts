@@ -142,6 +142,7 @@ type ApiMonstre = {
   drops: ApiDrop[];
   subareas: number[];
   isBoss: boolean;
+  isMiniBoss: boolean;
   isQuestMonster: boolean;
   hideInBestiary: boolean;
 };
@@ -171,7 +172,7 @@ function niveauxJoueur(criterions: string): { plMin?: number; plMax?: number } {
 /** Monstres lâchant au moins un équipement du catalogue, avec taux et zones. */
 async function fetchMonstres(idsCatalogue: Set<number>): Promise<Monstre[]> {
   const [bruts, sousZones, zones] = await Promise.all([
-    fetchFeathers<ApiMonstre>('monsters', ['id', 'name', 'grades.level', 'drops', 'subareas', 'isBoss', 'isQuestMonster', 'hideInBestiary']),
+    fetchFeathers<ApiMonstre>('monsters', ['id', 'name', 'grades.level', 'drops', 'subareas', 'isBoss', 'isMiniBoss', 'isQuestMonster', 'hideInBestiary']),
     fetchFeathers<{ id: number; areaId: number; name: { fr: string } }>('subareas', ['id', 'areaId', 'name']),
     fetchFeathers<{ id: number; name: { fr: string } }>('areas', ['id', 'name']),
   ]);
@@ -201,6 +202,7 @@ async function fetchMonstres(idsCatalogue: Set<number>): Promise<Monstre[]> {
       niveau: Math.min(...niveaux),
       niveauMax: Math.max(...niveaux),
       boss: Boolean(m.isBoss),
+      archimonstre: Boolean(m.isMiniBoss),
       zones: [...new Set((m.subareas ?? []).map((sz) => nomSousZone.get(sz)).filter((z): z is string => Boolean(z)))],
       drops: drops.sort((a, b) => b.taux - a.taux),
     });
@@ -472,7 +474,9 @@ async function main() {
   console.log(`Images              : ${okIcons.size}/${allIconIds.length} téléchargées`);
   console.log(`Droppable           : ${droppableIds ? `${items.filter((i) => i.droppable).length} objets flagués` : 'indisponible'}`);
   console.log(`Panoplies           : ${panoplies.length}`);
-  console.log(`Monstres à drops    : ${monstres.length} (${monstres.reduce((n, m) => n + m.drops.length, 0)} couples monstre/objet)`);
+  console.log(
+    `Monstres à drops    : ${monstres.length} (${monstres.reduce((n, m) => n + m.drops.length, 0)} couples monstre/objet, dont ${monstres.filter((m) => m.archimonstre).length} archimonstres)`,
+  );
   console.log(`Sans aucune stat    : ${items.filter((i) => i.stats.length === 0).length} objets`);
   console.log(`Effets mappés       : ${effectReport.filter((r) => r.status === 'mapped').length}`);
   console.log(`Effets ignorés      : ${effectReport.filter((r) => r.status === 'ignored').length}`);

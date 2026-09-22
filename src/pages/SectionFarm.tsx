@@ -53,6 +53,9 @@ export function SectionFarm() {
   const g = useGuide();
   const [ouvert, setOuvert] = useState<number | null>(null);
   const [combatsParHeure, setCombatsParHeure] = useState<number | null>(30);
+  // Les archimonstres n'apparaissent qu'au hasard : on ne peut pas les farmer.
+  const [archis, setArchis] = useState(false);
+  const [boss, setBoss] = useState(true);
 
   const resultats = useMemo(
     () =>
@@ -63,8 +66,10 @@ export function SectionFarm() {
         taxePct,
         jet: 'moyen',
         ecartNiveauMax: g.ecartNiveauFarm,
+        inclureArchimonstres: archis,
+        inclureBoss: boss,
       }),
-    [monstres, parId, ctx, g.niveauJoueur, g.prospection, g.coefSuppose, g.ecartNiveauFarm, taxePct],
+    [monstres, parId, ctx, g.niveauJoueur, g.prospection, g.coefSuppose, g.ecartNiveauFarm, taxePct, archis, boss],
   );
 
   const meilleur = resultats[0];
@@ -90,6 +95,14 @@ export function SectionFarm() {
         <label className="flex flex-col gap-0.5" title="Pour convertir le gain par combat en gain horaire">
           Combats / heure
           <ChampNombre value={combatsParHeure} onChange={setCombatsParHeure} vide className="w-20" />
+        </label>
+        <label className="flex items-center gap-1 pb-2" title="Les archimonstres n'apparaissent qu'au hasard : impossible de farmer dessus">
+          <input type="checkbox" checked={archis} onChange={(e) => setArchis(e.target.checked)} />
+          Archimonstres
+        </label>
+        <label className="flex items-center gap-1 pb-2" title="Boss de donjon : farmables, mais ils demandent une clé et un groupe">
+          <input type="checkbox" checked={boss} onChange={(e) => setBoss(e.target.checked)} />
+          Boss de donjon
         </label>
       </div>
 

@@ -30,6 +30,7 @@ const monstre = (drops: Monstre['drops']): Monstre => ({
   niveau: 40,
   niveauMax: 45,
   boss: false,
+  archimonstre: false,
   zones: ['Amakna / Plaine'],
   drops,
 });
@@ -94,5 +95,22 @@ describe('evaluerFarm', () => {
     const ctx = contexte('toutSimple');
     const inconnu = monstre([{ itemId: 999, taux: 50 }]);
     expect(evaluerFarm([inconnu], parId, ctx, OPT)).toEqual([]);
+  });
+});
+
+describe('filtres de cibles', () => {
+  const ctx = contexte('toutSimple');
+  const normal = { ...monstre([{ itemId: 1, taux: 5 }]), id: 1 };
+  const archi = { ...monstre([{ itemId: 1, taux: 90 }]), id: 2, archimonstre: true };
+  const patron = { ...monstre([{ itemId: 1, taux: 50 }]), id: 3, boss: true };
+
+  it('exclut les archimonstres par défaut', () => {
+    expect(evaluerFarm([normal, archi], parId, ctx, OPT).map((m) => m.monstre.id)).toEqual([1]);
+    expect(evaluerFarm([normal, archi], parId, ctx, { ...OPT, inclureArchimonstres: true }).map((m) => m.monstre.id)).toEqual([2, 1]);
+  });
+
+  it('garde les boss de donjon sauf si on les exclut', () => {
+    expect(evaluerFarm([normal, patron], parId, ctx, OPT).map((m) => m.monstre.id)).toEqual([3, 1]);
+    expect(evaluerFarm([normal, patron], parId, ctx, { ...OPT, inclureBoss: false }).map((m) => m.monstre.id)).toEqual([1]);
   });
 });

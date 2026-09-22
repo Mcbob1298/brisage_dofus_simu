@@ -43,6 +43,10 @@ export type OptionsFarm = {
   jet: JetChoisi;
   /** Écart de niveau toléré au-dessus du personnage. */
   ecartNiveauMax: number;
+  /** Archimonstres : apparition rare, on ne peut pas farmer dessus (exclus par défaut). */
+  inclureArchimonstres?: boolean;
+  /** Boss de donjon : farmables, mais ils demandent une clé et un groupe. */
+  inclureBoss?: boolean;
 };
 
 /** Un drop conditionné par le niveau du joueur (critère `PL`) n'est pris que si la condition est remplie. */
@@ -88,7 +92,12 @@ export function evaluerFarm(
   options: OptionsFarm,
 ): MonstreEvalue[] {
   return monstres
-    .filter((m) => m.niveau <= options.niveauJoueur + options.ecartNiveauMax)
+    .filter(
+      (m) =>
+        m.niveau <= options.niveauJoueur + options.ecartNiveauMax &&
+        (options.inclureArchimonstres || !m.archimonstre) &&
+        (options.inclureBoss !== false || !m.boss),
+    )
     .map((m) => evaluerMonstre(m, parId, ctx, options))
     .filter((m) => m.drops.length > 0)
     .sort((a, b) => b.valeurParCombat - a.valeurParCombat);

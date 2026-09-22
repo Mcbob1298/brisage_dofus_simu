@@ -82,6 +82,8 @@ export type Monstre = {
   niveau: number;
   niveauMax: number;
   boss: boolean;
+  /** Archimonstre (version « mini-boss » d'un monstre normal) : apparition rare. */
+  archimonstre: boolean;
   /** Noms des sous-zones où on le croise, « Zone / Sous-zone ». */
   zones: string[];
   /** Uniquement les objets du catalogue (équipements brisables). */
