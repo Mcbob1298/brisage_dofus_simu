@@ -52,6 +52,12 @@ type EtatGuide = {
   candidats: Candidat[];
   /** Part de la bourse (en %) qu'un test peut consommer. */
   partBudgetTest: number;
+  /** Niveau du personnage : conditionne les drops accessibles et les monstres proposés. */
+  niveauJoueur: number;
+  /** Prospection du personnage (100 = taux de drop de base). */
+  prospection: number;
+  /** Monstres jusqu'à N niveaux au-dessus du personnage. */
+  ecartNiveauFarm: number;
   /** Coefficient supposé pour le prix max d'achat (à ajuster d'après ce que tu lis au concasseur). */
   coefSuppose: number;
   /** ROI minimum visé pour le prix max d'achat, en %. */
@@ -69,6 +75,9 @@ type EtatGuide = {
   setObjectif: (objectif: number | null) => void;
   setJet: (jet: JetGuide) => void;
   setPartBudgetTest: (pct: number) => void;
+  setNiveauJoueur: (n: number) => void;
+  setProspection: (n: number) => void;
+  setEcartNiveauFarm: (n: number) => void;
   setCoefSuppose: (coef: number) => void;
   setRoiVise: (roi: number) => void;
   setCategorieHdv: (type: string) => void;
@@ -89,6 +98,9 @@ const etatInitial = {
   jet: 'moyen' as JetGuide,
   candidats: [] as Candidat[],
   partBudgetTest: PART_BUDGET_TEST_DEFAUT,
+  niveauJoueur: 50,
+  prospection: 100,
+  ecartNiveauFarm: 10,
   coefSuppose: 100,
   roiVise: 30,
   categorieHdv: '',
@@ -112,6 +124,9 @@ export const useGuide = create<EtatGuide>()(
       setObjectif: (objectif) => set({ objectif }),
       setJet: (jet) => set({ jet }),
       setPartBudgetTest: (partBudgetTest) => set({ partBudgetTest: Math.min(100, Math.max(1, partBudgetTest)) }),
+      setNiveauJoueur: (niveauJoueur) => set({ niveauJoueur: Math.min(200, Math.max(1, Math.round(niveauJoueur))) }),
+      setProspection: (prospection) => set({ prospection: Math.max(0, Math.round(prospection)) }),
+      setEcartNiveauFarm: (ecartNiveauFarm) => set({ ecartNiveauFarm: Math.max(0, Math.round(ecartNiveauFarm)) }),
       setCoefSuppose: (coefSuppose) => set({ coefSuppose: Math.max(1, coefSuppose) }),
       setRoiVise: (roiVise) => set({ roiVise: Math.max(0, roiVise) }),
       setCategorieHdv: (categorieHdv) => set({ categorieHdv }),
@@ -153,9 +168,18 @@ export const useGuide = create<EtatGuide>()(
     }),
     {
       name: 'brisage.guide',
-      version: 4,
+      version: 5,
       migrate: (persisted, version) => {
-        const p = { partBudgetTest: PART_BUDGET_TEST_DEFAUT, coefSuppose: 100, roiVise: 30, categorieHdv: '', ...(persisted as { partBudgetTest?: number }) };
+        const p = {
+          partBudgetTest: PART_BUDGET_TEST_DEFAUT,
+          coefSuppose: 100,
+          roiVise: 30,
+          categorieHdv: '',
+          niveauJoueur: 50,
+          prospection: 100,
+          ecartNiveauFarm: 10,
+          ...(persisted as { partBudgetTest?: number }),
+        };
         // v2 avait 20 % par défaut : trop peu de tests à petite bourse.
         if (version < 3 && p.partBudgetTest === 20) p.partBudgetTest = PART_BUDGET_TEST_DEFAUT;
         return p;

@@ -21,6 +21,8 @@ import {
 } from '../src/data/statMapping.ts';
 import type {
   Item,
+  Monstre,
+  DropItem,
   RuneDef,
   RuneTier,
   StatLine,
@@ -93,6 +95,82 @@ async function fetchAllPages(endpoint: string, fields: string[]): Promise<ApiIte
   }
   process.stdout.write('\n');
   return items;
+}
+
+// ---------- Drops (DofusDB) ----------
+
+type ApiDrop = { objectId: number; percentDropForGrade1: number; criterions: string };
+type ApiMonstre = {
+  id: number;
+  name: { fr: string };
+  grades: { level: number }[];
+  drops: ApiDrop[];
+  subareas: number[];
+  isBoss: boolean;
+  isQuestMonster: boolean;
+  hideInBestiary: boolean;
+};
+
+/** Pagination Feathers : $limit est plafonné à 50 côté serveur. */
+async function fetchFeathers<T>(chemin: string, select: string[], filtre = ''): Promise<T[]> {
+  const sel = select.map((x) => `$select[]=${encodeURIComponent(x)}`).join('&');
+  const out: T[] = [];
+  for (let skip = 0; ; skip += 50) {
+    const url = `${DOFUSDB}/${chemin}?$limit=50&$skip=${skip}&${sel}${filtre}`;
+    const d = await fetchJson<{ total: number; data: T[] }>(url);
+    out.push(...d.data);
+    process.stdout.write(`  ${chemin} : ${out.length}/${d.total}\r`);
+    if (skip + 50 >= d.total || d.data.length === 0) break;
+  }
+  process.stdout.write('\n');
+  return out;
+}
+
+/** « PL>9&PL<111 » → niveau de joueur requis entre 10 et 110. */
+function niveauxJoueur(criterions: string): { plMin?: number; plMax?: number } {
+  const m = criterions?.match(/PL>(\d+)&PL<(\d+)/);
+  if (!m) return {};
+  return { plMin: Number(m[1]) + 1, plMax: Number(m[2]) - 1 };
+}
+
+/** Monstres lâchant au moins un équipement du catalogue, avec taux et zones. */
+async function fetchMonstres(idsCatalogue: Set<number>): Promise<Monstre[]> {
+  const [bruts, sousZones, zones] = await Promise.all([
+    fetchFeathers<ApiMonstre>('monsters', ['id', 'name', 'grades.level', 'drops', 'subareas', 'isBoss', 'isQuestMonster', 'hideInBestiary']),
+    fetchFeathers<{ id: number; areaId: number; name: { fr: string } }>('subareas', ['id', 'areaId', 'name']),
+    fetchFeathers<{ id: number; name: { fr: string } }>('areas', ['id', 'name']),
+  ]);
+  const nomZone = new Map(zones.map((z) => [z.id, z.name?.fr ?? '']));
+  const nomSousZone = new Map(
+    sousZones.map((sz) => {
+      const zone = nomZone.get(sz.areaId) ?? '';
+      const nom = sz.name?.fr ?? '';
+      return [sz.id, zone && zone !== nom ? `${zone} / ${nom}` : nom];
+    }),
+  );
+
+  const out: Monstre[] = [];
+  for (const m of bruts) {
+    if (m.hideInBestiary) continue;
+    const drops: DropItem[] = [];
+    for (const d of m.drops ?? []) {
+      if (!idsCatalogue.has(d.objectId) || !(d.percentDropForGrade1 > 0)) continue;
+      drops.push({ itemId: d.objectId, taux: d.percentDropForGrade1, ...niveauxJoueur(d.criterions) });
+    }
+    if (drops.length === 0) continue;
+    const niveaux = (m.grades ?? []).map((g) => g.level).filter(Number.isFinite);
+    if (niveaux.length === 0) continue;
+    out.push({
+      id: m.id,
+      nom: m.name?.fr ?? `#${m.id}`,
+      niveau: Math.min(...niveaux),
+      niveauMax: Math.max(...niveaux),
+      boss: Boolean(m.isBoss),
+      zones: [...new Set((m.subareas ?? []).map((sz) => nomSousZone.get(sz)).filter((z): z is string => Boolean(z)))],
+      drops: drops.sort((a, b) => b.taux - a.taux),
+    });
+  }
+  return out.sort((a, b) => a.niveau - b.niveau || a.nom.localeCompare(b.nom, 'fr'));
 }
 
 /** Ids Ankama des objets droppables selon DofusDB (`dropMonsterIds` non vide). */
@@ -303,6 +381,15 @@ async function main() {
       tierOrder[a.tier] - tierOrder[b.tier],
   );
 
+  // --- Drops ---
+  console.log('▶ Drops détaillés (monstres, zones, taux)…');
+  let monstres: Monstre[] = [];
+  try {
+    monstres = await fetchMonstres(new Set(items.map((i) => i.id)));
+  } catch (e) {
+    console.warn(`  ⚠ drops indisponibles (${(e as Error).message}) : le guide de farm sera vide.`);
+  }
+
   // --- Images ---
   console.log('▶ Icônes (WebP 48×48)…');
   const allIconIds = [...new Set([...iconByItem.values(), ...iconByRune.values()])];
@@ -331,6 +418,7 @@ async function main() {
   await writeFile(path.join(DATA_DIR, 'runes.json'), JSON.stringify(runes, null, 1));
   await writeFile(path.join(DATA_DIR, 'effect-types.json'), JSON.stringify(effectReport, null, 1));
   await writeFile(path.join(DATA_DIR, 'meta.json'), JSON.stringify(meta, null, 1));
+  await writeFile(path.join(DATA_DIR, 'monstres.json'), JSON.stringify(monstres));
 
   // --- Rapport ---
   const unmapped = effectReport.filter((r) => r.status === 'unmapped');
@@ -343,6 +431,7 @@ async function main() {
   console.log(`Runes               : ${runes.length}${runesIgnorees.length ? ` (ignorées : ${runesIgnorees.join(', ')})` : ''}`);
   console.log(`Images              : ${okIcons.size}/${allIconIds.length} téléchargées`);
   console.log(`Droppable           : ${droppableIds ? `${items.filter((i) => i.droppable).length} objets flagués` : 'indisponible'}`);
+  console.log(`Monstres à drops    : ${monstres.length} (${monstres.reduce((n, m) => n + m.drops.length, 0)} couples monstre/objet)`);
   console.log(`Sans aucune stat    : ${items.filter((i) => i.stats.length === 0).length} objets`);
   console.log(`Effets mappés       : ${effectReport.filter((r) => r.status === 'mapped').length}`);
   console.log(`Effets ignorés      : ${effectReport.filter((r) => r.status === 'ignored').length}`);

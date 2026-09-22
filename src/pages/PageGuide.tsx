@@ -13,6 +13,7 @@ import { useCatalogue } from '../store/catalogue.ts';
 import { budgetTest, PARTS_BUDGET_TEST, useGuide, type JetGuide } from '../store/guide.ts';
 import { useNotes } from '../store/notes.ts';
 import { useSimu } from '../store/simu.ts';
+import { SectionFarm } from './SectionFarm.tsx';
 
 const TRANCHES = [60, 120, 160, 200];
 
@@ -315,10 +316,15 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
         </div>
       </Etape>
 
-      {/* 2. Candidats */}
+      {/* 2. Farm gratuit */}
+      <Etape n={2} titre="Farmer : des objets gratuits" actif={objectifOk} aide="ce que tu peux looter à ton niveau, zéro mise de départ">
+        <SectionFarm />
+      </Etape>
+
+      {/* 3. Candidats HDV */}
       <Etape
-        n={2}
-        titre="Objets à tester"
+        n={3}
+        titre="Acheter : objets à tester"
         actif={objectifOk}
         aide={budget !== null ? `un test ≤ ${formatKamas(budget)} — et briser rend des runes : la mise réelle est bien moindre que le prix` : undefined}
       >
@@ -472,8 +478,8 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
         </div>
       </Etape>
 
-      {/* 3. Stratégie */}
-      <Etape n={3} titre="Stratégie" actif={objectifOk && prets.length > 0} aide={prets.length === 0 ? 'apparaît dès qu’un objet testé est rentable' : undefined}>
+      {/* 4. Stratégie */}
+      <Etape n={4} titre="Stratégie" actif={objectifOk && prets.length > 0} aide={prets.length === 0 ? 'apparaît dès qu’un objet testé est rentable' : undefined}>
         {strategie && strategie.plan && (
           <div className="space-y-2">
             <div className="rounded border border-ok/40 bg-ok-doux p-3">
@@ -546,8 +552,8 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
         )}
       </Etape>
 
-      {/* 4. Suivi */}
-      <Etape n={4} titre="Suivi" actif={objectifOk && (strategie !== null || g.sessions.length > 0)}>
+      {/* 5. Suivi */}
+      <Etape n={5} titre="Suivi" actif={objectifOk && (strategie !== null || g.sessions.length > 0)}>
         <div className="grid gap-3 md:grid-cols-2">
           <div>
             <h3 className="mb-1 titre-section">Enregistrer une session</h3>

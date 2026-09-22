@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CatalogueMeta, Item, RuneDef } from '../data/types.ts';
+import type { CatalogueMeta, Item, Monstre, RuneDef } from '../data/types.ts';
 import { IndexRecherche } from '../search/index.ts';
 
 type Statut = 'idle' | 'chargement' | 'pret' | 'erreur';
@@ -10,6 +10,7 @@ type EtatCatalogue = {
   items: Item[];
   parId: Map<number, Item>;
   runes: RuneDef[];
+  monstres: Monstre[];
   meta: CatalogueMeta | null;
   index: IndexRecherche | null;
   charger: () => Promise<void>;
@@ -28,22 +29,26 @@ export const useCatalogue = create<EtatCatalogue>((set, get) => ({
   items: [],
   parId: new Map(),
   runes: [],
+  monstres: [],
   meta: null,
   index: null,
   charger: async () => {
     if (get().statut !== 'idle') return;
     set({ statut: 'chargement' });
     try {
-      const [items, runes, meta] = await Promise.all([
+      const [items, runes, meta, monstres] = await Promise.all([
         lireJson<Item[]>('/data/items.json'),
         lireJson<RuneDef[]>('/data/runes.json'),
         lireJson<CatalogueMeta>('/data/meta.json').catch(() => null),
+        // Les drops sont optionnels : l'app reste utilisable sans eux.
+        lireJson<Monstre[]>('/data/monstres.json').catch(() => [] as Monstre[]),
       ]);
       set({
         statut: 'pret',
         items,
         parId: new Map(items.map((i) => [i.id, i])),
         runes,
+        monstres,
         meta,
         index: new IndexRecherche(items),
       });

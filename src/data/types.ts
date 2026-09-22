@@ -64,3 +64,32 @@ export type CatalogueMeta = {
   nbImagesEchouees: number;
   droppableDisponible: boolean;
 };
+
+/** Un objet lâché par un monstre, avec son taux de base (prospection 100). */
+export type DropItem = {
+  itemId: number;
+  /** Taux de drop en %, tel que fourni par l'API (identique pour tous les grades). */
+  taux: number;
+  /** Niveau de joueur minimum requis, si le drop est conditionné (critère `PL`). */
+  plMin?: number;
+  plMax?: number;
+};
+
+export type Monstre = {
+  id: number;
+  nom: string;
+  /** Niveau du grade le plus bas (les grades supérieurs sont plus costauds). */
+  niveau: number;
+  niveauMax: number;
+  boss: boolean;
+  /** Noms des sous-zones où on le croise, « Zone / Sous-zone ». */
+  zones: string[];
+  /** Uniquement les objets du catalogue (équipements brisables). */
+  drops: DropItem[];
+};
+
+export type DropsMeta = {
+  source: string;
+  nbMonstres: number;
+  nbDrops: number;
+};
