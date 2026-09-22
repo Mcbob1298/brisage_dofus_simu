@@ -52,6 +52,12 @@ type EtatGuide = {
   candidats: Candidat[];
   /** Part de la bourse (en %) qu'un test peut consommer. */
   partBudgetTest: number;
+  /** Coefficient supposé pour le prix max d'achat (à ajuster d'après ce que tu lis au concasseur). */
+  coefSuppose: number;
+  /** ROI minimum visé pour le prix max d'achat, en %. */
+  roiVise: number;
+  /** Catégorie HDV parcourue (type d'objet), '' = toutes. */
+  categorieHdv: string;
   /** Niveau max des suggestions, null = indicatif selon la bourse. */
   niveauMaxSuggestions: number | null;
   triSuggestions: TriSuggestions;
@@ -63,6 +69,9 @@ type EtatGuide = {
   setObjectif: (objectif: number | null) => void;
   setJet: (jet: JetGuide) => void;
   setPartBudgetTest: (pct: number) => void;
+  setCoefSuppose: (coef: number) => void;
+  setRoiVise: (roi: number) => void;
+  setCategorieHdv: (type: string) => void;
   setNiveauMaxSuggestions: (n: number | null) => void;
   setTriSuggestions: (t: TriSuggestions) => void;
   ajouterCandidat: (itemId: number) => void;
@@ -80,6 +89,9 @@ const etatInitial = {
   jet: 'moyen' as JetGuide,
   candidats: [] as Candidat[],
   partBudgetTest: PART_BUDGET_TEST_DEFAUT,
+  coefSuppose: 100,
+  roiVise: 30,
+  categorieHdv: '',
   niveauMaxSuggestions: null as number | null,
   triSuggestions: 'densite' as TriSuggestions,
   strategieItemId: null,
@@ -100,6 +112,9 @@ export const useGuide = create<EtatGuide>()(
       setObjectif: (objectif) => set({ objectif }),
       setJet: (jet) => set({ jet }),
       setPartBudgetTest: (partBudgetTest) => set({ partBudgetTest: Math.min(100, Math.max(1, partBudgetTest)) }),
+      setCoefSuppose: (coefSuppose) => set({ coefSuppose: Math.max(1, coefSuppose) }),
+      setRoiVise: (roiVise) => set({ roiVise: Math.max(0, roiVise) }),
+      setCategorieHdv: (categorieHdv) => set({ categorieHdv }),
       setNiveauMaxSuggestions: (niveauMaxSuggestions) => set({ niveauMaxSuggestions }),
       setTriSuggestions: (triSuggestions) => set({ triSuggestions }),
       ajouterCandidat: (itemId) =>
@@ -138,9 +153,9 @@ export const useGuide = create<EtatGuide>()(
     }),
     {
       name: 'brisage.guide',
-      version: 3,
+      version: 4,
       migrate: (persisted, version) => {
-        const p = { partBudgetTest: PART_BUDGET_TEST_DEFAUT, ...(persisted as { partBudgetTest?: number }) };
+        const p = { partBudgetTest: PART_BUDGET_TEST_DEFAUT, coefSuppose: 100, roiVise: 30, categorieHdv: '', ...(persisted as { partBudgetTest?: number }) };
         // v2 avait 20 % par défaut : trop peu de tests à petite bourse.
         if (version < 3 && p.partBudgetTest === 20) p.partBudgetTest = PART_BUDGET_TEST_DEFAUT;
         return p;

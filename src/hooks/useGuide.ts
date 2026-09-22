@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { StatId } from '../data/statMapping.ts';
+import { STAT_BY_ID, type StatId } from '../data/statMapping.ts';
 import type { Item } from '../data/types.ts';
 import {
   calculerBilan,
@@ -38,10 +38,16 @@ export type CandidatEvalue = {
   plan: Plan | null;
 };
 
+export type LigneValeur = { statId: StatId; jet: number; valeur: number };
+
 export type Suggestion = {
   eval: EvaluationItem;
   /** Prix HDV noté, s'il existe. */
   prix: number | null;
+  /** Prix max d'achat : valeur nette au coef supposé ÷ (1 + ROI visé). */
+  prixMax: number;
+  /** Lignes de l'objet classées par kamas rapportés (pour le reconnaître en HDV). */
+  lignes: LigneValeur[];
   /** Bénéfice estimé à coef 100 % (valeur nette de taxe − prix), si prix noté. */
   beneficeEstime: number | null;
   roiEstime: number | null;
@@ -53,7 +59,7 @@ export type Suggestion = {
 export const SEUIL_MAX_SUGGESTION = 300;
 
 export type Suggestions = {
-  /** Objets dont le prix noté rentre dans la bourse ET rentables à coef 100 %, classés par bénéfice estimé. */
+  /** Prix noté ≤ prix max (et ≤ budget de test) : bonnes affaires, classées par bénéfice estimé. */
   surMesure: Suggestion[];
   /** Abordables mais rentables seulement au-dessus de 100 % (jusqu'à SEUIL_MAX_SUGGESTION), classés par seuil croissant. */
   siCoefEleve: Suggestion[];
@@ -78,7 +84,7 @@ export type Suggestions = {
 export function useSuggestions(limite = 10): Suggestions {
   const items = useCatalogue((s) => s.items);
   const ctx = useContexte();
-  const { jet, candidats, kamasActuels, niveauMaxSuggestions, triSuggestions, partBudgetTest } = useGuide();
+  const { jet, candidats, kamasActuels, niveauMaxSuggestions, triSuggestions, partBudgetTest, coefSuppose, roiVise, categorieHdv } = useGuide();
   const budget = budgetTest(kamasActuels, partBudgetTest);
   const prixConstates = useNotes((s) => s.prixConstates);
   const taxePct = useSimu((s) => s.taxePct);
@@ -89,8 +95,15 @@ export function useSuggestions(limite = 10): Suggestions {
     // Diviseur plancher à 20 : sinon les objets niveau 1 (souvent des récompenses de quête) écrasent le tri.
     const cle = (e: EvaluationItem) => (triSuggestions === 'densite' ? e.valeurMeilleure / Math.max(20, e.item.niveau) : e.valeurMeilleure);
     const eligibles = evaluations.filter(
-      (e) => e.item.stats.length > 0 && e.item.droppable !== true && !e.prixManquants && !deja.has(e.item.id) && e.item.niveau <= niveauMax,
+      (e) =>
+        e.item.stats.length > 0 &&
+        e.item.droppable !== true &&
+        !e.prixManquants &&
+        !deja.has(e.item.id) &&
+        e.item.niveau <= niveauMax &&
+        (categorieHdv === '' || (categorieHdv === 'Arme' ? e.item.famille === 'Arme' : e.item.type === categorieHdv)),
     );
+    const facteurNet = 1 - taxePct / 100;
     const surMesure: Suggestion[] = [];
     const siCoefEleve: Suggestion[] = [];
     const aChiffrer: Suggestion[] = [];
@@ -98,19 +111,30 @@ export function useSuggestions(limite = 10): Suggestions {
     let nbNonRentables = 0;
     for (const e of eligibles) {
       const prix = prixConstates[e.item.id]?.prix ?? null;
+      const valeurNette100 = e.valeurMeilleure * facteurNet;
+      // Prix max d'achat : ce que valent les runes au coef supposé, moins le ROI visé.
+      const prixMax = (valeurNette100 * (coefSuppose / 100)) / (1 + roiVise / 100);
+      // Lignes classées par kamas rapportés en brisage naturel (jet choisi, coef 100 %).
+      const lignes: LigneValeur[] = lignesDepuisItem(e.item, jet)
+        .filter((l) => l.jet > 0)
+        .map((l) => {
+          const r = calculerBrisage({ niveau: e.item.niveau, lignes: [l], coefficient: 100, focus: null }, ctx);
+          return { statId: l.statId, jet: l.jet, valeur: r.valeurEsperee };
+        })
+        .sort((a, b) => b.valeur - a.valeur);
+      const base = { eval: e, prixMax, lignes };
       if (prix === null) {
-        aChiffrer.push({ eval: e, prix: null, beneficeEstime: null, roiEstime: null, seuilEstime: null });
+        aChiffrer.push({ ...base, prix: null, beneficeEstime: null, roiEstime: null, seuilEstime: null });
         continue;
       }
-      if (budget !== null && prix > budget) {
+      if ((budget !== null && prix > budget) || prix > prixMax) {
         nbTropChers++;
         continue;
       }
-      const valeurNette100 = e.valeurMeilleure * (1 - taxePct / 100);
-      const beneficeEstime = valeurNette100 - prix;
+      const beneficeEstime = valeurNette100 * (coefSuppose / 100) - prix;
       // La valeur des runes est linéaire en coef : seuil ≈ prix / valeur nette à 100 %.
       const seuilEstime = valeurNette100 > 0 ? (prix / valeurNette100) * 100 : null;
-      const s: Suggestion = { eval: e, prix, beneficeEstime, roiEstime: prix > 0 ? (beneficeEstime / prix) * 100 : null, seuilEstime };
+      const s: Suggestion = { ...base, prix, beneficeEstime, roiEstime: prix > 0 ? (beneficeEstime / prix) * 100 : null, seuilEstime };
       if (beneficeEstime > 0) surMesure.push(s);
       else if (seuilEstime !== null && seuilEstime <= SEUIL_MAX_SUGGESTION) siCoefEleve.push(s);
       else nbNonRentables++;
@@ -119,7 +143,27 @@ export function useSuggestions(limite = 10): Suggestions {
     siCoefEleve.sort((a, b) => a.seuilEstime! - b.seuilEstime!);
     aChiffrer.sort((a, b) => cle(b.eval) - cle(a.eval));
     return { surMesure, siCoefEleve, nbNonRentables, aChiffrer: aChiffrer.slice(0, limite), nbTropChers, budget, niveauMax, auto: niveauMaxSuggestions === null };
-  }, [evaluations, candidats, niveauMax, triSuggestions, limite, prixConstates, budget, taxePct, niveauMaxSuggestions]);
+  }, [evaluations, candidats, niveauMax, triSuggestions, limite, prixConstates, budget, taxePct, niveauMaxSuggestions, coefSuppose, roiVise, categorieHdv, jet, ctx]);
+}
+
+export type KamasParPoint = { statId: StatId; label: string; kamasParPoint: number };
+
+/**
+ * Ce que rapporte 1 point de chaque caractéristique sur un objet du niveau donné
+ * (brisage naturel, coef 100 %, mode et prix courants). Sert à reconnaître en HDV
+ * les lignes qui valent cher.
+ */
+export function useKamasParPoint(niveau: number): KamasParPoint[] {
+  const ctx = useContexte();
+  return useMemo(() => {
+    const stats = new Set(ctx.runes.map((r) => r.statId));
+    const out: KamasParPoint[] = [];
+    for (const statId of stats) {
+      const r = calculerBrisage({ niveau, lignes: [{ statId, jet: 100 }], coefficient: 100, focus: null }, ctx);
+      if (r.valeurEsperee > 0) out.push({ statId, label: STAT_BY_ID[statId].label, kamasParPoint: r.valeurEsperee / 100 });
+    }
+    return out.sort((a, b) => b.kamasParPoint - a.kamasParPoint);
+  }, [ctx, niveau]);
 }
 
 export function useCandidatsEvalues(): CandidatEvalue[] {

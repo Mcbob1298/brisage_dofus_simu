@@ -6,7 +6,7 @@ import { Courbe } from '../components/Courbe.tsx';
 import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
 import { RechercheObjet } from '../components/RechercheObjet.tsx';
-import { strategieRetenue, useCandidatsEvalues, useSuggestions, type CandidatEvalue, type EtatCandidat, type Suggestion } from '../hooks/useGuide.ts';
+import { strategieRetenue, useCandidatsEvalues, useKamasParPoint, useSuggestions, type CandidatEvalue, type EtatCandidat, type Suggestion } from '../hooks/useGuide.ts';
 import { formatDate, formatKamas, formatNombre, formatPct, joursDepuis } from '../lib/format.ts';
 import { JOURS_PERIME } from '../store/prix.ts';
 import { useCatalogue } from '../store/catalogue.ts';
@@ -140,35 +140,52 @@ function LigneCandidat({ e, ouvrir }: { e: CandidatEvalue; ouvrir: (item: Item) 
   );
 }
 
-/** Une suggestion : prix HDV saisi ici → enregistré partout, et la liste se recompose. */
+/** Une suggestion : prix max d'achat, lignes à reconnaître en HDV, prix saisi ici → enregistré partout. */
 function LigneSuggestion({ s, onAjouter }: { s: Suggestion; onAjouter: () => void }) {
   const setPrixConstate = useNotes((st) => st.setPrixConstate);
+  const item = s.eval.item;
   return (
-    <li className="flex items-center gap-2 px-2 py-1 text-sm">
-      <Objet item={s.eval.item} />
-      <span className="tnum ml-auto text-right text-xs text-encre-2" title="Valeur espérée des runes à coef. 100 % · valeur ÷ niveau">
-        {formatKamas(s.eval.valeurMeilleure)}
+    <li className="flex items-center gap-2 px-2 py-1.5 text-sm">
+      <span className="flex min-w-0 flex-1 items-start gap-2">
+        <ItemImage src={item.imageLocale} alt="" fallback={placeholderPour(item.type, item.famille)} taille={28} className="mt-0.5" />
+        <span className="min-w-0">
+          <span className="block truncate leading-tight">
+            {item.nom} <span className="tnum text-[11px] text-encre-2">· niv. {item.niveau} · {item.type}</span>
+          </span>
+          <span className="mt-0.5 flex flex-wrap gap-1 text-[10px] text-encre-2">
+            {s.lignes.slice(0, 4).map((l) => (
+              <span key={l.statId} className="rounded bg-surface-2 px-1" title={`≈ ${formatKamas(l.valeur)} de runes`}>
+                {formatNombre(l.jet)} {STAT_BY_ID[l.statId].label}
+              </span>
+            ))}
+            {s.lignes.length > 4 && <span>+{s.lignes.length - 4}</span>}
+          </span>
+        </span>
+      </span>
+      <span className="tnum shrink-0 text-right text-xs" title="Prix max d'achat au coef supposé, ROI visé déduit · valeur des runes à 100 %">
+        <span className="block font-semibold text-encre">≤ {formatKamas(s.prixMax)}</span>
         {s.beneficeEstime === null ? (
-          <span className="block text-[10px]">{formatNombre(s.eval.valeurMeilleure / Math.max(20, s.eval.item.niveau))} / niv.</span>
+          <span className="block text-[10px] text-encre-2">{formatKamas(s.eval.valeurMeilleure)} de runes</span>
         ) : s.beneficeEstime > 0 ? (
-          <span className="block text-[10px] text-ok" title="Bénéfice estimé à coef. 100 %, net de taxe, avant test du coefficient">
-            +{formatKamas(s.beneficeEstime)} @100 %{s.roiEstime !== null ? ` · ROI ${formatPct(s.roiEstime)}` : ''}
+          <span className="block text-[10px] text-ok">
+            +{formatKamas(s.beneficeEstime)}{s.roiEstime !== null ? ` · ROI ${formatPct(s.roiEstime)}` : ''}
           </span>
         ) : (
           <span className="block text-[10px] text-alerte" title="À ce prix, rentable seulement si le concasseur affiche au moins ce coefficient">
-            rentable si coef ≥ {s.seuilEstime === null ? '—' : formatPct(s.seuilEstime, 0)}
+            si coef ≥ {s.seuilEstime === null ? '—' : formatPct(s.seuilEstime, 0)}
           </span>
         )}
       </span>
       <ChampNombre
         value={s.prix}
-        onChange={(v) => setPrixConstate(s.eval.item.id, v)}
+        onChange={(v) => setPrixConstate(item.id, v)}
         vide
-        placeholder="prix HDV"
-        className="w-24 [&>input]:h-7"
-        aria-label={`Prix HDV ${s.eval.item.nom}`}
+        placeholder="prix vu"
+        className="w-22 shrink-0 [&>input]:h-7"
+        aria-label={`Prix HDV ${item.nom}`}
+        title="Prix vu en HDV : au-dessus du prix max il disparaît, en dessous il passe en bonne affaire"
       />
-      <button onClick={onAjouter} className="btn btn-petit px-1.5" aria-label={`Ajouter ${s.eval.item.nom}`} title="Ajouter aux objets à tester">
+      <button onClick={onAjouter} className="btn btn-petit shrink-0 px-1.5" aria-label={`Ajouter ${item.nom}`} title="Ajouter aux objets à tester">
         +
       </button>
     </li>
@@ -181,6 +198,9 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
   const nbPrixRunes = useCatalogue((s) => s.runes.length);
   const evalues = useCandidatsEvalues();
   const suggestions = useSuggestions();
+  const index = useCatalogue((s) => s.index);
+  // Kamas par point au milieu de la tranche de niveau parcourue.
+  const kamasParPoint = useKamasParPoint(Math.max(20, Math.round(suggestions.niveauMax * 0.75)));
   const { choisirObjet, setChamp, setFocus } = useSimu();
   const [nbSession, setNbSession] = useState<number | null>(null);
   const [gainSession, setGainSession] = useState<number | null>(null);
@@ -306,7 +326,39 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
 
         <div className="grid gap-3 md:grid-cols-2">
           <div>
-            <h3 className="mb-1 titre-section">Suggestions (non droppables, runes toutes pricées)</h3>
+            <h3 className="mb-1 titre-section">Guide d'achat HDV (non droppables, runes toutes pricées)</h3>
+            <div className="mb-2 flex flex-wrap items-end gap-x-3 gap-y-1 text-xs text-encre-2">
+              <label className="flex flex-col gap-0.5" title="Coefficient que tu supposes lire au concasseur ; ajuste-le d'après tes tests">
+                Coef supposé
+                <ChampNombre value={g.coefSuppose} onChange={(v) => g.setCoefSuppose(v ?? 100)} suffixe="%" className="w-20" />
+              </label>
+              <label className="flex flex-col gap-0.5" title="Marge minimale voulue sur chaque objet">
+                ROI visé
+                <ChampNombre value={g.roiVise} onChange={(v) => g.setRoiVise(v ?? 30)} suffixe="%" className="w-20" />
+              </label>
+              <label className="flex flex-col gap-0.5" title="Comme les onglets de l'HDV">
+                Catégorie HDV
+                <select value={g.categorieHdv} onChange={(e) => g.setCategorieHdv(e.target.value)} className="champ">
+                  <option value="">Toutes</option>
+                  <option value="Arme">Toutes armes</option>
+                  {index?.types.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="mb-2 rounded-lg border border-bord bg-surface-2 px-2 py-1.5 text-xs">
+              <span className="titre-section">Ce qui rapporte, par point, sur un objet niv. ~{Math.max(20, Math.round(suggestions.niveauMax * 0.75))}</span>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {kamasParPoint.slice(0, 14).map((k) => (
+                  <span key={k.statId} className="tnum rounded bg-surface px-1.5 py-0.5" title="Kamas de runes par point de la caractéristique, brisage naturel à 100 %">
+                    {k.label} <span className="text-encre-2">{formatNombre(k.kamasParPoint, 1)}/pt</span>
+                  </span>
+                ))}
+              </div>
+            </div>
             <div className="mb-1 flex flex-wrap items-center gap-1 text-xs">
               <span className="text-encre-2">Niveau ≤</span>
               {TRANCHES.map((n) => (
@@ -339,7 +391,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
             </div>
             {suggestions.surMesure.length > 0 && (
               <>
-                <div className="mb-1 mt-2 text-[11px] font-medium uppercase tracking-wide text-ok">Sur mesure — sous le budget de test et rentables à 100 %</div>
+                <div className="mb-1 mt-2 text-[11px] font-medium uppercase tracking-wide text-ok">Bonnes affaires — prix noté sous le prix max</div>
                 <ul className="mb-2 divide-y divide-ok/30 rounded-lg border border-ok/40 bg-ok-doux/50">
                   {suggestions.surMesure.map((s) => (
                     <LigneSuggestion key={s.eval.item.id} s={s} onAjouter={() => g.ajouterCandidat(s.eval.item.id)} />
@@ -359,7 +411,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
                 </ul>
               </details>
             )}
-            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-encre-2">À chiffrer — note le prix HDV, la liste se met à jour</div>
+            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-encre-2">À repérer en HDV — note le prix que tu vois</div>
             <ul className="carte divide-y divide-bord">
               {suggestions.aChiffrer.map((s) => (
                 <LigneSuggestion key={s.eval.item.id} s={s} onAjouter={() => g.ajouterCandidat(s.eval.item.id)} />
@@ -367,9 +419,9 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
               {suggestions.aChiffrer.length === 0 && <li className="px-2 py-1 text-xs text-encre-2">Plus rien à chiffrer dans cette tranche.</li>}
             </ul>
             <p className="mt-1 text-xs text-encre-2">
-              Aucune API ne donne les prix HDV : un prix noté au-dessus du budget de test retire l'objet des suggestions
+              Aucune API ne donne les prix HDV : parcours la catégorie en HDV, compare au « achète si ≤ ». Un prix noté au-dessus du prix max (ou du budget de test) retire l'objet
               {suggestions.nbTropChers > 0 && <span className="tnum"> ({suggestions.nbTropChers} masqué{suggestions.nbTropChers > 1 ? 's' : ''} pour l'instant)</span>}, un prix
-              abordable et rentable à 100 % le fait remonter en « sur mesure »
+              sous le prix max le fait remonter en « bonnes affaires »
               {suggestions.nbNonRentables > 0 && (
                 <span className="tnum">
                   {' '}
