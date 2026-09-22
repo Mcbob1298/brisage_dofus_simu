@@ -93,3 +93,12 @@ export type DropsMeta = {
   nbMonstres: number;
   nbDrops: number;
 };
+
+/** Bonus d'une panoplie : caractéristiques gagnées à partir de N pièces portées. */
+export type Panoplie = {
+  id: number;
+  nom: string;
+  niveau: number;
+  /** Nombre de pièces → bonus cumulés à ce palier (valeurs absolues, pas incrémentales). */
+  bonus: Record<number, { statId: StatId; valeur: number }[]>;
+};

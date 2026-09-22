@@ -78,7 +78,10 @@ export function SectionFarm() {
         </label>
         <label className="flex flex-col gap-0.5" title="Taux de base = 100 pp. La mise à l'échelle linéaire avec la prospection est une approximation.">
           Prospection
-          <ChampNombre value={g.prospection} onChange={(v) => g.setProspection(v ?? 100)} className="w-20" />
+          <span className="flex items-center gap-1">
+            <ChampNombre value={g.prospection} onChange={(v) => g.setProspection(v ?? 100)} className="w-20" />
+            <a href="#perso" className="lien text-[11px]">stuff →</a>
+          </span>
         </label>
         <label className="flex flex-col gap-0.5" title="Monstres jusqu'à ce nombre de niveaux au-dessus du tien">
           Écart de niveau

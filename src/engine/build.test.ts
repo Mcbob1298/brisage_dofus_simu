@@ -1,0 +1,122 @@
+import { describe, expect, it } from 'vitest';
+import type { Item, Panoplie } from '../data/types.ts';
+import { alternatives, bonusPanoplie, optimiser, scoreStats, slotDe, statsItem, SLOTS } from './build.ts';
+
+let id = 1;
+const obj = (type: string, stats: Item['stats'], niveau = 50, panoplieId?: number): Item => ({
+  id: id++,
+  nom: `${type} ${id}`,
+  niveau,
+  type,
+  famille: type === 'Épée' ? 'Arme' : type === 'Dofus' ? 'Dofus' : type === 'Trophée' ? 'Trophée' : 'Équipement',
+  imageLocale: '',
+  stats,
+  panoplieId,
+});
+
+const pp = (n: number) => [{ statId: 'prospection' as const, min: n, max: n }];
+
+describe('slots', () => {
+  it('mappe chaque type sur un emplacement, armes et dofus/trophées compris', () => {
+    expect(slotDe(obj('Coiffe', pp(1)))).toBe('coiffe');
+    expect(slotDe(obj('Anneau', pp(1)))).toBe('anneau');
+    expect(slotDe(obj('Épée', pp(1)))).toBe('arme');
+    expect(slotDe(obj('Trophée', pp(1)))).toBe('dofus');
+    expect(slotDe(obj('Dofus', pp(1)))).toBe('dofus');
+    expect(SLOTS.find((s) => s.id === 'anneau')!.capacite).toBe(2);
+    expect(SLOTS.find((s) => s.id === 'dofus')!.capacite).toBe(6);
+  });
+});
+
+describe('statsItem / scoreStats', () => {
+  it('utilise le jet demandé et additionne les lignes de même stat', () => {
+    const i = obj('Coiffe', [
+      { statId: 'prospection', min: 10, max: 20 },
+      { statId: 'prospection', min: 2, max: 4 },
+    ]);
+    expect(statsItem(i, 'max').prospection).toBe(24);
+    expect(statsItem(i, 'min').prospection).toBe(12);
+    expect(statsItem(i, 'moyen').prospection).toBe(18);
+    expect(scoreStats(statsItem(i, 'max'), { prospection: 2 })).toBe(48);
+  });
+});
+
+describe('optimiser', () => {
+  const options = { niveauJoueur: 60, poids: { prospection: 1 }, jet: 'max' as const };
+
+  it('prend le meilleur objet par emplacement et respecte les capacités', () => {
+    const items = [
+      obj('Coiffe', pp(10)),
+      obj('Coiffe', pp(30)),
+      obj('Anneau', pp(5)),
+      obj('Anneau', pp(20)),
+      obj('Anneau', pp(15)),
+    ];
+    const b = optimiser(items, options);
+    expect(b.parSlot.coiffe.map((i) => statsItem(i, 'max').prospection)).toEqual([30]);
+    expect(b.parSlot.anneau.map((i) => statsItem(i, 'max').prospection)).toEqual([20, 15]);
+    expect(b.totaux.prospection).toBe(65);
+    expect(b.score).toBe(65);
+  });
+
+  it('exclut les objets au-dessus du niveau du personnage', () => {
+    const items = [obj('Coiffe', pp(100), 150), obj('Coiffe', pp(10), 40)];
+    const b = optimiser(items, options);
+    expect(b.totaux.prospection).toBe(10);
+  });
+
+  it('ignore les objets sans apport pour l’objectif', () => {
+    const items = [obj('Coiffe', [{ statId: 'force', min: 50, max: 50 }])];
+    expect(optimiser(items, options).parSlot.coiffe).toEqual([]);
+  });
+
+  it('impose les objets déjà possédés', () => {
+    const mien = obj('Coiffe', pp(5));
+    const mieux = obj('Coiffe', pp(50));
+    const b = optimiser([mien, mieux], { ...options, fixes: [mien.id] });
+    expect(b.parSlot.coiffe).toEqual([mien]);
+  });
+
+  it('préfère une panoplie quand son bonus dépasse la perte sur les pièces', () => {
+    const pano: Panoplie = { id: 7, nom: 'Test', niveau: 50, bonus: { 2: [{ statId: 'prospection', valeur: 40 }] } };
+    const items = [
+      obj('Coiffe', pp(30)),
+      obj('Cape', pp(30)),
+      obj('Coiffe', pp(20), 50, 7),
+      obj('Cape', pp(20), 50, 7),
+    ];
+    const sans = optimiser(items, options);
+    expect(sans.totaux.prospection).toBe(60);
+    const avec = optimiser(items, { ...options, panoplies: [pano] });
+    expect(avec.totaux.prospection).toBe(80); // 20 + 20 + 40 de bonus
+    expect(avec.panoplies[0].pieces).toBe(2);
+  });
+
+  it('garde le stuff libre si le bonus de panoplie ne compense pas', () => {
+    const pano: Panoplie = { id: 8, nom: 'Faible', niveau: 50, bonus: { 2: [{ statId: 'prospection', valeur: 5 }] } };
+    const items = [obj('Coiffe', pp(30)), obj('Cape', pp(30)), obj('Coiffe', pp(20), 50, 8), obj('Cape', pp(20), 50, 8)];
+    expect(optimiser(items, { ...options, panoplies: [pano] }).totaux.prospection).toBe(60);
+  });
+});
+
+describe('bonusPanoplie', () => {
+  const p: Panoplie = {
+    id: 1,
+    nom: 'P',
+    niveau: 10,
+    bonus: { 2: [{ statId: 'prospection', valeur: 5 }], 4: [{ statId: 'prospection', valeur: 20 }] },
+  };
+  it('retient le palier atteint le plus élevé', () => {
+    expect(bonusPanoplie(p, 1)).toEqual([]);
+    expect(bonusPanoplie(p, 3)[0].valeur).toBe(5);
+    expect(bonusPanoplie(p, 6)[0].valeur).toBe(20);
+  });
+});
+
+describe('alternatives', () => {
+  it('classe les objets d’un emplacement par score', () => {
+    const items = [obj('Bottes', pp(5)), obj('Bottes', pp(50)), obj('Coiffe', pp(99))];
+    const alt = alternatives(items, 'bottes', { niveauJoueur: 60, poids: { prospection: 1 }, jet: 'max' });
+    expect(alt.map((i) => statsItem(i, 'max').prospection)).toEqual([50, 5]);
+  });
+});

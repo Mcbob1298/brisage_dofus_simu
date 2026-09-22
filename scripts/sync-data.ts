@@ -23,6 +23,7 @@ import type {
   Item,
   Monstre,
   DropItem,
+  Panoplie,
   RuneDef,
   RuneTier,
   StatLine,
@@ -35,6 +36,8 @@ const DOFUSDUDE = 'https://api.dofusdu.de/dofus3/v1/fr';
 const DOFUSDUDE_IMG = 'https://api.dofusdu.de/dofus3/v1/img/item';
 const DOFUSDB = 'https://api.dofusdb.fr';
 const PAGE_SIZE = 1000;
+// L'endpoint /sets plafonne la taille de page à 500.
+const PAGE_SIZE_SETS = 500;
 const IMG_CONCURRENCY = 4;
 const IMG_MAX_TENTATIVES = 6;
 const IMG_SIZE = 48;
@@ -95,6 +98,38 @@ async function fetchAllPages(endpoint: string, fields: string[]): Promise<ApiIte
   }
   process.stdout.write('\n');
   return items;
+}
+
+// ---------- Panoplies (DofusDude) ----------
+
+type ApiSet = {
+  ankama_id: number;
+  name: string;
+  level: number;
+  effects?: Record<string, ApiEffect[] | null>;
+};
+
+/** Bonus de panoplie par nombre de pièces, mappés sur le référentiel. */
+async function fetchPanoplies(acc: EffectAccumulator): Promise<Panoplie[]> {
+  const out: Panoplie[] = [];
+  for (let page = 1; ; page++) {
+    const url = `${DOFUSDUDE}/sets?page[size]=${PAGE_SIZE_SETS}&page[number]=${page}&fields[set]=effects`;
+    const data = await fetchJson<{ _links: { next: string | null }; sets: ApiSet[] }>(url);
+    if (!data.sets?.length) break;
+    for (const s of data.sets) {
+      const bonus: Panoplie['bonus'] = {};
+      for (const [nb, effets] of Object.entries(s.effects ?? {})) {
+        if (!effets?.length) continue;
+        const lignes = mapEffects(effets, s.name, acc).map((l) => ({ statId: l.statId, valeur: l.max }));
+        if (lignes.length) bonus[Number(nb)] = lignes;
+      }
+      if (Object.keys(bonus).length) out.push({ id: s.ankama_id, nom: s.name, niveau: s.level, bonus });
+    }
+    process.stdout.write(`  panoplies : ${out.length}\r`);
+    if (!data._links?.next) break;
+  }
+  process.stdout.write('\n');
+  return out;
 }
 
 // ---------- Drops (DofusDB) ----------
@@ -381,6 +416,10 @@ async function main() {
       tierOrder[a.tier] - tierOrder[b.tier],
   );
 
+  // --- Panoplies ---
+  console.log('▶ Panoplies…');
+  const panoplies = await fetchPanoplies(effectAcc);
+
   // --- Drops ---
   console.log('▶ Drops détaillés (monstres, zones, taux)…');
   let monstres: Monstre[] = [];
@@ -419,6 +458,7 @@ async function main() {
   await writeFile(path.join(DATA_DIR, 'effect-types.json'), JSON.stringify(effectReport, null, 1));
   await writeFile(path.join(DATA_DIR, 'meta.json'), JSON.stringify(meta, null, 1));
   await writeFile(path.join(DATA_DIR, 'monstres.json'), JSON.stringify(monstres));
+  await writeFile(path.join(DATA_DIR, 'panoplies.json'), JSON.stringify(panoplies));
 
   // --- Rapport ---
   const unmapped = effectReport.filter((r) => r.status === 'unmapped');
@@ -431,6 +471,7 @@ async function main() {
   console.log(`Runes               : ${runes.length}${runesIgnorees.length ? ` (ignorées : ${runesIgnorees.join(', ')})` : ''}`);
   console.log(`Images              : ${okIcons.size}/${allIconIds.length} téléchargées`);
   console.log(`Droppable           : ${droppableIds ? `${items.filter((i) => i.droppable).length} objets flagués` : 'indisponible'}`);
+  console.log(`Panoplies           : ${panoplies.length}`);
   console.log(`Monstres à drops    : ${monstres.length} (${monstres.reduce((n, m) => n + m.drops.length, 0)} couples monstre/objet)`);
   console.log(`Sans aucune stat    : ${items.filter((i) => i.stats.length === 0).length} objets`);
   console.log(`Effets mappés       : ${effectReport.filter((r) => r.status === 'mapped').length}`);

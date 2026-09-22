@@ -237,6 +237,8 @@ export const IGNORED_EFFECTS: Readonly<Record<number, string>> = {
   245: 'Sort : + dommages',
   274: 'Sort : - portée minimale',
   145: 'Ajoute un sort temporaire',
+  // Panoplie « Malédiction de Cire Momore » : « 23 max. 4 », modificateur de sort.
+  166: 'Sort : max.',
   // Méta / cosmétique / échange.
   0: 'Échangeable',
   81: 'Lié au personnage',
