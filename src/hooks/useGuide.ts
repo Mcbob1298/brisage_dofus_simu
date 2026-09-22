@@ -12,17 +12,18 @@ import {
   type Plan,
 } from '../engine/index.ts';
 import { useCatalogue } from '../store/catalogue.ts';
-import { useGuide, type Candidat } from '../store/guide.ts';
+import { niveauMaxIndicatif, useGuide, type Candidat } from '../store/guide.ts';
 import { dernierCoef, useNotes } from '../store/notes.ts';
 import { useSimu } from '../store/simu.ts';
 import { useContexte } from './useSimulation.ts';
 
-export type EtatCandidat = 'ecarte' | 'manquePrix' | 'aTester' | 'perte' | 'pret';
+export type EtatCandidat = 'ecarte' | 'manquePrix' | 'tropCher' | 'aTester' | 'perte' | 'pret';
 
 export type CandidatEvalue = {
   candidat: Candidat;
   item: Item;
   prix: number | null;
+  prixDate: string | null;
   coef: number | null;
   coefDate: string | null;
   /** Valeur espérée brute à 100 %, meilleur focus (repère indépendant du coef). */
@@ -37,19 +38,27 @@ export type CandidatEvalue = {
   plan: Plan | null;
 };
 
-/** Suggestions : meilleurs objets du catalogue non droppables, aux runes toutes pricées, pas encore candidats. */
-export function useSuggestions(limite = 12): EvaluationItem[] {
+/**
+ * Suggestions : objets non droppables, aux runes toutes pricées, pas encore
+ * candidats, dans la tranche de niveau choisie (ou indicative selon la bourse),
+ * triés par valeur ÷ niveau (objets denses) ou par valeur brute.
+ */
+export function useSuggestions(limite = 10): { liste: EvaluationItem[]; niveauMax: number; auto: boolean } {
   const items = useCatalogue((s) => s.items);
   const ctx = useContexte();
-  const jet = useGuide((s) => s.jet);
-  const candidats = useGuide((s) => s.candidats);
-  return useMemo(() => {
+  const { jet, candidats, kamasActuels, niveauMaxSuggestions, triSuggestions } = useGuide();
+  const niveauMax = niveauMaxSuggestions ?? niveauMaxIndicatif(kamasActuels);
+  const evaluations = useMemo(() => evaluerCatalogue(items, ctx, jet), [items, ctx, jet]);
+  const liste = useMemo(() => {
     const deja = new Set(candidats.map((c) => c.itemId));
-    return evaluerCatalogue(items, ctx, jet)
-      .filter((e) => e.item.stats.length > 0 && e.item.droppable !== true && !e.prixManquants && !deja.has(e.item.id))
-      .sort((a, b) => b.valeurMeilleure - a.valeurMeilleure)
+    // Diviseur plancher à 20 : sinon les objets niveau 1 (souvent des récompenses de quête) écrasent le tri.
+    const cle = (e: EvaluationItem) => (triSuggestions === 'densite' ? e.valeurMeilleure / Math.max(20, e.item.niveau) : e.valeurMeilleure);
+    return evaluations
+      .filter((e) => e.item.stats.length > 0 && e.item.droppable !== true && !e.prixManquants && !deja.has(e.item.id) && e.item.niveau <= niveauMax)
+      .sort((a, b) => cle(b) - cle(a))
       .slice(0, limite);
-  }, [items, ctx, jet, candidats]);
+  }, [evaluations, candidats, niveauMax, triSuggestions, limite]);
+  return { liste, niveauMax, auto: niveauMaxSuggestions === null };
 }
 
 export function useCandidatsEvalues(): CandidatEvalue[] {
@@ -66,6 +75,7 @@ export function useCandidatsEvalues(): CandidatEvalue[] {
       const item = parId.get(c.itemId);
       if (!item) continue;
       const prix = prixConstates[c.itemId]?.prix ?? null;
+      const prixDate = prixConstates[c.itemId]?.date ?? null;
       const dernier = dernierCoef(coefs[c.itemId]);
       const coef = dernier?.coef ?? null;
       const lignes = lignesDepuisItem(item, jet);
@@ -94,6 +104,7 @@ export function useCandidatsEvalues(): CandidatEvalue[] {
       let etat: EtatCandidat;
       if (c.statut === 'ecarte') etat = 'ecarte';
       else if (prix === null) etat = 'manquePrix';
+      else if (kamasActuels !== null && prix > kamasActuels) etat = 'tropCher';
       else if (coef === null) etat = 'aTester';
       else if (benefice <= 0) etat = 'perte';
       else etat = 'pret';
@@ -101,7 +112,7 @@ export function useCandidatsEvalues(): CandidatEvalue[] {
       const plan =
         etat === 'pret' && kamasActuels !== null && objectif !== null && prix !== null ? planifier(kamasActuels, objectif, prix, benefice) : null;
 
-      out.push({ candidat: c, item, prix, coef, coefDate: dernier?.date ?? null, valeur100, focus, benefice, roi: coef === null ? null : bilan.roi, seuil, etat, plan });
+      out.push({ candidat: c, item, prix, prixDate, coef, coefDate: dernier?.date ?? null, valeur100, focus, benefice, roi: coef === null ? null : bilan.roi, seuil, etat, plan });
     }
     return out;
   }, [candidats, parId, ctx, jet, coefs, prixConstates, taxePct, kamasActuels, objectif]);

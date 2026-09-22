@@ -21,6 +21,19 @@ export type Session = {
 export type PointKamas = { date: string; kamas: number };
 
 export type JetGuide = 'min' | 'moyen' | 'max';
+export type TriSuggestions = 'densite' | 'valeur';
+
+/**
+ * Tranche de niveau indicative selon la bourse. L'app ne connaît pas les prix
+ * HDV : le niveau est le seul proxy de prix disponible, et cette règle n'est
+ * qu'un point de départ modifiable d'un clic.
+ */
+export function niveauMaxIndicatif(kamas: number | null): number {
+  if (kamas === null || kamas < 100_000) return 60;
+  if (kamas < 500_000) return 120;
+  if (kamas < 2_000_000) return 160;
+  return 200;
+}
 
 type EtatGuide = {
   kamasActuels: number | null;
@@ -28,6 +41,9 @@ type EtatGuide = {
   /** Jets supposés des objets achetés : « moyen » est prudent pour de l'HDV. */
   jet: JetGuide;
   candidats: Candidat[];
+  /** Niveau max des suggestions, null = indicatif selon la bourse. */
+  niveauMaxSuggestions: number | null;
+  triSuggestions: TriSuggestions;
   /** Objet retenu comme stratégie (null = meilleur automatique). */
   strategieItemId: number | null;
   sessions: Session[];
@@ -35,6 +51,8 @@ type EtatGuide = {
   setKamas: (kamas: number | null) => void;
   setObjectif: (objectif: number | null) => void;
   setJet: (jet: JetGuide) => void;
+  setNiveauMaxSuggestions: (n: number | null) => void;
+  setTriSuggestions: (t: TriSuggestions) => void;
   ajouterCandidat: (itemId: number) => void;
   retirerCandidat: (itemId: number) => void;
   setStatut: (itemId: number, statut: StatutCandidat) => void;
@@ -49,6 +67,8 @@ const etatInitial = {
   objectif: null,
   jet: 'moyen' as JetGuide,
   candidats: [] as Candidat[],
+  niveauMaxSuggestions: null as number | null,
+  triSuggestions: 'densite' as TriSuggestions,
   strategieItemId: null,
   sessions: [] as Session[],
   historiqueKamas: [] as PointKamas[],
@@ -66,6 +86,8 @@ export const useGuide = create<EtatGuide>()(
         })),
       setObjectif: (objectif) => set({ objectif }),
       setJet: (jet) => set({ jet }),
+      setNiveauMaxSuggestions: (niveauMaxSuggestions) => set({ niveauMaxSuggestions }),
+      setTriSuggestions: (triSuggestions) => set({ triSuggestions }),
       ajouterCandidat: (itemId) =>
         set((s) =>
           s.candidats.some((c) => c.itemId === itemId)

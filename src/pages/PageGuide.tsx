@@ -7,11 +7,14 @@ import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
 import { RechercheObjet } from '../components/RechercheObjet.tsx';
 import { strategieRetenue, useCandidatsEvalues, useSuggestions, type CandidatEvalue, type EtatCandidat } from '../hooks/useGuide.ts';
-import { formatDate, formatKamas, formatNombre, formatPct } from '../lib/format.ts';
+import { formatDate, formatKamas, formatNombre, formatPct, joursDepuis } from '../lib/format.ts';
+import { JOURS_PERIME } from '../store/prix.ts';
 import { useCatalogue } from '../store/catalogue.ts';
 import { useGuide, type JetGuide } from '../store/guide.ts';
 import { useNotes } from '../store/notes.ts';
 import { useSimu } from '../store/simu.ts';
+
+const TRANCHES = [60, 120, 160, 200];
 
 function Etape({ n, titre, actif, children, aide }: { n: number; titre: string; actif: boolean; children: React.ReactNode; aide?: string }) {
   return (
@@ -28,6 +31,7 @@ function Etape({ n, titre, actif, children, aide }: { n: number; titre: string; 
 
 const ETAT: Record<EtatCandidat, { label: string; cls: string }> = {
   manquePrix: { label: 'prix ?', cls: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400' },
+  tropCher: { label: 'trop cher', cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
   aTester: { label: 'à tester', cls: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' },
   pret: { label: 'rentable', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
   perte: { label: 'à perte', cls: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
@@ -65,6 +69,14 @@ function LigneCandidat({ e, ouvrir }: { e: CandidatEvalue; ouvrir: (item: Item) 
       </td>
       <td className="px-2 py-1">
         <ChampNombre value={e.prix} onChange={(v) => setPrixConstate(e.item.id, v)} vide placeholder="prix HDV" className="w-24 [&>input]:h-7" aria-label={`Prix ${e.item.nom}`} />
+        {e.prixDate && (
+          <span
+            className={`block text-[10px] ${joursDepuis(e.prixDate) > JOURS_PERIME ? 'text-orange-600 dark:text-orange-400' : 'text-zinc-500'}`}
+            title={joursDepuis(e.prixDate) > JOURS_PERIME ? `Prix vieux de ${joursDepuis(e.prixDate)} jours : à vérifier` : undefined}
+          >
+            {joursDepuis(e.prixDate) > JOURS_PERIME ? '⚠ ' : ''}noté le {formatDate(e.prixDate)}
+          </span>
+        )}
       </td>
       <td className="px-2 py-1">
         <span className="flex items-center gap-1">
@@ -235,19 +247,55 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
 
         <div className="grid gap-3 md:grid-cols-2">
           <div>
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">Suggestions (meilleure valeur de runes, non droppables)</h3>
+            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">Suggestions (non droppables, runes toutes pricées)</h3>
+            <div className="mb-1 flex flex-wrap items-center gap-1 text-xs">
+              <span className="text-zinc-500">Niveau ≤</span>
+              {TRANCHES.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => g.setNiveauMaxSuggestions(n)}
+                  className={`rounded border px-1.5 py-0.5 ${suggestions.niveauMax === n ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900' : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400'}`}
+                >
+                  {n}
+                </button>
+              ))}
+              {suggestions.auto ? (
+                <span className="text-zinc-500" title="L'app ne connaît pas les prix HDV : le niveau est le seul repère de prix. Tranche pré-choisie d'après ta bourse, à ajuster.">
+                  (indicatif d'après ta bourse)
+                </span>
+              ) : (
+                <button onClick={() => g.setNiveauMaxSuggestions(null)} className="text-sky-600 hover:underline dark:text-sky-400">
+                  auto
+                </button>
+              )}
+              <span className="ml-auto text-zinc-500">tri</span>
+              <select
+                value={g.triSuggestions}
+                onChange={(e) => g.setTriSuggestions(e.target.value as 'densite' | 'valeur')}
+                className="h-6 rounded border border-zinc-300 bg-white px-1 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+              >
+                <option value="densite">valeur ÷ niveau</option>
+                <option value="valeur">valeur brute</option>
+              </select>
+            </div>
             <ul className="divide-y divide-zinc-100 rounded border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-              {suggestions.map((s) => (
+              {suggestions.liste.map((s) => (
                 <li key={s.item.id} className="flex items-center gap-2 px-2 py-1 text-sm">
                   <Objet item={s.item} />
-                  <span className="tnum ml-auto text-xs text-zinc-500">{formatKamas(s.valeurMeilleure)}</span>
+                  <span className="tnum ml-auto text-right text-xs text-zinc-500" title="Valeur espérée des runes à coef. 100 % · valeur ÷ niveau">
+                    {formatKamas(s.valeurMeilleure)}
+                    <span className="block text-[10px]">{formatNombre(s.valeurMeilleure / Math.max(20, s.item.niveau))} / niv.</span>
+                  </span>
                   <button onClick={() => g.ajouterCandidat(s.item.id)} className="rounded border border-zinc-300 px-1.5 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800" aria-label={`Ajouter ${s.item.nom}`}>
                     +
                   </button>
                 </li>
               ))}
-              {suggestions.length === 0 && <li className="px-2 py-1 text-xs text-zinc-500">Aucune suggestion (prix de runes manquants ?).</li>}
+              {suggestions.liste.length === 0 && <li className="px-2 py-1 text-xs text-zinc-500">Aucune suggestion dans cette tranche (prix de runes manquants ?).</li>}
             </ul>
+            <p className="mt-1 text-xs text-zinc-500">
+              Aucune API ne donne les prix HDV : vise une tranche de niveau que ta bourse permet d'acheter par lots, et note le prix réel de chaque candidat.
+            </p>
             <button onClick={() => aller('explorateur')} className="mt-1 text-xs text-sky-600 hover:underline dark:text-sky-400">
               Voir tout l'explorateur →
             </button>
@@ -257,7 +305,8 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
             <RechercheObjet onChoisir={(it) => g.ajouterCandidat(it.id)} />
             <p className="mt-2 text-xs text-zinc-500">
               Le test : achète (ou crafte) un exemplaire, note son prix, ouvre le concasseur et note le coefficient affiché. Le bénéfice par objet et le seuil se
-              calculent avec tes prix de runes.
+              calculent avec tes prix de runes. Tu ne notes que tes candidats (5 à 10 objets), jamais tout le catalogue ; un prix reste valable jusqu'à ce que tu le
+              changes, et passe en orange au bout de {JOURS_PERIME} jours.
             </p>
           </div>
         </div>
