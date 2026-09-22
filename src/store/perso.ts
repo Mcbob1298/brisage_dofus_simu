@@ -1,15 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { PRESETS, type Poids } from '../engine/build.ts';
+import type { Element } from '../engine/build.ts';
 import type { JetChoisi } from '../engine/explorateur.ts';
 
+export type Objectif = 'prospection' | 'degats' | 'mixte';
+
 type EtatPerso = {
-  /** Poids de l'objectif d'équipement (préréglage ou valeurs modifiées). */
-  poids: Poids;
+  /** Classe du personnage (id DofusDB), repère d'affichage. */
+  classeId: number | null;
+  /** Voie élémentaire visée : oriente les poids du stuff. */
+  element: Element;
+  objectif: Objectif;
   jet: JetChoisi;
   /** Objets imposés : ceux qu'on possède déjà ou qu'on a choisis à la main. */
   epingles: number[];
-  setPoids: (poids: Poids) => void;
+  setClasse: (id: number | null) => void;
+  setElement: (e: Element) => void;
+  setObjectif: (o: Objectif) => void;
   setJet: (jet: JetChoisi) => void;
   basculerEpingle: (itemId: number) => void;
   ajouterEpingle: (itemId: number) => void;
@@ -17,13 +24,21 @@ type EtatPerso = {
   reset: () => void;
 };
 
-const initial = { poids: PRESETS[0].poids, jet: 'moyen' as JetChoisi, epingles: [] as number[] };
+const initial = {
+  classeId: null,
+  element: 'terre' as Element,
+  objectif: 'prospection' as Objectif,
+  jet: 'moyen' as JetChoisi,
+  epingles: [] as number[],
+};
 
 export const usePerso = create<EtatPerso>()(
   persist(
     (set) => ({
       ...initial,
-      setPoids: (poids) => set({ poids }),
+      setClasse: (classeId) => set({ classeId }),
+      setElement: (element) => set({ element }),
+      setObjectif: (objectif) => set({ objectif }),
       setJet: (jet) => set({ jet }),
       basculerEpingle: (itemId) =>
         set((s) => ({ epingles: s.epingles.includes(itemId) ? s.epingles.filter((i) => i !== itemId) : [...s.epingles, itemId] })),
@@ -31,6 +46,6 @@ export const usePerso = create<EtatPerso>()(
       retirerEpingle: (itemId) => set((s) => ({ epingles: s.epingles.filter((i) => i !== itemId) })),
       reset: () => set({ ...initial }),
     }),
-    { name: 'brisage.perso', version: 1 },
+    { name: 'brisage.perso', version: 2, migrate: () => ({ ...initial }) },
   ),
 );

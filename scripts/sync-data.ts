@@ -24,6 +24,7 @@ import type {
   Monstre,
   DropItem,
   Panoplie,
+  Classe,
   RuneDef,
   RuneTier,
   StatLine,
@@ -100,6 +101,30 @@ async function fetchAllPages(endpoint: string, fields: string[]): Promise<ApiIte
   return items;
 }
 
+/** Pagination Feathers : $limit est plafonné à 50 côté serveur. */
+async function fetchFeathers<T>(chemin: string, select: string[], filtre = ''): Promise<T[]> {
+  const sel = select.map((x) => `$select[]=${encodeURIComponent(x)}`).join('&');
+  const out: T[] = [];
+  for (let skip = 0; ; skip += 50) {
+    const url = `${DOFUSDB}/${chemin}?$limit=50&$skip=${skip}&${sel}${filtre}`;
+    const d = await fetchJson<{ total: number; data: T[] }>(url);
+    out.push(...d.data);
+    process.stdout.write(`  ${chemin} : ${out.length}/${d.total}\r`);
+    if (skip + 50 >= d.total || d.data.length === 0) break;
+  }
+  process.stdout.write('\n');
+  return out;
+}
+
+/** Les 19 classes du jeu. */
+async function fetchClasses(): Promise<Classe[]> {
+  const bruts = await fetchFeathers<{ id: number; shortName: { fr: string } }>('breeds', ['id', 'shortName']);
+  return bruts
+    .filter((b) => b.shortName?.fr)
+    .map((b) => ({ id: b.id, nom: b.shortName.fr }))
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+}
+
 // ---------- Panoplies (DofusDude) ----------
 
 type ApiSet = {
@@ -146,21 +171,6 @@ type ApiMonstre = {
   isQuestMonster: boolean;
   hideInBestiary: boolean;
 };
-
-/** Pagination Feathers : $limit est plafonné à 50 côté serveur. */
-async function fetchFeathers<T>(chemin: string, select: string[], filtre = ''): Promise<T[]> {
-  const sel = select.map((x) => `$select[]=${encodeURIComponent(x)}`).join('&');
-  const out: T[] = [];
-  for (let skip = 0; ; skip += 50) {
-    const url = `${DOFUSDB}/${chemin}?$limit=50&$skip=${skip}&${sel}${filtre}`;
-    const d = await fetchJson<{ total: number; data: T[] }>(url);
-    out.push(...d.data);
-    process.stdout.write(`  ${chemin} : ${out.length}/${d.total}\r`);
-    if (skip + 50 >= d.total || d.data.length === 0) break;
-  }
-  process.stdout.write('\n');
-  return out;
-}
 
 /** « PL>9&PL<111 » → niveau de joueur requis entre 10 et 110. */
 function niveauxJoueur(criterions: string): { plMin?: number; plMax?: number } {
@@ -418,6 +428,9 @@ async function main() {
       tierOrder[a.tier] - tierOrder[b.tier],
   );
 
+  // --- Classes ---
+  const classes = await fetchClasses();
+
   // --- Panoplies ---
   console.log('▶ Panoplies…');
   const panoplies = await fetchPanoplies(effectAcc);
@@ -461,6 +474,7 @@ async function main() {
   await writeFile(path.join(DATA_DIR, 'meta.json'), JSON.stringify(meta, null, 1));
   await writeFile(path.join(DATA_DIR, 'monstres.json'), JSON.stringify(monstres));
   await writeFile(path.join(DATA_DIR, 'panoplies.json'), JSON.stringify(panoplies));
+  await writeFile(path.join(DATA_DIR, 'classes.json'), JSON.stringify(classes));
 
   // --- Rapport ---
   const unmapped = effectReport.filter((r) => r.status === 'unmapped');
@@ -474,6 +488,7 @@ async function main() {
   console.log(`Images              : ${okIcons.size}/${allIconIds.length} téléchargées`);
   console.log(`Droppable           : ${droppableIds ? `${items.filter((i) => i.droppable).length} objets flagués` : 'indisponible'}`);
   console.log(`Panoplies           : ${panoplies.length}`);
+  console.log(`Classes             : ${classes.length}`);
   console.log(
     `Monstres à drops    : ${monstres.length} (${monstres.reduce((n, m) => n + m.drops.length, 0)} couples monstre/objet, dont ${monstres.filter((m) => m.archimonstre).length} archimonstres)`,
   );

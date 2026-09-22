@@ -246,3 +246,85 @@ export const PRESETS: { id: string; label: string; aide: string; poids: Poids }[
     },
   },
 ];
+
+/** Les quatre voies élémentaires du jeu, avec leur caractéristique et leur ligne de dommages. */
+export type Element = 'terre' | 'feu' | 'eau' | 'air';
+
+export const ELEMENTS: readonly { id: Element; label: string; stat: StatId; dommages: StatId; resistance: StatId }[] = [
+  { id: 'terre', label: 'Terre', stat: 'force', dommages: 'doTerre', resistance: 'pctResTerre' },
+  { id: 'feu', label: 'Feu', stat: 'intelligence', dommages: 'doFeu', resistance: 'pctResFeu' },
+  { id: 'eau', label: 'Eau', stat: 'chance', dommages: 'doEau', resistance: 'pctResEau' },
+  { id: 'air', label: 'Air', stat: 'agilite', dommages: 'doAir', resistance: 'pctResAir' },
+];
+
+/**
+ * Poids « dégâts » orientés vers un élément : la caractéristique de l'élément et
+ * ses dommages pèsent, les autres éléments ne comptent pas.
+ *
+ * Ces poids sont un score de comparaison, PAS la formule de dégâts du jeu : ils
+ * sont proposés comme point de départ et restent modifiables.
+ */
+export function poidsElement(element: Element, avecProspection = 0): Poids {
+  const e = ELEMENTS.find((x) => x.id === element)!;
+  return {
+    [e.stat]: 1,
+    [e.dommages]: 8,
+    dommages: 10,
+    puissance: 1,
+    pctDommagesArmes: 3,
+    pctDommagesDistance: 3,
+    pctDommagesMelee: 3,
+    pctDommagesSorts: 3,
+    pctCritique: 1,
+    pa: 60,
+    pm: 40,
+    portee: 5,
+    vitalite: 0.02,
+    ...(avecProspection > 0 ? { prospection: avecProspection } : {}),
+  };
+}
+
+export type EtapeProgression = {
+  /** Niveau requis pour porter l'objet. */
+  niveau: number;
+  slot: Slot;
+  item: Item;
+  /** Objet qu'il remplace (celui porté jusque-là), si connu. */
+  remplace: Item | null;
+  /** Gain de score par rapport à l'objet remplacé. */
+  gain: number;
+};
+
+/**
+ * Prochains équipements à viser : pour chaque emplacement, les objets qui
+ * deviendront le meilleur choix en montant de niveau. Les bonus de panoplie ne
+ * sont pas pris en compte ici (c'est une liste d'objectifs, pas un build).
+ */
+export function progression(items: readonly Item[], options: OptionsBuild, niveauMax = 200): EtapeProgression[] {
+  const etapes: EtapeProgression[] = [];
+  for (const s of SLOTS) {
+    const candidats = items
+      .filter((i) => slotDe(i) === s.id && i.stats.length > 0 && i.niveau <= niveauMax)
+      .map((i) => ({ item: i, score: scoreStats(statsItem(i, options.jet), options.poids) }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => a.item.niveau - b.item.niveau);
+
+    // Meilleur objet portable aujourd'hui : point de départ de la progression.
+    let meilleur = 0;
+    let porte: Item | null = null;
+    for (const c of candidats) {
+      if (c.item.niveau > options.niveauJoueur) continue;
+      if (c.score > meilleur) {
+        meilleur = c.score;
+        porte = c.item;
+      }
+    }
+    for (const c of candidats) {
+      if (c.item.niveau <= options.niveauJoueur || c.score <= meilleur) continue;
+      etapes.push({ niveau: c.item.niveau, slot: s.id, item: c.item, remplace: porte, gain: c.score - meilleur });
+      meilleur = c.score;
+      porte = c.item;
+    }
+  }
+  return etapes.sort((a, b) => a.niveau - b.niveau || b.gain - a.gain);
+}

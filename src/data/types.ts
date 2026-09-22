@@ -104,3 +104,6 @@ export type Panoplie = {
   /** Nombre de pièces → bonus cumulés à ce palier (valeurs absolues, pas incrémentales). */
   bonus: Record<number, { statId: StatId; valeur: number }[]>;
 };
+
+/** Classe de personnage (données du jeu, DofusDB /breeds). */
+export type Classe = { id: number; nom: string };

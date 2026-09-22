@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Item, Panoplie } from '../data/types.ts';
-import { alternatives, bonusPanoplie, optimiser, scoreStats, slotDe, statsItem, SLOTS } from './build.ts';
+import { alternatives, bonusPanoplie, optimiser, poidsElement, progression, scoreStats, slotDe, statsItem, ELEMENTS, SLOTS } from './build.ts';
 
 let id = 1;
 const obj = (type: string, stats: Item['stats'], niveau = 50, panoplieId?: number): Item => ({
@@ -118,5 +118,46 @@ describe('alternatives', () => {
     const items = [obj('Bottes', pp(5)), obj('Bottes', pp(50)), obj('Coiffe', pp(99))];
     const alt = alternatives(items, 'bottes', { niveauJoueur: 60, poids: { prospection: 1 }, jet: 'max' });
     expect(alt.map((i) => statsItem(i, 'max').prospection)).toEqual([50, 5]);
+  });
+});
+
+describe('progression', () => {
+  const options = { niveauJoueur: 30, poids: { prospection: 1 }, jet: 'max' as const };
+
+  it('liste les objets qui deviendront meilleurs en montant de niveau', () => {
+    const porte = obj('Coiffe', pp(10), 20);
+    const items = [porte, obj('Coiffe', pp(5), 40), obj('Coiffe', pp(20), 50), obj('Coiffe', pp(40), 80)];
+    const etapes = progression(items, options);
+    expect(etapes.map((e) => ({ niveau: e.niveau, gain: e.gain }))).toEqual([
+      { niveau: 50, gain: 10 },
+      { niveau: 80, gain: 20 },
+    ]);
+    expect(etapes[0].remplace).toBe(porte);
+  });
+
+  it('ignore les objets moins bons que celui déjà portable', () => {
+    const items = [obj('Bottes', pp(50), 10), obj('Bottes', pp(20), 60)];
+    expect(progression(items, options)).toEqual([]);
+  });
+
+  it('classe toutes les étapes par niveau croissant', () => {
+    const items = [obj('Coiffe', pp(40), 80), obj('Cape', pp(10), 35), obj('Bottes', pp(5), 60)];
+    expect(progression(items, options).map((e) => e.niveau)).toEqual([35, 60, 80]);
+  });
+});
+
+describe('poidsElement', () => {
+  it('ne pondère que la caractéristique et les dommages de l’élément choisi', () => {
+    const p = poidsElement('terre');
+    expect(p.force).toBe(1);
+    expect(p.doTerre).toBe(8);
+    expect(p.doFeu).toBeUndefined();
+    expect(p.intelligence).toBeUndefined();
+    expect(poidsElement('air').agilite).toBe(1);
+    expect(ELEMENTS.map((e) => e.id)).toEqual(['terre', 'feu', 'eau', 'air']);
+  });
+
+  it('peut mélanger prospection et dégâts', () => {
+    expect(poidsElement('eau', 5).prospection).toBe(5);
   });
 });
