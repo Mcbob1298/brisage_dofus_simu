@@ -23,8 +23,9 @@ export type PointKamas = { date: string; kamas: number };
 export type JetGuide = 'min' | 'moyen' | 'max';
 export type TriSuggestions = 'densite' | 'valeur';
 
-/** Part de la bourse qu'un seul test peut consommer, par défaut (en %). */
-export const PART_BUDGET_TEST_DEFAUT = 20;
+/** Part de la bourse qu'un seul test peut consommer, par défaut (en %) : ~20 tests possibles. */
+export const PART_BUDGET_TEST_DEFAUT = 5;
+export const PARTS_BUDGET_TEST = [5, 10, 20] as const;
 
 /** Budget maximal d'un test : on ne mise jamais toute la bourse sur un seul objet à tester. */
 export function budgetTest(kamas: number | null, partPct: number): number | null {
@@ -137,8 +138,13 @@ export const useGuide = create<EtatGuide>()(
     }),
     {
       name: 'brisage.guide',
-      version: 2,
-      migrate: (persisted) => ({ partBudgetTest: PART_BUDGET_TEST_DEFAUT, ...(persisted as object) }),
+      version: 3,
+      migrate: (persisted, version) => {
+        const p = { partBudgetTest: PART_BUDGET_TEST_DEFAUT, ...(persisted as { partBudgetTest?: number }) };
+        // v2 avait 20 % par défaut : trop peu de tests à petite bourse.
+        if (version < 3 && p.partBudgetTest === 20) p.partBudgetTest = PART_BUDGET_TEST_DEFAUT;
+        return p;
+      },
     },
   ),
 );

@@ -10,7 +10,7 @@ import { strategieRetenue, useCandidatsEvalues, useSuggestions, type CandidatEva
 import { formatDate, formatKamas, formatNombre, formatPct, joursDepuis } from '../lib/format.ts';
 import { JOURS_PERIME } from '../store/prix.ts';
 import { useCatalogue } from '../store/catalogue.ts';
-import { budgetTest, useGuide, type JetGuide } from '../store/guide.ts';
+import { budgetTest, PARTS_BUDGET_TEST, useGuide, type JetGuide } from '../store/guide.ts';
 import { useNotes } from '../store/notes.ts';
 import { useSimu } from '../store/simu.ts';
 
@@ -238,8 +238,19 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
           <label className="flex flex-col gap-0.5 text-xs text-encre-2" title="Un test ne doit pas engloutir la bourse : plafond de prix pour un objet à tester">
             Budget par test
             <span className="flex items-center gap-1">
-              <ChampNombre value={g.partBudgetTest} onChange={(v) => g.setPartBudgetTest(v ?? 20)} suffixe="%" className="w-20" />
-              {budget !== null && <span className="tnum text-xs text-encre-2">= {formatKamas(budget)}</span>}
+              <ChampNombre value={g.partBudgetTest} onChange={(v) => g.setPartBudgetTest(v ?? 5)} suffixe="%" className="w-20" />
+              <span className="segment" role="radiogroup" aria-label="Préréglages du budget par test">
+                {PARTS_BUDGET_TEST.map((p) => (
+                  <button key={p} role="radio" aria-checked={g.partBudgetTest === p} onClick={() => g.setPartBudgetTest(p)}>
+                    {p} %
+                  </button>
+                ))}
+              </span>
+              {budget !== null && (
+                <span className="tnum text-xs text-encre-2">
+                  = {formatKamas(budget)} · ~{Math.max(1, Math.floor(100 / g.partBudgetTest))} tests
+                </span>
+              )}
             </span>
           </label>
           {objectifOk && (
@@ -263,7 +274,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
         n={2}
         titre="Objets à tester"
         actif={objectifOk}
-        aide={budget !== null ? `un test ≤ ${formatKamas(budget)} : ta bourse en permet environ ${Math.max(1, Math.floor(100 / g.partBudgetTest))} en parallèle` : undefined}
+        aide={budget !== null ? `un test ≤ ${formatKamas(budget)} — et briser rend des runes : la mise réelle est bien moindre que le prix` : undefined}
       >
         {nbPrixRunes === 0 && <p className="text-sm text-alerte">Catalogue non chargé.</p>}
         {evalues.length > 0 && (
