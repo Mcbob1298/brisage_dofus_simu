@@ -3,12 +3,13 @@ import { STAT_BY_ID, placeholderPour, type StatId } from '../data/statMapping.ts
 import type { Item } from '../data/types.ts';
 import {
   alternatives,
-  optimiser,
+  optimiserValide,
   poidsElement,
   poidsProspection,
   progression,
   prospectionTotale,
   scoreStats,
+  violations,
   statsItem,
   ELEMENTS,
   SLOTS,
@@ -42,6 +43,9 @@ const RESUME: StatId[] = [
   'initiative',
   'pods',
 ];
+
+/** Caractéristiques saisissables hors équipement (celles qui portent des conditions). */
+const BASE_STATS: StatId[] = ['vitalite', 'sagesse', 'force', 'intelligence', 'chance', 'agilite', 'pa', 'pm'];
 
 const OBJECTIFS: { id: Objectif; label: string; aide: string }[] = [
   { id: 'prospection', label: 'Prospection', aide: 'Maximise les taux de drop : plus d’objets ramassés, donc plus de runes.' },
@@ -146,11 +150,13 @@ export function PagePerso({ aller }: { aller: (o: Onglet) => void }) {
     () => ({ niveauJoueur: g.niveauJoueur, poids, jet: p.jet, fixes: p.epingles, panoplies }),
     [g.niveauJoueur, poids, p.jet, p.epingles, panoplies],
   );
-  const build = useMemo(() => optimiser(items, options), [items, options]);
+  const { build, exclus } = useMemo(() => optimiserValide(items, options, p.base), [items, options, p.base]);
+  const restantes = useMemo(() => violations(build, p.base), [build, p.base]);
+  const aVerifier = useMemo(() => SLOTS.flatMap((s) => build.parSlot[s.id]).filter((i) => i.conditionsNonVerifiables), [build]);
   const alt = useMemo(() => (choix ? alternatives(items, choix.slot, options, 15) : []), [choix, items, options]);
   const etapes = useMemo(() => progression(items, options).slice(0, 25), [items, options]);
 
-  const pp = prospectionTotale(build.totaux, p.chanceBase);
+  const pp = prospectionTotale(build.totaux, p.base.chance ?? 0);
   const prospection = pp.total;
   const objectif = OBJECTIFS.find((o) => o.id === p.objectif)!;
   const classe = classes.find((c) => c.id === p.classeId);
@@ -220,13 +226,6 @@ export function PagePerso({ aller }: { aller: (o: Onglet) => void }) {
               ))}
             </span>
           </span>
-          <label
-            className="flex flex-col gap-0.5 text-xs text-encre-2"
-            title="Chance venant de tes points de caractéristique et de tes parchemins (hors équipement) : 10 chance = 1 prospection"
-          >
-            Chance hors stuff
-            <ChampNombre value={p.chanceBase} onChange={(v) => p.setChanceBase(v ?? 0)} className="w-20" />
-          </label>
           <label className="flex flex-col gap-0.5 text-xs text-encre-2" title="Jets supposés des objets portés">
             Jets
             <select value={p.jet} onChange={(e) => p.setJet(e.target.value as 'min' | 'moyen' | 'max')} className="champ w-24">
@@ -238,6 +237,20 @@ export function PagePerso({ aller }: { aller: (o: Onglet) => void }) {
           <button onClick={() => p.reset()} className="btn btn-petit">
             ↺ Réinitialiser
           </button>
+        </div>
+
+        <div className="mt-3">
+          <div className="mb-1 titre-section" title="Tes caractéristiques hors équipement, comme affichées en jeu : elles comptent pour la prospection et pour les conditions d'équipement">
+            Caractéristiques hors stuff (points investis, parchemins)
+          </div>
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
+            {BASE_STATS.map((s) => (
+              <label key={s} className="flex items-center gap-1 text-xs text-encre-2">
+                {STAT_BY_ID[s].label}
+                <ChampNombre value={p.base[s] ?? null} onChange={(v) => p.setBase(s, v)} vide placeholder="0" className="w-16 [&>input]:h-7" />
+              </label>
+            ))}
+          </div>
         </div>
         <p className="mt-1 text-xs text-encre-2">
           {classe ? `${classe.nom} niveau ${g.niveauJoueur}` : `Niveau ${g.niveauJoueur}`} · voie {ELEMENTS.find((e) => e.id === p.element)?.label} ({
@@ -298,6 +311,34 @@ export function PagePerso({ aller }: { aller: (o: Onglet) => void }) {
           </div>
         </div>
 
+        {(exclus.length > 0 || restantes.length > 0 || aVerifier.length > 0) && (
+          <div className="mt-3 space-y-1 text-xs">
+            {exclus.length > 0 && (
+              <p className="rounded-lg border border-bord bg-surface-2 px-2 py-1 text-encre-2">
+                <strong>{exclus.length} objet(s) écarté(s)</strong>, conditions d'équipement non remplies :{' '}
+                {exclus.slice(0, 6).map((i) => i.nom).join(', ')}
+                {exclus.length > 6 ? ` +${exclus.length - 6}` : ''}.
+              </p>
+            )}
+            {restantes.length > 0 && (
+              <p className="rounded-lg border border-ko/40 bg-ko-doux px-2 py-1 text-ko">
+                Conditions non remplies :{' '}
+                {restantes
+                  .map((v) => {
+                    const quoi = 'panoplies' in v.condition ? 'bonus de panoplies' : STAT_BY_ID[v.condition.statId].label;
+                    return `${v.item.nom} (${quoi} ${v.condition.operateur} ${v.condition.valeur}, tu as ${formatNombre(v.valeurAtteinte)})`;
+                  })
+                  .join(' · ')}
+              </p>
+            )}
+            {aVerifier.length > 0 && (
+              <p className="rounded-lg border border-alerte/40 bg-alerte-doux px-2 py-1 text-alerte">
+                À vérifier en jeu (quête, succès, alignement, abonnement…) : {aVerifier.map((i) => i.nom).join(', ')}.
+              </p>
+            )}
+          </div>
+        )}
+
         {build.panoplies.length > 0 && (
           <p className="mt-3 rounded-lg border border-ok/40 bg-ok-doux px-2 py-1 text-xs">
             {build.panoplies.map((bp) => (
@@ -344,7 +385,9 @@ export function PagePerso({ aller }: { aller: (o: Onglet) => void }) {
       </section>
 
       <p className="text-xs text-encre-2">
-        La prospection vaut 100 de base, plus 1 point tous les 10 de chance, plus celle de l'équipement (source :{' '}
+        Les conditions d'équipement (caractéristique minimale, PA/PM maximum, nombre de bonus de panoplie) sont vérifiées sur le total « hors stuff + équipement » ;
+        celles qui dépendent d'une quête, d'un succès, de l'alignement ou de l'abonnement ne sont pas vérifiables et sont signalées. La prospection vaut 100 de
+        base, plus 1 point tous les 10 de chance, plus celle de l'équipement (source :{' '}
         <a className="lien" href="https://dofus.jeuxonline.info/article/2084/prospection" target="_blank" rel="noreferrer">
           JeuxOnLine
         </a>

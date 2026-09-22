@@ -4,6 +4,7 @@ import {
   alternatives,
   bonusPanoplie,
   optimiser,
+  optimiserValide,
   poidsElement,
   poidsProspection,
   progression,
@@ -11,6 +12,7 @@ import {
   scoreStats,
   slotDe,
   statsItem,
+  violations,
   CHANCE_PAR_PROSPECTION,
   ELEMENTS,
   PROSPECTION_BASE,
@@ -209,5 +211,60 @@ describe('prospection réelle (base 100 + chance/10 + équipement)', () => {
   it('à score égal, 10 chance valent autant qu’1 prospection', () => {
     const p = poidsProspection();
     expect(scoreStats({ chance: 10 }, p)).toBeCloseTo(scoreStats({ prospection: 1 }, p), 10);
+  });
+});
+
+describe('conditions d’équipement', () => {
+  const options = { niveauJoueur: 60, poids: { prospection: 1 }, jet: 'max' as const };
+  const conditionnel = (type: string, valeur: number, conditions: Item['conditions']): Item => ({
+    ...obj(type, pp(valeur)),
+    conditions,
+  });
+
+  it('repère une condition de caractéristique non remplie', () => {
+    const item = conditionnel('Coiffe', 50, [{ statId: 'force', operateur: '>', valeur: 100 }]);
+    const build = optimiser([item], options);
+    const v = violations(build);
+    expect(v).toHaveLength(1);
+    expect(v[0].valeurAtteinte).toBe(0);
+  });
+
+  it('tient compte des caractéristiques de base du personnage', () => {
+    const item = conditionnel('Coiffe', 50, [{ statId: 'force', operateur: '>', valeur: 100 }]);
+    const build = optimiser([item], options);
+    expect(violations(build, { force: 150 })).toEqual([]);
+  });
+
+  it('cumule base et équipement pour évaluer la condition', () => {
+    const item: Item = { ...obj('Coiffe', [{ statId: 'force', min: 60, max: 60 }]), conditions: [{ statId: 'force', operateur: '>', valeur: 100 }] };
+    const build = optimiser([item], { ...options, poids: { force: 1 } });
+    expect(violations(build, { force: 50 })).toEqual([]);
+    expect(violations(build, { force: 30 })).toHaveLength(1);
+  });
+
+  it('vérifie les conditions « moins de N » (PA, PM)', () => {
+    const item: Item = { ...obj('Coiffe', [{ statId: 'pa', min: 1, max: 1 }]), conditions: [{ statId: 'pa', operateur: '<', valeur: 12 }] };
+    const build = optimiser([item], { ...options, poids: { pa: 1 } });
+    // 12 de base + 1 de l'objet = 13, la condition « PA < 12 » n'est plus remplie.
+    expect(violations(build, { pa: 12 })).toHaveLength(1);
+    expect(violations(build, { pa: 6 })).toEqual([]);
+  });
+
+  it('vérifie le nombre de bonus de panoplie actifs', () => {
+    const pano: Panoplie = { id: 3, nom: 'P', niveau: 10, bonus: { 2: [{ statId: 'prospection', valeur: 40 }] } };
+    const trophee: Item = { ...obj('Trophée', pp(30)), conditions: [{ panoplies: true, operateur: '<', valeur: 1 }] };
+    const items = [obj('Coiffe', pp(20), 50, 3), obj('Cape', pp(20), 50, 3), trophee];
+    const build = optimiser(items, { ...options, panoplies: [pano] });
+    expect(build.panoplies).toHaveLength(1);
+    expect(violations(build).map((v) => v.item.nom)).toEqual([trophee.nom]);
+  });
+
+  it('optimiserValide écarte les objets inéquipables et propose un stuff valable', () => {
+    const interdit = conditionnel('Coiffe', 99, [{ statId: 'force', operateur: '>', valeur: 500 }]);
+    const ok = obj('Coiffe', pp(20));
+    const { build, exclus } = optimiserValide([interdit, ok], options);
+    expect(build.parSlot.coiffe).toEqual([ok]);
+    expect(exclus.map((i) => i.id)).toEqual([interdit.id]);
+    expect(violations(build)).toEqual([]);
   });
 });

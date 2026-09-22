@@ -25,6 +25,7 @@ import type {
   DropItem,
   Panoplie,
   Classe,
+  Condition,
   RuneDef,
   RuneTier,
   StatLine,
@@ -113,6 +114,68 @@ async function fetchFeathers<T>(chemin: string, select: string[], filtre = ''): 
     if (skip + 50 >= d.total || d.data.length === 0) break;
   }
   process.stdout.write('\n');
+  return out;
+}
+
+/**
+ * Codes de conditions d'équipement de DofusDB → caractéristique du référentiel.
+ * Mapping établi le 2026-09-22 en recoupant `criterions` (DofusDB) avec le champ
+ * `conditions` de DofusDude, qui nomme les éléments en clair :
+ *   CP<12&CM<6&CW>99  ↔  PA < 12 & PM < 6 & Sagesse > 99   (La Baguette des Limbes)
+ *   CS>99&CA>99&CV>99 ↔  Force > 99 & Agilité > 99 & Vitalité > 99  (Neuf Queues)
+ *   CI<100&CC<100     ↔  Intelligence < 100 & Chance < 100  (Anneau Mèr)
+ *   Pk<3              ↔  Bonus de panoplies < 3             (Obstructeur mineur)
+ */
+const CODE_CONDITION: Readonly<Record<string, StatId | 'panoplies'>> = {
+  CP: 'pa',
+  CM: 'pm',
+  CW: 'sagesse',
+  CS: 'force',
+  CI: 'intelligence',
+  CC: 'chance',
+  CA: 'agilite',
+  CV: 'vitalite',
+  Pk: 'panoplies',
+};
+
+/**
+ * Découpe la chaîne `criterions` en conditions exploitables.
+ * Tout ce qui n'est pas dans CODE_CONDITION (quêtes, succès, alignement,
+ * abonnement, kamas…) est signalé comme non vérifiable plutôt qu'ignoré.
+ */
+function parserConditions(criterions: string): { conditions: Condition[]; nonVerifiables: boolean } {
+  const conditions: Condition[] = [];
+  let nonVerifiables = false;
+  if (!criterions) return { conditions, nonVerifiables };
+  // Une alternative (|) ne se réduit pas à une contrainte simple : on ne tranche pas.
+  if (criterions.includes('|')) return { conditions, nonVerifiables: true };
+  for (const partie of criterions.split('&')) {
+    const m = partie.trim().match(/^\(*([A-Za-z]{2})([<>])(-?\d+)\)*$/);
+    if (!m) {
+      nonVerifiables = true;
+      continue;
+    }
+    const cible = CODE_CONDITION[m[1]];
+    if (!cible) {
+      nonVerifiables = true;
+      continue;
+    }
+    const operateur = m[2] as '>' | '<';
+    const valeur = Number(m[3]);
+    if (cible === 'panoplies') conditions.push({ panoplies: true, operateur, valeur });
+    else conditions.push({ statId: cible, operateur, valeur });
+  }
+  return { conditions, nonVerifiables };
+}
+
+/** Conditions d'équipement des objets du catalogue (DofusDB `criterions`). */
+async function fetchConditions(): Promise<Map<number, { conditions: Condition[]; nonVerifiables: boolean }>> {
+  const bruts = await fetchFeathers<{ id: number; criterions: string }>('items', ['id', 'criterions'], '&criterions[$ne]=');
+  const out = new Map<number, { conditions: Condition[]; nonVerifiables: boolean }>();
+  for (const b of bruts) {
+    const parsed = parserConditions(b.criterions);
+    if (parsed.conditions.length || parsed.nonVerifiables) out.set(b.id, parsed);
+  }
   return out;
 }
 
@@ -431,6 +494,16 @@ async function main() {
   // --- Classes ---
   const classes = await fetchClasses();
 
+  // --- Conditions d'équipement ---
+  console.log("▶ Conditions d'équipement…");
+  const conditions = await fetchConditions();
+  for (const it of items) {
+    const c = conditions.get(it.id);
+    if (!c) continue;
+    if (c.conditions.length) it.conditions = c.conditions;
+    if (c.nonVerifiables) it.conditionsNonVerifiables = true;
+  }
+
   // --- Panoplies ---
   console.log('▶ Panoplies…');
   const panoplies = await fetchPanoplies(effectAcc);
@@ -489,6 +562,9 @@ async function main() {
   console.log(`Droppable           : ${droppableIds ? `${items.filter((i) => i.droppable).length} objets flagués` : 'indisponible'}`);
   console.log(`Panoplies           : ${panoplies.length}`);
   console.log(`Classes             : ${classes.length}`);
+  console.log(
+    `Conditions          : ${items.filter((i) => i.conditions?.length).length} objets à conditions vérifiables, ${items.filter((i) => i.conditionsNonVerifiables).length} à conditions non vérifiables`,
+  );
   console.log(
     `Monstres à drops    : ${monstres.length} (${monstres.reduce((n, m) => n + m.drops.length, 0)} couples monstre/objet, dont ${monstres.filter((m) => m.archimonstre).length} archimonstres)`,
   );

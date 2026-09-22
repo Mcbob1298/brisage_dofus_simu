@@ -12,7 +12,7 @@
  * panoplie) : c'est une heuristique, pas une garantie d'optimum.
  */
 import type { StatId } from '../data/statMapping.ts';
-import type { Item, Panoplie } from '../data/types.ts';
+import type { Condition, Item, Panoplie } from '../data/types.ts';
 import type { JetChoisi } from './explorateur.ts';
 
 export type Slot = 'coiffe' | 'cape' | 'amulette' | 'anneau' | 'ceinture' | 'bottes' | 'bouclier' | 'arme' | 'dofus';
@@ -374,4 +374,68 @@ export function prospectionTotale(
  */
 export function poidsProspection(): Poids {
   return { prospection: 1, chance: 1 / CHANCE_PAR_PROSPECTION, vitalite: 0.02 };
+}
+
+/**
+ * Caractéristiques du personnage hors équipement : points investis, parchemins,
+ * bonus de base. Saisies par l'utilisateur d'après sa fiche en jeu, car aucune
+ * API ne les connaît.
+ */
+export type StatsBase = Partial<Record<StatId, number>>;
+
+export type Violation = { item: Item; condition: Condition; valeurAtteinte: number };
+
+function respecte(operateur: '>' | '<', valeur: number, atteint: number): boolean {
+  return operateur === '>' ? atteint > valeur : atteint < valeur;
+}
+
+/**
+ * Conditions d'équipement non respectées par un build.
+ * Les conditions portent sur le total du personnage (base + équipement) et sur
+ * le nombre de bonus de panoplie actifs, donc elles se vérifient sur le build
+ * complet, pas objet par objet.
+ */
+export function violations(build: Build, base: StatsBase = {}): Violation[] {
+  const out: Violation[] = [];
+  const nbPanoplies = build.panoplies.length;
+  for (const s of SLOTS) {
+    for (const item of build.parSlot[s.id]) {
+      for (const c of item.conditions ?? []) {
+        const atteint = 'panoplies' in c ? nbPanoplies : (build.totaux[c.statId] ?? 0) + (base[c.statId] ?? 0);
+        if (!respecte(c.operateur, c.valeur, atteint)) out.push({ item, condition: c, valeurAtteinte: atteint });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Compose un équipement en respectant les conditions : on optimise, puis on
+ * retire les objets dont la condition n'est pas remplie et on recommence.
+ * `maxPasses` borne la boucle (chaque passe retire au moins un objet).
+ */
+export function optimiserValide(
+  items: readonly Item[],
+  options: OptionsBuild,
+  base: StatsBase = {},
+  maxPasses = 12,
+): { build: Build; exclus: Item[] } {
+  const exclus: Item[] = [];
+  const bannis = new Set<number>();
+  let build = optimiser(items, options);
+  for (let passe = 0; passe < maxPasses; passe++) {
+    const v = violations(build, base);
+    if (v.length === 0) break;
+    for (const x of v) {
+      if (!bannis.has(x.item.id)) {
+        bannis.add(x.item.id);
+        exclus.push(x.item);
+      }
+    }
+    build = optimiser(
+      items.filter((i) => !bannis.has(i.id)),
+      { ...options, fixes: (options.fixes ?? []).filter((id) => !bannis.has(id)) },
+    );
+  }
+  return { build, exclus };
 }
