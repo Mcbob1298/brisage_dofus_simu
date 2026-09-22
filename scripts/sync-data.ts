@@ -1,0 +1,362 @@
+/**
+ * `npm run sync-data` — télécharge le catalogue d'objets et de runes depuis
+ * DofusDude (https://docs.dofusdu.de), les icônes en WebP 48×48, et l'info
+ * « droppable » depuis DofusDB (https://api.dofusdb.fr). Écrit tout dans
+ * public/data/ et public/img/. L'app ne fait aucun appel réseau au runtime.
+ *
+ * Exécuté directement par Node ≥ 22.6 (type stripping natif) : ne pas utiliser
+ * de syntaxe TS non effaçable (enum, parameter properties…).
+ */
+import { mkdir, writeFile, access } from 'node:fs/promises';
+import path from 'node:path';
+import sharp from 'sharp';
+import {
+  API_EFFECT_TO_STAT,
+  IGNORED_EFFECTS,
+  API_TYPE_TO_TYPE,
+  API_RUNE_TYPE_ID,
+  STAT_BY_ID,
+  placeholderPour,
+  type StatId,
+} from '../src/data/statMapping.ts';
+import type {
+  Item,
+  RuneDef,
+  RuneTier,
+  StatLine,
+  EffectTypeReport,
+  CatalogueMeta,
+} from '../src/data/types.ts';
+
+const DOFUSDUDE = 'https://api.dofusdu.de/dofus3/v1/fr';
+// Les images ne sont pas préfixées par la langue.
+const DOFUSDUDE_IMG = 'https://api.dofusdu.de/dofus3/v1/img/item';
+const DOFUSDB = 'https://api.dofusdb.fr';
+const PAGE_SIZE = 1000;
+const IMG_CONCURRENCY = 4;
+const IMG_MAX_TENTATIVES = 6;
+const IMG_SIZE = 48;
+
+const ROOT = path.resolve(import.meta.dirname, '..');
+const DATA_DIR = path.join(ROOT, 'public', 'data');
+const IMG_DIR = path.join(ROOT, 'public', 'img', 'items');
+
+// ---------- Types bruts de l'API (sous-ensemble utilisé) ----------
+
+type ApiEffect = {
+  int_minimum: number;
+  int_maximum: number;
+  ignore_int_min: boolean;
+  ignore_int_max: boolean;
+  type: { name: string; id: number; is_meta: boolean; is_active: boolean };
+  formatted: string;
+};
+
+type ApiItem = {
+  ankama_id: number;
+  name: string;
+  type: { name: string; id: number };
+  level: number;
+  image_urls?: { icon?: string; sd?: string };
+  effects?: ApiEffect[];
+  recipe?: unknown[];
+  parent_set?: { id: number; name: string };
+};
+
+type ApiPage = { _links: { next: string | null }; items: ApiItem[] };
+
+// ---------- Utilitaires réseau ----------
+
+async function fetchJson<T>(url: string, tentative = 1): Promise<T> {
+  const res = await fetch(url, { signal: AbortSignal.timeout(120_000) });
+  if (!res.ok) {
+    if (res.status >= 500 && tentative < 3) {
+      await new Promise((r) => setTimeout(r, 1500 * tentative));
+      return fetchJson<T>(url, tentative + 1);
+    }
+    throw new Error(`HTTP ${res.status} sur ${url}`);
+  }
+  return (await res.json()) as T;
+}
+
+async function fetchAllPages(endpoint: string, fields: string[]): Promise<ApiItem[]> {
+  const items: ApiItem[] = [];
+  for (let page = 1; ; page++) {
+    const url =
+      `${DOFUSDUDE}/items/${endpoint}?page[size]=${PAGE_SIZE}&page[number]=${page}` +
+      `&fields[item]=${fields.join(',')}`;
+    const data = await fetchJson<ApiPage>(url);
+    if (!data.items?.length) break;
+    items.push(...data.items);
+    process.stdout.write(`  ${endpoint} : ${items.length} objets\r`);
+    if (!data._links?.next) break;
+  }
+  process.stdout.write('\n');
+  return items;
+}
+
+/** Ids Ankama des objets droppables selon DofusDB (`dropMonsterIds` non vide). */
+async function fetchDroppableIds(): Promise<Set<number> | null> {
+  const ids = new Set<number>();
+  try {
+    for (let skip = 0; ; ) {
+      const url =
+        `${DOFUSDB}/items?$limit=50&$skip=${skip}&$select[]=id` +
+        `&dropMonsterIds.0[$exists]=true`;
+      const data = await fetchJson<{ total: number; limit: number; data: { id: number }[] }>(url);
+      for (const d of data.data) ids.add(d.id);
+      skip += data.limit;
+      process.stdout.write(`  DofusDB droppables : ${ids.size}/${data.total}\r`);
+      if (skip >= data.total || data.data.length === 0) break;
+    }
+    process.stdout.write('\n');
+    return ids;
+  } catch (e) {
+    process.stdout.write('\n');
+    console.warn(`  ⚠ DofusDB indisponible (${(e as Error).message}) : champ "droppable" non renseigné.`);
+    return null;
+  }
+}
+
+// ---------- Mapping des effets ----------
+
+type EffectAccumulator = Map<number, EffectTypeReport>;
+
+function noteEffect(acc: EffectAccumulator, e: ApiEffect, itemName: string, statId?: StatId) {
+  const status = statId ? 'mapped' : e.type.id in IGNORED_EFFECTS ? 'ignored' : 'unmapped';
+  let rep = acc.get(e.type.id);
+  if (!rep) {
+    rep = { apiId: e.type.id, apiName: e.type.name, status, statId, count: 0, exemples: [] };
+    acc.set(e.type.id, rep);
+  }
+  rep.count++;
+  if (rep.exemples.length < 3 && !rep.exemples.includes(itemName)) rep.exemples.push(itemName);
+}
+
+function mapEffects(effects: ApiEffect[] | undefined, itemName: string, acc: EffectAccumulator): StatLine[] {
+  const lines: StatLine[] = [];
+  for (const e of effects ?? []) {
+    const statId = API_EFFECT_TO_STAT[e.type.id];
+    noteEffect(acc, e, itemName, statId);
+    if (!statId) continue;
+    // ignore_int_max = true → jet fixe (l'API met 0 dans int_maximum).
+    const min = e.int_minimum;
+    const max = e.ignore_int_max ? min : e.int_maximum;
+    lines.push({ statId, min: Math.min(min, max), max: Math.max(min, max) });
+  }
+  return lines;
+}
+
+// ---------- Images ----------
+
+/** Extrait l'id d'icône d'une URL du type ".../img/item/6007-64.png". */
+function iconIdFromUrl(url: string | undefined): string | null {
+  const m = url?.match(/\/item\/(\d+)-\d+\.png$/);
+  return m ? m[1] : null;
+}
+
+async function exists(p: string): Promise<boolean> {
+  try {
+    await access(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+let premiereErreurImage = false;
+
+async function downloadIcon(iconId: string): Promise<boolean> {
+  const dest = path.join(IMG_DIR, `${iconId}.webp`);
+  if (await exists(dest)) return true;
+  for (let tentative = 1; tentative <= IMG_MAX_TENTATIVES; tentative++) {
+    try {
+      const res = await fetch(`${DOFUSDUDE_IMG}/${iconId}-64.png`, {
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (res.status === 429 || res.status >= 500) {
+        // Rate limit : on respecte Retry-After si présent, sinon backoff exponentiel.
+        const retryAfter = Number(res.headers.get('retry-after'));
+        const attente = retryAfter > 0 ? retryAfter * 1000 : 1000 * 2 ** tentative;
+        await new Promise((r) => setTimeout(r, attente));
+        continue;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const buf = Buffer.from(await res.arrayBuffer());
+      await sharp(buf)
+        .resize(IMG_SIZE, IMG_SIZE, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .webp({ quality: 80 })
+        .toFile(dest);
+      return true;
+    } catch (e) {
+      if (!premiereErreurImage) {
+        premiereErreurImage = true;
+        console.warn(`  ⚠ échec image ${iconId} : ${(e as Error).message}`);
+      }
+      return false;
+    }
+  }
+  if (!premiereErreurImage) {
+    premiereErreurImage = true;
+    console.warn(`  ⚠ échec image ${iconId} : rate limit persistant après ${IMG_MAX_TENTATIVES} tentatives`);
+  }
+  return false;
+}
+
+async function downloadAllIcons(iconIds: string[]): Promise<Set<string>> {
+  const ok = new Set<string>();
+  let done = 0;
+  const queue = [...iconIds];
+  const worker = async () => {
+    for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
+      if (await downloadIcon(id)) ok.add(id);
+      done++;
+      if (done % 50 === 0 || done === iconIds.length) {
+        process.stdout.write(`  images : ${done}/${iconIds.length}\r`);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: IMG_CONCURRENCY }, worker));
+  process.stdout.write('\n');
+  return ok;
+}
+
+// ---------- Runes ----------
+
+function runeTier(nom: string): RuneTier {
+  if (/^Rune Pa /.test(nom)) return 'pa';
+  if (/^Rune Ra /.test(nom)) return 'ra';
+  return 'simple';
+}
+
+// ---------- Main ----------
+
+async function main() {
+  await mkdir(DATA_DIR, { recursive: true });
+  await mkdir(IMG_DIR, { recursive: true });
+
+  console.log('▶ Téléchargement du catalogue DofusDude…');
+  const rawEquip = await fetchAllPages('equipment', ['effects', 'recipe', 'parent_set']);
+  const rawRes = await fetchAllPages('resources', ['effects']);
+
+  console.log('▶ Drops (DofusDB)…');
+  const droppableIds = await fetchDroppableIds();
+
+  // --- Objets ---
+  const effectAcc: EffectAccumulator = new Map();
+  const excludedTypes = new Map<string, number>();
+  const items: Item[] = [];
+  const iconByItem = new Map<number, string>();
+
+  for (const raw of rawEquip) {
+    const tm = API_TYPE_TO_TYPE[raw.type.id];
+    if (!tm) {
+      excludedTypes.set(raw.type.name, (excludedTypes.get(raw.type.name) ?? 0) + 1);
+      continue;
+    }
+    const iconId = iconIdFromUrl(raw.image_urls?.icon);
+    if (iconId) iconByItem.set(raw.ankama_id, iconId);
+    const item: Item = {
+      id: raw.ankama_id,
+      nom: raw.name,
+      niveau: raw.level,
+      type: tm.type,
+      famille: tm.famille,
+      imageLocale: placeholderPour(tm.type, tm.famille), // remplacé après téléchargement
+      stats: mapEffects(raw.effects, raw.name, effectAcc),
+    };
+    if (raw.parent_set) item.panoplieId = raw.parent_set.id;
+    item.recetteConnue = (raw.recipe?.length ?? 0) > 0;
+    if (droppableIds) item.droppable = droppableIds.has(raw.ankama_id);
+    items.push(item);
+  }
+  items.sort((a, b) => a.niveau - b.niveau || a.nom.localeCompare(b.nom, 'fr'));
+
+  // --- Runes ---
+  const runes: RuneDef[] = [];
+  const runesIgnorees: string[] = [];
+  const iconByRune = new Map<number, string>();
+  for (const raw of rawRes) {
+    if (raw.type.id !== API_RUNE_TYPE_ID) continue;
+    const eff = (raw.effects ?? []).find((e) => API_EFFECT_TO_STAT[e.type.id]);
+    if (!eff) {
+      runesIgnorees.push(raw.name);
+      continue;
+    }
+    const iconId = iconIdFromUrl(raw.image_urls?.icon);
+    if (iconId) iconByRune.set(raw.ankama_id, iconId);
+    const statId = API_EFFECT_TO_STAT[eff.type.id];
+    runes.push({
+      id: raw.ankama_id,
+      nom: raw.name,
+      statId,
+      tier: runeTier(raw.name),
+      // « Arme de chasse » n'a pas de valeur numérique dans l'API → 1 point.
+      valeur: eff.int_minimum > 0 ? eff.int_minimum : 1,
+      imageLocale: '/img/placeholder/rune.svg',
+    });
+  }
+  const tierOrder: Record<RuneTier, number> = { simple: 0, pa: 1, ra: 2 };
+  runes.sort(
+    (a, b) =>
+      STAT_BY_ID[a.statId].label.localeCompare(STAT_BY_ID[b.statId].label, 'fr') ||
+      tierOrder[a.tier] - tierOrder[b.tier],
+  );
+
+  // --- Images ---
+  console.log('▶ Icônes (WebP 48×48)…');
+  const allIconIds = [...new Set([...iconByItem.values(), ...iconByRune.values()])];
+  const okIcons = await downloadAllIcons(allIconIds);
+  for (const it of items) {
+    const ic = iconByItem.get(it.id);
+    if (ic && okIcons.has(ic)) it.imageLocale = `/img/items/${ic}.webp`;
+  }
+  for (const r of runes) {
+    const ic = iconByRune.get(r.id);
+    if (ic && okIcons.has(ic)) r.imageLocale = `/img/items/${ic}.webp`;
+  }
+
+  // --- Écriture ---
+  const effectReport = [...effectAcc.values()].sort((a, b) => b.count - a.count);
+  const meta: CatalogueMeta = {
+    source: DOFUSDUDE,
+    syncedAt: new Date().toISOString(),
+    nbItems: items.length,
+    nbRunes: runes.length,
+    nbImages: okIcons.size,
+    nbImagesEchouees: allIconIds.length - okIcons.size,
+    droppableDisponible: droppableIds !== null,
+  };
+  await writeFile(path.join(DATA_DIR, 'items.json'), JSON.stringify(items));
+  await writeFile(path.join(DATA_DIR, 'runes.json'), JSON.stringify(runes, null, 1));
+  await writeFile(path.join(DATA_DIR, 'effect-types.json'), JSON.stringify(effectReport, null, 1));
+  await writeFile(path.join(DATA_DIR, 'meta.json'), JSON.stringify(meta, null, 1));
+
+  // --- Rapport ---
+  const unmapped = effectReport.filter((r) => r.status === 'unmapped');
+  console.log('\n═══ Résumé ═══');
+  console.log(`Objets API          : ${rawEquip.length}`);
+  console.log(`Objets conservés    : ${items.length}`);
+  console.log(
+    `Types exclus        : ${[...excludedTypes.entries()].map(([t, n]) => `${t} (${n})`).join(', ')}`,
+  );
+  console.log(`Runes               : ${runes.length}${runesIgnorees.length ? ` (ignorées : ${runesIgnorees.join(', ')})` : ''}`);
+  console.log(`Images              : ${okIcons.size}/${allIconIds.length} téléchargées`);
+  console.log(`Droppable           : ${droppableIds ? `${items.filter((i) => i.droppable).length} objets flagués` : 'indisponible'}`);
+  console.log(`Sans aucune stat    : ${items.filter((i) => i.stats.length === 0).length} objets`);
+  console.log(`Effets mappés       : ${effectReport.filter((r) => r.status === 'mapped').length}`);
+  console.log(`Effets ignorés      : ${effectReport.filter((r) => r.status === 'ignored').length}`);
+  if (unmapped.length) {
+    console.log(`\n⚠ Caractéristiques NON MAPPÉES (${unmapped.length}) — à compléter dans src/data/statMapping.ts :`);
+    for (const u of unmapped) {
+      console.log(`  - #${u.apiId} « ${u.apiName} » ×${u.count}  ex : ${u.exemples.join(', ')}`);
+    }
+  } else {
+    console.log('\n✔ Aucune caractéristique non mappée.');
+  }
+}
+
+main().catch((e) => {
+  console.error('✖ sync-data a échoué :', e);
+  process.exit(1);
+});

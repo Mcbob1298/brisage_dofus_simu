@@ -1,0 +1,1114 @@
+[
+ {
+  "apiId": 9,
+  "apiName": "Vitalité",
+  "status": "mapped",
+  "statId": "vitalite",
+  "count": 2350,
+  "exemples": [
+   "Épée de Fouraille",
+   "Épée d'Alle",
+   "Épée d'Ha"
+  ]
+ },
+ {
+  "apiId": 10,
+  "apiName": "Sagesse",
+  "status": "mapped",
+  "statId": "sagesse",
+  "count": 1708,
+  "exemples": [
+   "Anneau de Sagesse",
+   "Le Flan des Étoiles",
+   "La Baguette des Limbes"
+  ]
+ },
+ {
+  "apiId": 29,
+  "apiName": "% Critique",
+  "status": "mapped",
+  "statId": "pctCritique",
+  "count": 1101,
+  "exemples": [
+   "La Triste Lame",
+   "Marteau de Boisaille",
+   "Ceinture de Puissance"
+  ]
+ },
+ {
+  "apiId": 36,
+  "apiName": "Agilité",
+  "status": "mapped",
+  "statId": "agilite",
+  "count": 934,
+  "exemples": [
+   "Goultard",
+   "Le Tranchant Infernal",
+   "Dagues de Boisaille"
+  ]
+ },
+ {
+  "apiId": 13,
+  "apiName": "Intelligence",
+  "status": "mapped",
+  "statId": "intelligence",
+  "count": 928,
+  "exemples": [
+   "Épée d'Alle",
+   "Amulette du Hibou",
+   "L'Ecrabouilleur de Iop"
+  ]
+ },
+ {
+  "apiId": 45,
+  "apiName": "Force",
+  "status": "mapped",
+  "statId": "force",
+  "count": 921,
+  "exemples": [
+   "Épée de Boisaille",
+   "Épée de Fouraille",
+   "Épée d'Alle"
+  ]
+ },
+ {
+  "apiId": 22,
+  "apiName": "Chance",
+  "status": "mapped",
+  "statId": "chance",
+  "count": 895,
+  "exemples": [
+   "Anneau de Chance",
+   "Bottes de Bowisse",
+   "L'Ecrabouilleur de Iop"
+  ]
+ },
+ {
+  "apiId": 25,
+  "apiName": "Prospection",
+  "status": "mapped",
+  "statId": "prospection",
+  "count": 882,
+  "exemples": [
+   "Bottes de Bowisse",
+   "Arc Déroutant",
+   "Bâton du Bwork Mage"
+  ]
+ },
+ {
+  "apiId": 31,
+  "apiName": "Portée",
+  "status": "mapped",
+  "statId": "portee",
+  "count": 602,
+  "exemples": [
+   "La Célébrité",
+   "La Baguette des Limbes",
+   "Baguette des Cieux"
+  ]
+ },
+ {
+  "apiId": 59,
+  "apiName": "Fuite",
+  "status": "mapped",
+  "statId": "fuite",
+  "count": 582,
+  "exemples": [
+   "Épée d'Alle",
+   "Épée d'Ha",
+   "La crinière de Badoul"
+  ]
+ },
+ {
+  "apiId": 61,
+  "apiName": "Dommage Feu",
+  "status": "mapped",
+  "statId": "doFeu",
+  "count": 546,
+  "exemples": [
+   "Baguette de Glace",
+   "Marteau d'Ivoire",
+   "Alliance de Silimelle"
+  ]
+ },
+ {
+  "apiId": 27,
+  "apiName": "Dommage Eau",
+  "status": "mapped",
+  "statId": "doEau",
+  "count": 544,
+  "exemples": [
+   "Ceinture de Puissance",
+   "Chakra Style",
+   "Sargasse"
+  ]
+ },
+ {
+  "apiId": 48,
+  "apiName": "Dommage Terre",
+  "status": "mapped",
+  "statId": "doTerre",
+  "count": 532,
+  "exemples": [
+   "Épée de Boisaille",
+   "Épée de Fouraille",
+   "L'Ecrabouilleur de Iop"
+  ]
+ },
+ {
+  "apiId": 24,
+  "apiName": "Initiative",
+  "status": "mapped",
+  "statId": "initiative",
+  "count": 528,
+  "exemples": [
+   "La Broche Céleste",
+   "Amulette du Kam Assutra",
+   "Arc en Racine d'Abraknyde"
+  ]
+ },
+ {
+  "apiId": 26,
+  "apiName": "Tacle",
+  "status": "mapped",
+  "statId": "tacle",
+  "count": 526,
+  "exemples": [
+   "Goultard",
+   "La crinière de Badoul",
+   "Arc de Boisaille"
+  ]
+ },
+ {
+  "apiId": 47,
+  "apiName": "Dommage Air",
+  "status": "mapped",
+  "statId": "doAir",
+  "count": 517,
+  "exemples": [
+   "Dagues de Boisaille",
+   "L'Ecrabouilleur de Iop",
+   "Razielle"
+  ]
+ },
+ {
+  "apiId": 32,
+  "apiName": "Puissance",
+  "status": "mapped",
+  "statId": "puissance",
+  "count": 512,
+  "exemples": [
+   "Marteau de Raclage",
+   "Kaiser",
+   "Xaveur"
+  ]
+ },
+ {
+  "apiId": 16,
+  "apiName": "% Résistance Air",
+  "status": "mapped",
+  "statId": "pctResAir",
+  "count": 490,
+  "exemples": [
+   "Cape du Vampire",
+   "Cape du Poolay Chogrelotant",
+   "Cape Maj'Hic"
+  ]
+ },
+ {
+  "apiId": 17,
+  "apiName": "% Résistance Eau",
+  "status": "mapped",
+  "statId": "pctResEau",
+  "count": 488,
+  "exemples": [
+   "Cape du Vampire",
+   "Cape du Poolay Chogrelotant",
+   "Cape Maj'Hic"
+  ]
+ },
+ {
+  "apiId": 37,
+  "apiName": "% Résistance Feu",
+  "status": "mapped",
+  "statId": "pctResFeu",
+  "count": 486,
+  "exemples": [
+   "Cape du Vampire",
+   "Cape du Poolay Chogrelotant",
+   "Cape Maj'Hic"
+  ]
+ },
+ {
+  "apiId": 63,
+  "apiName": "% Résistance Terre",
+  "status": "mapped",
+  "statId": "pctResTerre",
+  "count": 482,
+  "exemples": [
+   "Kaiser",
+   "Boulgourde des Clairières",
+   "Minotokorno"
+  ]
+ },
+ {
+  "apiId": 49,
+  "apiName": "Dommage Neutre",
+  "status": "mapped",
+  "statId": "doNeutre",
+  "count": 450,
+  "exemples": [
+   "Épée de Fouraille",
+   "Razielle",
+   "Koliet Aclou"
+  ]
+ },
+ {
+  "apiId": 28,
+  "apiName": "Invocation",
+  "status": "mapped",
+  "statId": "invocation",
+  "count": 445,
+  "exemples": [
+   "Ragnarok",
+   "Ares",
+   "Amulette Deulegarnoulle"
+  ]
+ },
+ {
+  "apiId": 195,
+  "apiName": "dommages Neutre",
+  "status": "ignored",
+  "count": 421,
+  "exemples": [
+   "Épée de Boisaille",
+   "Épée de Fouraille",
+   "La Triste Lame"
+  ]
+ },
+ {
+  "apiId": 121,
+  "apiName": "Soin",
+  "status": "mapped",
+  "statId": "soins",
+  "count": 421,
+  "exemples": [
+   "Le Tranchant Infernal",
+   "Amulette du Mulou",
+   "La Gougnole"
+  ]
+ },
+ {
+  "apiId": 30,
+  "apiName": "Dommage",
+  "status": "mapped",
+  "statId": "dommages",
+  "count": 404,
+  "exemples": [
+   "Ceinture du Tot",
+   "Kaiser",
+   "Xaveur"
+  ]
+ },
+ {
+  "apiId": 34,
+  "apiName": "% Résistance Neutre",
+  "status": "mapped",
+  "statId": "pctResNeutre",
+  "count": 334,
+  "exemples": [
+   "Minotokorno",
+   "Cape du Poolay Chogrelotant",
+   "Dofusteuse"
+  ]
+ },
+ {
+  "apiId": 8,
+  "apiName": "PM",
+  "status": "mapped",
+  "statId": "pm",
+  "count": 290,
+  "exemples": [
+   "La crinière de Badoul",
+   "Bottes de Bowisse",
+   "La Baguette des Limbes"
+  ]
+ },
+ {
+  "apiId": 46,
+  "apiName": "Résistance Critiques",
+  "status": "mapped",
+  "statId": "resCritiques",
+  "count": 255,
+  "exemples": [
+   "Marteau d'Ivoire",
+   "Pelle de Bois Dormant",
+   "Marteau Pospodrol"
+  ]
+ },
+ {
+  "apiId": 39,
+  "apiName": "Esquive PM",
+  "status": "mapped",
+  "statId": "esquivePm",
+  "count": 245,
+  "exemples": [
+   "Couronne du Wa Wabbit",
+   "Balgourde des Clairettes",
+   "Bottes du Boufcoul"
+  ]
+ },
+ {
+  "apiId": 12,
+  "apiName": "PA",
+  "status": "mapped",
+  "statId": "pa",
+  "count": 243,
+  "exemples": [
+   "La Broche Céleste",
+   "Le Flan des Étoiles",
+   "La Baguette des Limbes"
+  ]
+ },
+ {
+  "apiId": 75,
+  "apiName": "Esquive PA",
+  "status": "mapped",
+  "statId": "esquivePa",
+  "count": 233,
+  "exemples": [
+   "Abraton",
+   "Hache de Dame Oise",
+   "Daguette du Captain Chafer"
+  ]
+ },
+ {
+  "apiId": 50,
+  "apiName": "Retrait PM",
+  "status": "mapped",
+  "statId": "retraitPm",
+  "count": 230,
+  "exemples": [
+   "Alliance de Silimelle",
+   "Baguette à Pans",
+   "Pelle Ikan"
+  ]
+ },
+ {
+  "apiId": 62,
+  "apiName": "Dommage Poussée",
+  "status": "mapped",
+  "statId": "doPoussee",
+  "count": 221,
+  "exemples": [
+   "La Queue Infernale",
+   "Minotokorno",
+   "Cape Ulais"
+  ]
+ },
+ {
+  "apiId": 208,
+  "apiName": ": + Portée maximale",
+  "status": "ignored",
+  "count": 217,
+  "exemples": [
+   "Casque Keutumedi",
+   "Chapeau Grave",
+   "Bonnet Nufar"
+  ]
+ },
+ {
+  "apiId": 38,
+  "apiName": "Dommage Critiques",
+  "status": "mapped",
+  "statId": "doCritiques",
+  "count": 215,
+  "exemples": [
+   "Marteau d'Ivoire",
+   "Kaiser",
+   "Bottes de Faillete"
+  ]
+ },
+ {
+  "apiId": 64,
+  "apiName": "Retrait PA",
+  "status": "mapped",
+  "statId": "retraitPa",
+  "count": 197,
+  "exemples": [
+   "Alliance de Silimelle",
+   "Le Matronome",
+   "Pelle Ikan"
+  ]
+ },
+ {
+  "apiId": 70,
+  "apiName": "Résistance Poussée",
+  "status": "mapped",
+  "statId": "resPoussee",
+  "count": 187,
+  "exemples": [
+   "Pelle de Bois Dormant",
+   "Marteau Pospodrol",
+   "Hache de Dame Oise"
+  ]
+ },
+ {
+  "apiId": 60,
+  "apiName": "Résistance Air",
+  "status": "mapped",
+  "statId": "resAir",
+  "count": 151,
+  "exemples": [
+   "Lisseur",
+   "Citwouille",
+   "Fécaliseur du Magicien"
+  ]
+ },
+ {
+  "apiId": 14,
+  "apiName": "Résistance Feu",
+  "status": "mapped",
+  "statId": "resFeu",
+  "count": 150,
+  "exemples": [
+   "Lisseur",
+   "Citwouille",
+   "Fécaliseur du Magicien"
+  ]
+ },
+ {
+  "apiId": 82,
+  "apiName": "Résistance Eau",
+  "status": "mapped",
+  "statId": "resEau",
+  "count": 149,
+  "exemples": [
+   "Lisseur",
+   "Citwouille",
+   "Fécaliseur du Magicien"
+  ]
+ },
+ {
+  "apiId": 198,
+  "apiName": "dommages Feu",
+  "status": "ignored",
+  "count": 145,
+  "exemples": [
+   "Épée d'Alle",
+   "Baguette de Boisaille",
+   "Marteau de Boisaille"
+  ]
+ },
+ {
+  "apiId": 207,
+  "apiName": ": - PA",
+  "status": "ignored",
+  "count": 144,
+  "exemples": [
+   "Casque Keutumedi",
+   "Coiffe Fère",
+   "Chapeau Tyron"
+  ]
+ },
+ {
+  "apiId": 15,
+  "apiName": "Résistance Terre",
+  "status": "mapped",
+  "statId": "resTerre",
+  "count": 138,
+  "exemples": [
+   "Louffeur",
+   "Citwouille",
+   "L'Arc à Hick"
+  ]
+ },
+ {
+  "apiId": 189,
+  "apiName": "dommages Air",
+  "status": "ignored",
+  "count": 132,
+  "exemples": [
+   "Arc de Boisaille",
+   "Bâton Kouyu",
+   "Dagues de Croclage"
+  ]
+ },
+ {
+  "apiId": 33,
+  "apiName": "Résistance Neutre",
+  "status": "mapped",
+  "statId": "resNeutre",
+  "count": 132,
+  "exemples": [
+   "Louffeur",
+   "Citwouille",
+   "L'Arc à Hick"
+  ]
+ },
+ {
+  "apiId": 214,
+  "apiName": "dommages Eau",
+  "status": "ignored",
+  "count": 116,
+  "exemples": [
+   "Pelle de Boisaille",
+   "Kryst O'Boul",
+   "Kaiser"
+  ]
+ },
+ {
+  "apiId": 205,
+  "apiName": ": ligne de vue désactivée",
+  "status": "ignored",
+  "count": 97,
+  "exemples": [
+   "Casque Keutumedi",
+   "Bonnet Nufar",
+   "Coiffe Fère"
+  ]
+ },
+ {
+  "apiId": 204,
+  "apiName": ": Portée modifiable",
+  "status": "ignored",
+  "count": 80,
+  "exemples": [
+   "Chapeau Grave",
+   "Capuche Apin",
+   "Coiffe de Robbie Capuche"
+  ]
+ },
+ {
+  "apiId": 194,
+  "apiName": "dommages Terre",
+  "status": "ignored",
+  "count": 79,
+  "exemples": [
+   "Arc de Boo",
+   "Bâton Tont'Ata",
+   "Bâton de Bouftier"
+  ]
+ },
+ {
+  "apiId": 203,
+  "apiName": "vol Eau",
+  "status": "ignored",
+  "count": 73,
+  "exemples": [
+   "L'Ergot Mina",
+   "Baguette du Chêne Mou",
+   "Pelle Rinage"
+  ]
+ },
+ {
+  "apiId": 0,
+  "apiName": "Échangeable :",
+  "status": "ignored",
+  "count": 67,
+  "exemples": [
+   "Dofus Pourpre",
+   "Dofus Émeraude",
+   "Dofus Turquoise"
+  ]
+ },
+ {
+  "apiId": 220,
+  "apiName": "Pod",
+  "status": "mapped",
+  "statId": "pods",
+  "count": 66,
+  "exemples": [
+   "Petit Sac en Laine de Boufton",
+   "Sac du Petit Récolteur",
+   "Sac du Petit Aventurier"
+  ]
+ },
+ {
+  "apiId": 227,
+  "apiName": ": - de relance",
+  "status": "ignored",
+  "count": 62,
+  "exemples": [
+   "Casque Keutumedi",
+   "Chapeau Tyron",
+   "Bonnet Spairance"
+  ]
+ },
+ {
+  "apiId": 193,
+  "apiName": "vol Feu",
+  "status": "ignored",
+  "count": 61,
+  "exemples": [
+   "Baguette Ni'Ninnin",
+   "Pieu Vampirique",
+   "Marteau Pinambour"
+  ]
+ },
+ {
+  "apiId": 163,
+  "apiName": "-special spell-",
+  "status": "ignored",
+  "count": 59,
+  "exemples": [
+   "Dofus Pourpre",
+   "Dofus Émeraude",
+   "Dofus Turquoise"
+  ]
+ },
+ {
+  "apiId": 81,
+  "apiName": "Lié au personnage",
+  "status": "ignored",
+  "count": 54,
+  "exemples": [
+   "Arc de Mech Riorraw",
+   "Arc de Mulic Bere",
+   "Cape Banale"
+  ]
+ },
+ {
+  "apiId": 224,
+  "apiName": "vol Air",
+  "status": "ignored",
+  "count": 51,
+  "exemples": [
+   "Bâton Carnivore",
+   "Dague Lutination",
+   "Arc du Sram Archer"
+  ]
+ },
+ {
+  "apiId": 206,
+  "apiName": ": + lancer(s) par tour",
+  "status": "ignored",
+  "count": 50,
+  "exemples": [
+   "Chapeau Tyron",
+   "Capuche Apin",
+   "Coiffe de Robbie Capuche"
+  ]
+ },
+ {
+  "apiId": 223,
+  "apiName": "vol Neutre",
+  "status": "ignored",
+  "count": 49,
+  "exemples": [
+   "Épée de Justice",
+   "Dague Régah",
+   "Le Tronknydum"
+  ]
+ },
+ {
+  "apiId": 179,
+  "apiName": "PA",
+  "status": "ignored",
+  "count": 47,
+  "exemples": [
+   "Kaiser",
+   "Abraton",
+   "Abraton Sombre"
+  ]
+ },
+ {
+  "apiId": 226,
+  "apiName": ": +% Critique",
+  "status": "ignored",
+  "count": 42,
+  "exemples": [
+   "Chapeau Leufère",
+   "Coiffe Fère",
+   "Chapeau Lithique"
+  ]
+ },
+ {
+  "apiId": 92,
+  "apiName": "Arme de chasse",
+  "status": "mapped",
+  "statId": "armeDeChasse",
+  "count": 41,
+  "exemples": [
+   "La Triste Lame",
+   "Barbe Grise",
+   "Le Marteau du Chafer"
+  ]
+ },
+ {
+  "apiId": 209,
+  "apiName": ": lancer en ligne désactivé",
+  "status": "ignored",
+  "count": 35,
+  "exemples": [
+   "Chapeau Grave",
+   "Bonnet Nufar",
+   "Cape Aurale"
+  ]
+ },
+ {
+  "apiId": 261,
+  "apiName": "soins Feu",
+  "status": "ignored",
+  "count": 31,
+  "exemples": [
+   "Arc Hidsad",
+   "Marteau Pinambour",
+   "Dagues Hischantes"
+  ]
+ },
+ {
+  "apiId": 221,
+  "apiName": "vol Terre",
+  "status": "ignored",
+  "count": 30,
+  "exemples": [
+   "Racine Sémilla",
+   "Bâton du Yondanwa",
+   "Hache Terrdala"
+  ]
+ },
+ {
+  "apiId": 231,
+  "apiName": ": + lancer(s) par cible",
+  "status": "ignored",
+  "count": 26,
+  "exemples": [
+   "Chapeau Leufère",
+   "Coiffe de Robbie Capuche",
+   "Cape Sulhit"
+  ]
+ },
+ {
+  "apiId": 35,
+  "apiName": "Titre :",
+  "status": "ignored",
+  "count": 20,
+  "exemples": [
+   "Bouclier trophée du Dark Vlad",
+   "Bouclier trophée du Moon",
+   "Bouclier trophée du Chêne Mou"
+  ]
+ },
+ {
+  "apiId": 108,
+  "apiName": "% Résistance distance",
+  "status": "unmapped",
+  "count": 20,
+  "exemples": [
+   "Jadis",
+   "Bouclier du serrurier",
+   "Carapar"
+  ]
+ },
+ {
+  "apiId": 65,
+  "apiName": "% Résistance mêlée",
+  "status": "unmapped",
+  "count": 19,
+  "exemples": [
+   "Bouclistik",
+   "Jadis",
+   "Carapar"
+  ]
+ },
+ {
+  "apiId": 191,
+  "apiName": "/",
+  "status": "ignored",
+  "count": 14,
+  "exemples": [
+   "Arc de Mech Riorraw",
+   "Arc de Mulic Bere",
+   "Bouclier d'entraînement"
+  ]
+ },
+ {
+  "apiId": 225,
+  "apiName": "Repousse de case",
+  "status": "ignored",
+  "count": 13,
+  "exemples": [
+   "Corbalame",
+   "Lance corrompue",
+   "Plume de Buhorado"
+  ]
+ },
+ {
+  "apiId": 106,
+  "apiName": "Puissance Pièges",
+  "status": "mapped",
+  "statId": "puissancePieges",
+  "count": 13,
+  "exemples": [
+   "Dagues Lassay",
+   "Ceinture Sula",
+   "Koloss"
+  ]
+ },
+ {
+  "apiId": 238,
+  "apiName": "PM",
+  "status": "ignored",
+  "count": 12,
+  "exemples": [
+   "Lame du Craqueleur",
+   "Marteau du Mominotor",
+   "Baguette Bainkuite"
+  ]
+ },
+ {
+  "apiId": 83,
+  "apiName": "Fabrication coopérative impossible",
+  "status": "ignored",
+  "count": 12,
+  "exemples": [
+   "Fléau d'armes",
+   "Écu Rikulome",
+   "Tabard Nak"
+  ]
+ },
+ {
+  "apiId": 98,
+  "apiName": "Attitude",
+  "status": "ignored",
+  "count": 9,
+  "exemples": [
+   "Dofus Pourpre",
+   "Dofus Émeraude",
+   "Dofus Turquoise"
+  ]
+ },
+ {
+  "apiId": 71,
+  "apiName": "% Dommages distance",
+  "status": "mapped",
+  "statId": "pctDommagesDistance",
+  "count": 9,
+  "exemples": [
+   "Katana de la Flamme",
+   "Katana de la Tempête",
+   "Katana de la Marée"
+  ]
+ },
+ {
+  "apiId": 112,
+  "apiName": "Dommage Pièges",
+  "status": "mapped",
+  "statId": "doPieges",
+  "count": 8,
+  "exemples": [
+   "Dagues Lassay",
+   "Ceinture Sula",
+   "Solomonk"
+  ]
+ },
+ {
+  "apiId": 249,
+  "apiName": "Dommages Renvoyés",
+  "status": "mapped",
+  "statId": "renvoiDommages",
+  "count": 8,
+  "exemples": [
+   "Sulik",
+   "Roncier",
+   "Sept ans de malheur"
+  ]
+ },
+ {
+  "apiId": 101,
+  "apiName": "Quelqu'un vous suit !",
+  "status": "ignored",
+  "count": 8,
+  "exemples": [
+   "Phéro-Cape",
+   "Araknacoiffe Velue",
+   "Baguette du Grand Glucid"
+  ]
+ },
+ {
+  "apiId": 41,
+  "apiName": "% Dommages d'armes",
+  "status": "mapped",
+  "statId": "pctDommagesArmes",
+  "count": 8,
+  "exemples": [
+   "Couronne de Brâm Barbe-Monde",
+   "Katana de la Flamme",
+   "Katana de la Tempête"
+  ]
+ },
+ {
+  "apiId": 123,
+  "apiName": "Nombre de victimes :",
+  "status": "ignored",
+  "count": 6,
+  "exemples": [
+   "Anneau du Vampyre",
+   "Amulette du Vampyre",
+   "Ceinture du Vampyre"
+  ]
+ },
+ {
+  "apiId": 145,
+  "apiName": "Ajouter un sort temporaire",
+  "status": "ignored",
+  "count": 6,
+  "exemples": [
+   "Épée Nécronyx",
+   "Ménologium béni",
+   "Dofus Verdoyant"
+  ]
+ },
+ {
+  "apiId": 248,
+  "apiName": "dommages du meilleur élément",
+  "status": "ignored",
+  "count": 6,
+  "exemples": [
+   "Crocobur",
+   "Griffe de Gargandyas",
+   "Fureur de Gargandyas"
+  ]
+ },
+ {
+  "apiId": 233,
+  "apiName": "Vole PM",
+  "status": "ignored",
+  "count": 5,
+  "exemples": [
+   "Lame Usicke",
+   "Hachebarde de Guerre",
+   "Poignards du Captain Chafer"
+  ]
+ },
+ {
+  "apiId": 93,
+  "apiName": "% Dommages aux sorts",
+  "status": "mapped",
+  "statId": "pctDommagesSorts",
+  "count": 5,
+  "exemples": [
+   "Couronne de Brâm Barbe-Monde",
+   "Noblesse de Jahash Jurgen",
+   "Courage de Dame Jhessica"
+  ]
+ },
+ {
+  "apiId": 255,
+  "apiName": "Attire de case",
+  "status": "ignored",
+  "count": 5,
+  "exemples": [
+   "Zarbappeau",
+   "Fureur de Gargandyas",
+   "Kornzbz Chzazzzbz"
+  ]
+ },
+ {
+  "apiId": 243,
+  "apiName": ": + dégâts de base",
+  "status": "ignored",
+  "count": 3,
+  "exemples": [
+   "Coiffe de Robbie Capuche",
+   "Cape Hulco",
+   "Sangle Cible"
+  ]
+ },
+ {
+  "apiId": 119,
+  "apiName": "Change les paroles",
+  "status": "ignored",
+  "count": 2,
+  "exemples": [
+   "Flûte de Sarr Ys",
+   "Troma du Vieux John"
+  ]
+ },
+ {
+  "apiId": 274,
+  "apiName": ": - Portée minimale",
+  "status": "ignored",
+  "count": 2,
+  "exemples": [
+   "Sangle Cible"
+  ]
+ },
+ {
+  "apiId": 117,
+  "apiName": "Change l'apparence",
+  "status": "ignored",
+  "count": 2,
+  "exemples": [
+   "Bâton de l'apprenti pélerin",
+   "Bague du hibou"
+  ]
+ },
+ {
+  "apiId": 257,
+  "apiName": "vol du meilleur élément",
+  "status": "ignored",
+  "count": 2,
+  "exemples": [
+   "Ciseaux du Destin",
+   "Jugement de Thanatena"
+  ]
+ },
+ {
+  "apiId": 40,
+  "apiName": "% Dommages mêlée",
+  "status": "mapped",
+  "statId": "pctDommagesMelee",
+  "count": 2,
+  "exemples": [
+   "Pugiliste",
+   "Amour d'Helséphine"
+  ]
+ },
+ {
+  "apiId": 240,
+  "apiName": ": case occupée nécessaire désactivée",
+  "status": "ignored",
+  "count": 1,
+  "exemples": [
+   "Cape Ytale"
+  ]
+ },
+ {
+  "apiId": 245,
+  "apiName": ": + Dommages",
+  "status": "ignored",
+  "count": 1,
+  "exemples": [
+   "Sangle Huée"
+  ]
+ },
+ {
+  "apiId": 251,
+  "apiName": "Taille : %",
+  "status": "ignored",
+  "count": 1,
+  "exemples": [
+   "Baguette Rikiki"
+  ]
+ },
+ {
+  "apiId": 84,
+  "apiName": "Reçu le :",
+  "status": "ignored",
+  "count": 1,
+  "exemples": [
+   "Sacrifice volontaire"
+  ]
+ },
+ {
+  "apiId": 258,
+  "apiName": "Avance de case",
+  "status": "ignored",
+  "count": 1,
+  "exemples": [
+   "Ferveur d'Amayiro"
+  ]
+ }
+]

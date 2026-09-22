@@ -1,0 +1,50 @@
+import { useEffect, useState } from 'react';
+import { EnTete, type Onglet } from './components/EnTete.tsx';
+import { BarreBilan } from './components/BarreBilan.tsx';
+import { PageObjet } from './pages/PageObjet.tsx';
+import { PagePrix } from './pages/PagePrix.tsx';
+import { PageComparateur } from './pages/PageComparateur.tsx';
+import { PageExplorateur } from './pages/PageExplorateur.tsx';
+import { useCatalogue } from './store/catalogue.ts';
+import { initTheme } from './store/theme.ts';
+import { useSimulation } from './hooks/useSimulation.ts';
+
+const ONGLETS: Onglet[] = ['objet', 'prix', 'comparateur', 'explorateur'];
+
+function ongletDepuisHash(): Onglet {
+  const h = location.hash.replace('#', '') as Onglet;
+  return ONGLETS.includes(h) ? h : 'objet';
+}
+
+export default function App() {
+  const [onglet, setOnglet] = useState<Onglet>(ongletDepuisHash);
+  const charger = useCatalogue((s) => s.charger);
+  const sim = useSimulation();
+
+  useEffect(() => {
+    initTheme();
+    void charger();
+    const onHash = () => setOnglet(ongletDepuisHash());
+    addEventListener('hashchange', onHash);
+    return () => removeEventListener('hashchange', onHash);
+  }, [charger]);
+
+  const changerOnglet = (o: Onglet) => {
+    location.hash = o;
+    setOnglet(o);
+    scrollTo({ top: 0 });
+  };
+
+  return (
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+      <EnTete onglet={onglet} onChange={changerOnglet} />
+      <BarreBilan sim={sim} />
+      <main className="mx-auto max-w-6xl px-3 py-3">
+        {onglet === 'objet' && <PageObjet sim={sim} aller={changerOnglet} />}
+        {onglet === 'prix' && <PagePrix />}
+        {onglet === 'comparateur' && <PageComparateur sim={sim} />}
+        {onglet === 'explorateur' && <PageExplorateur aller={changerOnglet} />}
+      </main>
+    </div>
+  );
+}

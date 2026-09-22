@@ -1,0 +1,818 @@
+[
+ {
+  "id": 7433,
+  "nom": "Rune Cri",
+  "statId": "pctCritique",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78014.webp"
+ },
+ {
+  "id": 18722,
+  "nom": "Rune Do Per So",
+  "statId": "pctDommagesSorts",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78094.webp"
+ },
+ {
+  "id": 18721,
+  "nom": "Rune Do Per Ar",
+  "statId": "pctDommagesArmes",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78093.webp"
+ },
+ {
+  "id": 18720,
+  "nom": "Rune Do Per Di",
+  "statId": "pctDommagesDistance",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78091.webp"
+ },
+ {
+  "id": 18719,
+  "nom": "Rune Do Per Mé",
+  "statId": "pctDommagesMelee",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78092.webp"
+ },
+ {
+  "id": 7458,
+  "nom": "Rune Ré Per Air",
+  "statId": "pctResAir",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78033.webp"
+ },
+ {
+  "id": 7560,
+  "nom": "Rune Ré Per Eau",
+  "statId": "pctResEau",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78031.webp"
+ },
+ {
+  "id": 7457,
+  "nom": "Rune Ré Per Feu",
+  "statId": "pctResFeu",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78029.webp"
+ },
+ {
+  "id": 7460,
+  "nom": "Rune Ré Per Neutre",
+  "statId": "pctResNeutre",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78058.webp"
+ },
+ {
+  "id": 7459,
+  "nom": "Rune Ré Per Terre",
+  "statId": "pctResTerre",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78035.webp"
+ },
+ {
+  "id": 1524,
+  "nom": "Rune Age",
+  "statId": "agilite",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78046.webp"
+ },
+ {
+  "id": 1549,
+  "nom": "Rune Pa Age",
+  "statId": "agilite",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78047.webp"
+ },
+ {
+  "id": 1555,
+  "nom": "Rune Ra Age",
+  "statId": "agilite",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78048.webp"
+ },
+ {
+  "id": 10057,
+  "nom": "Rune de chasse",
+  "statId": "armeDeChasse",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78059.webp"
+ },
+ {
+  "id": 1525,
+  "nom": "Rune Cha",
+  "statId": "chance",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78040.webp"
+ },
+ {
+  "id": 1550,
+  "nom": "Rune Pa Cha",
+  "statId": "chance",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78041.webp"
+ },
+ {
+  "id": 1556,
+  "nom": "Rune Ra Cha",
+  "statId": "chance",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78042.webp"
+ },
+ {
+  "id": 7435,
+  "nom": "Rune Do",
+  "statId": "dommages",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78015.webp"
+ },
+ {
+  "id": 11663,
+  "nom": "Rune Do Air",
+  "statId": "doAir",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78067.webp"
+ },
+ {
+  "id": 11664,
+  "nom": "Rune Pa Do Air",
+  "statId": "doAir",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78068.webp"
+ },
+ {
+  "id": 11653,
+  "nom": "Rune Do Cri",
+  "statId": "doCritiques",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78073.webp"
+ },
+ {
+  "id": 11654,
+  "nom": "Rune Pa Do Cri",
+  "statId": "doCritiques",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78074.webp"
+ },
+ {
+  "id": 11661,
+  "nom": "Rune Do Eau",
+  "statId": "doEau",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78061.webp"
+ },
+ {
+  "id": 11662,
+  "nom": "Rune Pa Do Eau",
+  "statId": "doEau",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78062.webp"
+ },
+ {
+  "id": 11659,
+  "nom": "Rune Do Feu",
+  "statId": "doFeu",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78063.webp"
+ },
+ {
+  "id": 11660,
+  "nom": "Rune Pa Do Feu",
+  "statId": "doFeu",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78064.webp"
+ },
+ {
+  "id": 11665,
+  "nom": "Rune Do Neutre",
+  "statId": "doNeutre",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78069.webp"
+ },
+ {
+  "id": 11666,
+  "nom": "Rune Pa Do Neutre",
+  "statId": "doNeutre",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78070.webp"
+ },
+ {
+  "id": 7446,
+  "nom": "Rune Do Pi",
+  "statId": "doPieges",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78268.webp"
+ },
+ {
+  "id": 10613,
+  "nom": "Rune Pa Do Pi",
+  "statId": "doPieges",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78023.webp"
+ },
+ {
+  "id": 11649,
+  "nom": "Rune Do Pou",
+  "statId": "doPoussee",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78081.webp"
+ },
+ {
+  "id": 11650,
+  "nom": "Rune Pa Do Pou",
+  "statId": "doPoussee",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78082.webp"
+ },
+ {
+  "id": 29684,
+  "nom": "Rune Ra Do Pou",
+  "statId": "doPoussee",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78273.webp"
+ },
+ {
+  "id": 11657,
+  "nom": "Rune Do Terre",
+  "statId": "doTerre",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78065.webp"
+ },
+ {
+  "id": 11658,
+  "nom": "Rune Pa Do Terre",
+  "statId": "doTerre",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78066.webp"
+ },
+ {
+  "id": 11641,
+  "nom": "Rune Ré Pa",
+  "statId": "esquivePa",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78083.webp"
+ },
+ {
+  "id": 11642,
+  "nom": "Rune Pa Ré Pa",
+  "statId": "esquivePa",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78084.webp"
+ },
+ {
+  "id": 11643,
+  "nom": "Rune Ré Pme",
+  "statId": "esquivePm",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78085.webp"
+ },
+ {
+  "id": 11644,
+  "nom": "Rune Pa Ré Pme",
+  "statId": "esquivePm",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78086.webp"
+ },
+ {
+  "id": 1519,
+  "nom": "Rune Fo",
+  "statId": "force",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78043.webp"
+ },
+ {
+  "id": 1545,
+  "nom": "Rune Pa Fo",
+  "statId": "force",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78044.webp"
+ },
+ {
+  "id": 1551,
+  "nom": "Rune Ra Fo",
+  "statId": "force",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78045.webp"
+ },
+ {
+  "id": 11637,
+  "nom": "Rune Fui",
+  "statId": "fuite",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78076.webp"
+ },
+ {
+  "id": 11638,
+  "nom": "Rune Pa Fui",
+  "statId": "fuite",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78075.webp"
+ },
+ {
+  "id": 7448,
+  "nom": "Rune Ini",
+  "statId": "initiative",
+  "tier": "simple",
+  "valeur": 10,
+  "imageLocale": "/img/items/78025.webp"
+ },
+ {
+  "id": 7449,
+  "nom": "Rune Pa Ini",
+  "statId": "initiative",
+  "tier": "pa",
+  "valeur": 30,
+  "imageLocale": "/img/items/78026.webp"
+ },
+ {
+  "id": 7450,
+  "nom": "Rune Ra Ini",
+  "statId": "initiative",
+  "tier": "ra",
+  "valeur": 100,
+  "imageLocale": "/img/items/78027.webp"
+ },
+ {
+  "id": 1522,
+  "nom": "Rune Ine",
+  "statId": "intelligence",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78037.webp"
+ },
+ {
+  "id": 1547,
+  "nom": "Rune Pa Ine",
+  "statId": "intelligence",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78038.webp"
+ },
+ {
+  "id": 1553,
+  "nom": "Rune Ra Ine",
+  "statId": "intelligence",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78039.webp"
+ },
+ {
+  "id": 7442,
+  "nom": "Rune Invo",
+  "statId": "invocation",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78019.webp"
+ },
+ {
+  "id": 1557,
+  "nom": "Rune Ga Pa",
+  "statId": "pa",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78055.webp"
+ },
+ {
+  "id": 1558,
+  "nom": "Rune Ga Pme",
+  "statId": "pm",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78056.webp"
+ },
+ {
+  "id": 7443,
+  "nom": "Rune Pod",
+  "statId": "pods",
+  "tier": "simple",
+  "valeur": 10,
+  "imageLocale": "/img/items/78020.webp"
+ },
+ {
+  "id": 7444,
+  "nom": "Rune Pa Pod",
+  "statId": "pods",
+  "tier": "pa",
+  "valeur": 30,
+  "imageLocale": "/img/items/78021.webp"
+ },
+ {
+  "id": 7445,
+  "nom": "Rune Ra Pod",
+  "statId": "pods",
+  "tier": "ra",
+  "valeur": 100,
+  "imageLocale": "/img/items/78022.webp"
+ },
+ {
+  "id": 7438,
+  "nom": "Rune Po",
+  "statId": "portee",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78018.webp"
+ },
+ {
+  "id": 7451,
+  "nom": "Rune Prospe",
+  "statId": "prospection",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78036.webp"
+ },
+ {
+  "id": 10662,
+  "nom": "Rune Pa Prospe",
+  "statId": "prospection",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78271.webp"
+ },
+ {
+  "id": 7436,
+  "nom": "Rune Pui",
+  "statId": "puissance",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78016.webp"
+ },
+ {
+  "id": 10618,
+  "nom": "Rune Pa Pui",
+  "statId": "puissance",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78269.webp"
+ },
+ {
+  "id": 10619,
+  "nom": "Rune Ra Pui",
+  "statId": "puissance",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78270.webp"
+ },
+ {
+  "id": 7447,
+  "nom": "Rune Per Pi",
+  "statId": "puissancePieges",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78024.webp"
+ },
+ {
+  "id": 10615,
+  "nom": "Rune Pa Per Pi",
+  "statId": "puissancePieges",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78266.webp"
+ },
+ {
+  "id": 10616,
+  "nom": "Rune Ra Per Pi",
+  "statId": "puissancePieges",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78267.webp"
+ },
+ {
+  "id": 7437,
+  "nom": "Rune Do Ren",
+  "statId": "renvoiDommages",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78017.webp"
+ },
+ {
+  "id": 30942,
+  "nom": "Rune Pa Do Ren",
+  "statId": "renvoiDommages",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78017.webp"
+ },
+ {
+  "id": 7453,
+  "nom": "Rune Ré Air",
+  "statId": "resAir",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78032.webp"
+ },
+ {
+  "id": 19338,
+  "nom": "Rune Pa Ré Air",
+  "statId": "resAir",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78100.webp"
+ },
+ {
+  "id": 30700,
+  "nom": "Rune Ra Ré Air",
+  "statId": "resAir",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78297.webp"
+ },
+ {
+  "id": 11655,
+  "nom": "Rune Ré Cri",
+  "statId": "resCritiques",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78071.webp"
+ },
+ {
+  "id": 11656,
+  "nom": "Rune Pa Ré Cri",
+  "statId": "resCritiques",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78072.webp"
+ },
+ {
+  "id": 30699,
+  "nom": "Rune Ra Ré Cri",
+  "statId": "resCritiques",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78292.webp"
+ },
+ {
+  "id": 7454,
+  "nom": "Rune Ré Eau",
+  "statId": "resEau",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78030.webp"
+ },
+ {
+  "id": 19339,
+  "nom": "Rune Pa Ré Eau",
+  "statId": "resEau",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78101.webp"
+ },
+ {
+  "id": 30698,
+  "nom": "Rune Ra Ré Eau",
+  "statId": "resEau",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78296.webp"
+ },
+ {
+  "id": 7452,
+  "nom": "Rune Ré Feu",
+  "statId": "resFeu",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78028.webp"
+ },
+ {
+  "id": 19340,
+  "nom": "Rune Pa Ré Feu",
+  "statId": "resFeu",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78102.webp"
+ },
+ {
+  "id": 30697,
+  "nom": "Rune Ra Ré Feu",
+  "statId": "resFeu",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78295.webp"
+ },
+ {
+  "id": 7456,
+  "nom": "Rune Ré Neutre",
+  "statId": "resNeutre",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78057.webp"
+ },
+ {
+  "id": 19341,
+  "nom": "Rune Pa Ré Neutre",
+  "statId": "resNeutre",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78103.webp"
+ },
+ {
+  "id": 30696,
+  "nom": "Rune Ra Ré Neutre",
+  "statId": "resNeutre",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78293.webp"
+ },
+ {
+  "id": 11651,
+  "nom": "Rune Ré Pou",
+  "statId": "resPoussee",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78079.webp"
+ },
+ {
+  "id": 11652,
+  "nom": "Rune Pa Ré Pou",
+  "statId": "resPoussee",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78080.webp"
+ },
+ {
+  "id": 29683,
+  "nom": "Rune Ra Ré Pou",
+  "statId": "resPoussee",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78272.webp"
+ },
+ {
+  "id": 7455,
+  "nom": "Rune Ré Terre",
+  "statId": "resTerre",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78034.webp"
+ },
+ {
+  "id": 19342,
+  "nom": "Rune Pa Ré Terre",
+  "statId": "resTerre",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78104.webp"
+ },
+ {
+  "id": 30695,
+  "nom": "Rune Ra Ré Terre",
+  "statId": "resTerre",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78294.webp"
+ },
+ {
+  "id": 11645,
+  "nom": "Rune Ret Pa",
+  "statId": "retraitPa",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78087.webp"
+ },
+ {
+  "id": 11646,
+  "nom": "Rune Pa Ret Pa",
+  "statId": "retraitPa",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78088.webp"
+ },
+ {
+  "id": 11647,
+  "nom": "Rune Ret Pme",
+  "statId": "retraitPm",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78089.webp"
+ },
+ {
+  "id": 11648,
+  "nom": "Rune Pa Ret Pme",
+  "statId": "retraitPm",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78090.webp"
+ },
+ {
+  "id": 1521,
+  "nom": "Rune Sa",
+  "statId": "sagesse",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78049.webp"
+ },
+ {
+  "id": 1546,
+  "nom": "Rune Pa Sa",
+  "statId": "sagesse",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78050.webp"
+ },
+ {
+  "id": 1552,
+  "nom": "Rune Ra Sa",
+  "statId": "sagesse",
+  "tier": "ra",
+  "valeur": 10,
+  "imageLocale": "/img/items/78051.webp"
+ },
+ {
+  "id": 7434,
+  "nom": "Rune So",
+  "statId": "soins",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78013.webp"
+ },
+ {
+  "id": 19337,
+  "nom": "Rune Pa So",
+  "statId": "soins",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78099.webp"
+ },
+ {
+  "id": 11639,
+  "nom": "Rune Tac",
+  "statId": "tacle",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78077.webp"
+ },
+ {
+  "id": 11640,
+  "nom": "Rune Pa Tac",
+  "statId": "tacle",
+  "tier": "pa",
+  "valeur": 3,
+  "imageLocale": "/img/items/78078.webp"
+ },
+ {
+  "id": 1523,
+  "nom": "Rune Vi",
+  "statId": "vitalite",
+  "tier": "simple",
+  "valeur": 5,
+  "imageLocale": "/img/items/78052.webp"
+ },
+ {
+  "id": 1548,
+  "nom": "Rune Pa Vi",
+  "statId": "vitalite",
+  "tier": "pa",
+  "valeur": 15,
+  "imageLocale": "/img/items/78053.webp"
+ },
+ {
+  "id": 1554,
+  "nom": "Rune Ra Vi",
+  "statId": "vitalite",
+  "tier": "ra",
+  "valeur": 50,
+  "imageLocale": "/img/items/78054.webp"
+ }
+]

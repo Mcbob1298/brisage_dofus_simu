@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+/* Bascule manuelle du thème : la classe .dark sur <html> force le sombre,
+   sinon on suit prefers-color-scheme (géré en JS dans le store thème). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-mono: ui-monospace, "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+
+.tnum {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
