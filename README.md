@@ -18,10 +18,10 @@ Spécification complète : [spec_brisage.md](spec_brisage.md).
 
 - `scripts/sync-data.ts` — sync du catalogue (Node ≥ 22.6, TypeScript natif).
 - `src/data/statMapping.ts` — référentiel des caractéristiques (`StatId`), mapping des effets API, effets ignorés, types conservés.
-- `src/engine/` — moteur pur : formule du brisage, focus, conversion points → runes (3 modes), bilan, coefficient seuil, comparateur, évaluation du catalogue, valeur de farm par monstre, plan de progression, optimiseur d'équipement.
+- `src/engine/` — moteur pur : formule du brisage, focus, conversion points → runes (3 modes), bilan, coefficient seuil, comparateur, évaluation du catalogue, valeur de farm par monstre, plan de progression.
 - `src/store/` — état zustand : catalogue, simulation, prix des runes, réglages (poids, mode), notes (journal des coefficients, prix constatés), thème.
-- `src/pages/` — Guide (objectif → farm gratuit → achat HDV → stratégie → suivi), Perso (classe, élément, équipement proposé et prochains équipements), Objet, Prix des runes, Comparateur, Explorateur.
+- `src/pages/` — Guide (objectif → farm gratuit → achat HDV → stratégie → suivi), Objet, Prix des runes, Comparateur, Explorateur.
 
 ## Données persistées (localStorage)
 
-`brisage.guide`, `brisage.perso`, `brisage.simu`, `brisage.prix` (exportable/importable en JSON depuis l'écran Prix), `brisage.reglages`, `brisage.notes`, `brisage.theme`.
+`brisage.guide`, `brisage.simu`, `brisage.prix` (exportable/importable en JSON depuis l'écran Prix), `brisage.reglages`, `brisage.notes`, `brisage.theme`.

@@ -10,17 +10,6 @@ export type StatLine = {
   max: number;
 };
 
-/**
- * Condition d'équipement portant sur une caractéristique du personnage.
- * « Force > 99 » → { statId: 'force', operateur: '>', valeur: 99 }.
- */
-export type ConditionStat = { statId: StatId; operateur: '>' | '<'; valeur: number };
-
-/** Condition portant sur le nombre de bonus de panoplie actifs (code « Pk »). */
-export type ConditionPanoplies = { panoplies: true; operateur: '>' | '<'; valeur: number };
-
-export type Condition = ConditionStat | ConditionPanoplies;
-
 export type Item = {
   id: number;
   nom: string;
@@ -35,13 +24,6 @@ export type Item = {
   recetteConnue?: boolean;
   /** `undefined` si la source de drops n'a pas répondu pendant le sync. */
   droppable?: boolean;
-  /** Conditions d'équipement exploitables (caractéristiques, bonus de panoplie). */
-  conditions?: Condition[];
-  /**
-   * L'objet a d'autres conditions que l'app ne sait pas vérifier (quête, succès,
-   * alignement, abonnement, kamas…) : à contrôler en jeu.
-   */
-  conditionsNonVerifiables?: boolean;
 };
 
 export type RuneTier = 'simple' | 'pa' | 'ra';
@@ -113,15 +95,3 @@ export type DropsMeta = {
   nbMonstres: number;
   nbDrops: number;
 };
-
-/** Bonus d'une panoplie : caractéristiques gagnées à partir de N pièces portées. */
-export type Panoplie = {
-  id: number;
-  nom: string;
-  niveau: number;
-  /** Nombre de pièces → bonus cumulés à ce palier (valeurs absolues, pas incrémentales). */
-  bonus: Record<number, { statId: StatId; valeur: number }[]>;
-};
-
-/** Classe de personnage (données du jeu, DofusDB /breeds). */
-export type Classe = { id: number; nom: string };

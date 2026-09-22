@@ -23,9 +23,6 @@ import type {
   Item,
   Monstre,
   DropItem,
-  Panoplie,
-  Classe,
-  Condition,
   RuneDef,
   RuneTier,
   StatLine,
@@ -38,8 +35,6 @@ const DOFUSDUDE = 'https://api.dofusdu.de/dofus3/v1/fr';
 const DOFUSDUDE_IMG = 'https://api.dofusdu.de/dofus3/v1/img/item';
 const DOFUSDB = 'https://api.dofusdb.fr';
 const PAGE_SIZE = 1000;
-// L'endpoint /sets plafonne la taille de page à 500.
-const PAGE_SIZE_SETS = 500;
 const IMG_CONCURRENCY = 4;
 const IMG_MAX_TENTATIVES = 6;
 const IMG_SIZE = 48;
@@ -112,109 +107,6 @@ async function fetchFeathers<T>(chemin: string, select: string[], filtre = ''): 
     out.push(...d.data);
     process.stdout.write(`  ${chemin} : ${out.length}/${d.total}\r`);
     if (skip + 50 >= d.total || d.data.length === 0) break;
-  }
-  process.stdout.write('\n');
-  return out;
-}
-
-/**
- * Codes de conditions d'équipement de DofusDB → caractéristique du référentiel.
- * Mapping établi le 2026-09-22 en recoupant `criterions` (DofusDB) avec le champ
- * `conditions` de DofusDude, qui nomme les éléments en clair :
- *   CP<12&CM<6&CW>99  ↔  PA < 12 & PM < 6 & Sagesse > 99   (La Baguette des Limbes)
- *   CS>99&CA>99&CV>99 ↔  Force > 99 & Agilité > 99 & Vitalité > 99  (Neuf Queues)
- *   CI<100&CC<100     ↔  Intelligence < 100 & Chance < 100  (Anneau Mèr)
- *   Pk<3              ↔  Bonus de panoplies < 3             (Obstructeur mineur)
- */
-const CODE_CONDITION: Readonly<Record<string, StatId | 'panoplies'>> = {
-  CP: 'pa',
-  CM: 'pm',
-  CW: 'sagesse',
-  CS: 'force',
-  CI: 'intelligence',
-  CC: 'chance',
-  CA: 'agilite',
-  CV: 'vitalite',
-  Pk: 'panoplies',
-};
-
-/**
- * Découpe la chaîne `criterions` en conditions exploitables.
- * Tout ce qui n'est pas dans CODE_CONDITION (quêtes, succès, alignement,
- * abonnement, kamas…) est signalé comme non vérifiable plutôt qu'ignoré.
- */
-function parserConditions(criterions: string): { conditions: Condition[]; nonVerifiables: boolean } {
-  const conditions: Condition[] = [];
-  let nonVerifiables = false;
-  if (!criterions) return { conditions, nonVerifiables };
-  // Une alternative (|) ne se réduit pas à une contrainte simple : on ne tranche pas.
-  if (criterions.includes('|')) return { conditions, nonVerifiables: true };
-  for (const partie of criterions.split('&')) {
-    const m = partie.trim().match(/^\(*([A-Za-z]{2})([<>])(-?\d+)\)*$/);
-    if (!m) {
-      nonVerifiables = true;
-      continue;
-    }
-    const cible = CODE_CONDITION[m[1]];
-    if (!cible) {
-      nonVerifiables = true;
-      continue;
-    }
-    const operateur = m[2] as '>' | '<';
-    const valeur = Number(m[3]);
-    if (cible === 'panoplies') conditions.push({ panoplies: true, operateur, valeur });
-    else conditions.push({ statId: cible, operateur, valeur });
-  }
-  return { conditions, nonVerifiables };
-}
-
-/** Conditions d'équipement des objets du catalogue (DofusDB `criterions`). */
-async function fetchConditions(): Promise<Map<number, { conditions: Condition[]; nonVerifiables: boolean }>> {
-  const bruts = await fetchFeathers<{ id: number; criterions: string }>('items', ['id', 'criterions'], '&criterions[$ne]=');
-  const out = new Map<number, { conditions: Condition[]; nonVerifiables: boolean }>();
-  for (const b of bruts) {
-    const parsed = parserConditions(b.criterions);
-    if (parsed.conditions.length || parsed.nonVerifiables) out.set(b.id, parsed);
-  }
-  return out;
-}
-
-/** Les 19 classes du jeu. */
-async function fetchClasses(): Promise<Classe[]> {
-  const bruts = await fetchFeathers<{ id: number; shortName: { fr: string } }>('breeds', ['id', 'shortName']);
-  return bruts
-    .filter((b) => b.shortName?.fr)
-    .map((b) => ({ id: b.id, nom: b.shortName.fr }))
-    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
-}
-
-// ---------- Panoplies (DofusDude) ----------
-
-type ApiSet = {
-  ankama_id: number;
-  name: string;
-  level: number;
-  effects?: Record<string, ApiEffect[] | null>;
-};
-
-/** Bonus de panoplie par nombre de pièces, mappés sur le référentiel. */
-async function fetchPanoplies(acc: EffectAccumulator): Promise<Panoplie[]> {
-  const out: Panoplie[] = [];
-  for (let page = 1; ; page++) {
-    const url = `${DOFUSDUDE}/sets?page[size]=${PAGE_SIZE_SETS}&page[number]=${page}&fields[set]=effects`;
-    const data = await fetchJson<{ _links: { next: string | null }; sets: ApiSet[] }>(url);
-    if (!data.sets?.length) break;
-    for (const s of data.sets) {
-      const bonus: Panoplie['bonus'] = {};
-      for (const [nb, effets] of Object.entries(s.effects ?? {})) {
-        if (!effets?.length) continue;
-        const lignes = mapEffects(effets, s.name, acc).map((l) => ({ statId: l.statId, valeur: l.max }));
-        if (lignes.length) bonus[Number(nb)] = lignes;
-      }
-      if (Object.keys(bonus).length) out.push({ id: s.ankama_id, nom: s.name, niveau: s.level, bonus });
-    }
-    process.stdout.write(`  panoplies : ${out.length}\r`);
-    if (!data._links?.next) break;
   }
   process.stdout.write('\n');
   return out;
@@ -491,23 +383,6 @@ async function main() {
       tierOrder[a.tier] - tierOrder[b.tier],
   );
 
-  // --- Classes ---
-  const classes = await fetchClasses();
-
-  // --- Conditions d'équipement ---
-  console.log("▶ Conditions d'équipement…");
-  const conditions = await fetchConditions();
-  for (const it of items) {
-    const c = conditions.get(it.id);
-    if (!c) continue;
-    if (c.conditions.length) it.conditions = c.conditions;
-    if (c.nonVerifiables) it.conditionsNonVerifiables = true;
-  }
-
-  // --- Panoplies ---
-  console.log('▶ Panoplies…');
-  const panoplies = await fetchPanoplies(effectAcc);
-
   // --- Drops ---
   console.log('▶ Drops détaillés (monstres, zones, taux)…');
   let monstres: Monstre[] = [];
@@ -546,8 +421,6 @@ async function main() {
   await writeFile(path.join(DATA_DIR, 'effect-types.json'), JSON.stringify(effectReport, null, 1));
   await writeFile(path.join(DATA_DIR, 'meta.json'), JSON.stringify(meta, null, 1));
   await writeFile(path.join(DATA_DIR, 'monstres.json'), JSON.stringify(monstres));
-  await writeFile(path.join(DATA_DIR, 'panoplies.json'), JSON.stringify(panoplies));
-  await writeFile(path.join(DATA_DIR, 'classes.json'), JSON.stringify(classes));
 
   // --- Rapport ---
   const unmapped = effectReport.filter((r) => r.status === 'unmapped');
@@ -560,11 +433,6 @@ async function main() {
   console.log(`Runes               : ${runes.length}${runesIgnorees.length ? ` (ignorées : ${runesIgnorees.join(', ')})` : ''}`);
   console.log(`Images              : ${okIcons.size}/${allIconIds.length} téléchargées`);
   console.log(`Droppable           : ${droppableIds ? `${items.filter((i) => i.droppable).length} objets flagués` : 'indisponible'}`);
-  console.log(`Panoplies           : ${panoplies.length}`);
-  console.log(`Classes             : ${classes.length}`);
-  console.log(
-    `Conditions          : ${items.filter((i) => i.conditions?.length).length} objets à conditions vérifiables, ${items.filter((i) => i.conditionsNonVerifiables).length} à conditions non vérifiables`,
-  );
   console.log(
     `Monstres à drops    : ${monstres.length} (${monstres.reduce((n, m) => n + m.drops.length, 0)} couples monstre/objet, dont ${monstres.filter((m) => m.archimonstre).length} archimonstres)`,
   );

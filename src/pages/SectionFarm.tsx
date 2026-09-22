@@ -81,12 +81,9 @@ export function SectionFarm() {
           Niveau du perso
           <ChampNombre value={g.niveauJoueur} onChange={(v) => g.setNiveauJoueur(v ?? 1)} className="w-20" />
         </label>
-        <label className="flex flex-col gap-0.5" title="% de drop = % de l'objet × prospection / 100. Prospection de départ : 100.">
+        <label className="flex flex-col gap-0.5" title="Ta prospection totale telle qu'affichée en jeu (elle inclut déjà la chance : 1 point tous les 10). % de drop = % de l'objet × prospection / 100.">
           Prospection
-          <span className="flex items-center gap-1">
-            <ChampNombre value={g.prospection} onChange={(v) => g.setProspection(v ?? 100)} className="w-20" />
-            <a href="#perso" className="lien text-[11px]">stuff →</a>
-          </span>
+          <ChampNombre value={g.prospection} onChange={(v) => g.setProspection(v ?? 100)} className="w-20" />
         </label>
         <label className="flex flex-col gap-0.5" title="Monstres jusqu'à ce nombre de niveaux au-dessus du tien">
           Écart de niveau
