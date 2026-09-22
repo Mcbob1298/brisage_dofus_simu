@@ -13,7 +13,7 @@ import {
 } from '../engine/index.ts';
 import { useCatalogue } from '../store/catalogue.ts';
 import { budgetTest, niveauMaxIndicatif, useGuide, type Candidat } from '../store/guide.ts';
-import { dernierCoef, useNotes } from '../store/notes.ts';
+import { coutRetenu, dernierCoef, useNotes, type SourceCout } from '../store/notes.ts';
 import { useSimu } from '../store/simu.ts';
 import { useContexte } from './useSimulation.ts';
 
@@ -24,6 +24,9 @@ export type CandidatEvalue = {
   item: Item;
   prix: number | null;
   prixDate: string | null;
+  source: SourceCout | null;
+  prixHdv: number | null;
+  coutCraft: number | null;
   coef: number | null;
   coefDate: string | null;
   /** Valeur espérée brute à 100 %, meilleur focus (repère indépendant du coef). */
@@ -42,8 +45,11 @@ export type LigneValeur = { statId: StatId; jet: number; valeur: number };
 
 export type Suggestion = {
   eval: EvaluationItem;
-  /** Prix HDV noté, s'il existe. */
+  /** Coût d'acquisition retenu (le moins cher entre HDV et craft), s'il existe. */
   prix: number | null;
+  source: SourceCout | null;
+  prixHdv: number | null;
+  coutCraft: number | null;
   /** Prix max d'achat : valeur nette au coef supposé ÷ (1 + ROI visé). */
   prixMax: number;
   /** Lignes de l'objet classées par kamas rapportés (pour le reconnaître en HDV). */
@@ -87,9 +93,12 @@ export function useSuggestions(limite = 10): Suggestions {
   const { jet, candidats, kamasActuels, niveauMaxSuggestions, triSuggestions, partBudgetTest, coefSuppose, roiVise, categorieHdv } = useGuide();
   const budget = budgetTest(kamasActuels, partBudgetTest);
   const prixConstates = useNotes((s) => s.prixConstates);
+  const coutsCraft = useNotes((s) => s.coutsCraft);
   const taxePct = useSimu((s) => s.taxePct);
   const niveauMax = niveauMaxSuggestions ?? niveauMaxIndicatif(kamasActuels);
   const evaluations = useMemo(() => evaluerCatalogue(items, ctx, jet), [items, ctx, jet]);
+  // Un objet crafté vise les jets max : on réévalue en max ceux dont le craft est le coût retenu.
+  const evaluationsMax = useMemo(() => (jet === 'max' ? evaluations : evaluerCatalogue(items, ctx, 'max')), [items, ctx, jet, evaluations]);
   return useMemo(() => {
     const deja = new Set(candidats.map((c) => c.itemId));
     // Diviseur plancher à 20 : sinon les objets niveau 1 (souvent des récompenses de quête) écrasent le tri.
@@ -109,20 +118,23 @@ export function useSuggestions(limite = 10): Suggestions {
     const aChiffrer: Suggestion[] = [];
     let nbTropChers = 0;
     let nbNonRentables = 0;
-    for (const e of eligibles) {
-      const prix = prixConstates[e.item.id]?.prix ?? null;
+    for (let e of eligibles) {
+      const cout = coutRetenu(prixConstates[e.item.id], coutsCraft[e.item.id]);
+      const prix = cout?.prix ?? null;
+      const jetObjet = cout?.source === 'craft' ? 'max' : jet;
+      if (jetObjet === 'max' && jet !== 'max') e = evaluationsMax.find((x) => x.item.id === e.item.id) ?? e;
       const valeurNette100 = e.valeurMeilleure * facteurNet;
       // Prix max d'achat : ce que valent les runes au coef supposé, moins le ROI visé.
       const prixMax = (valeurNette100 * (coefSuppose / 100)) / (1 + roiVise / 100);
       // Lignes classées par kamas rapportés en brisage naturel (jet choisi, coef 100 %).
-      const lignes: LigneValeur[] = lignesDepuisItem(e.item, jet)
+      const lignes: LigneValeur[] = lignesDepuisItem(e.item, jetObjet)
         .filter((l) => l.jet > 0)
         .map((l) => {
           const r = calculerBrisage({ niveau: e.item.niveau, lignes: [l], coefficient: 100, focus: null }, ctx);
           return { statId: l.statId, jet: l.jet, valeur: r.valeurEsperee };
         })
         .sort((a, b) => b.valeur - a.valeur);
-      const base = { eval: e, prixMax, lignes };
+      const base = { eval: e, prixMax, lignes, source: cout?.source ?? null, prixHdv: prixConstates[e.item.id]?.prix ?? null, coutCraft: coutsCraft[e.item.id]?.prix ?? null };
       if (prix === null) {
         aChiffrer.push({ ...base, prix: null, beneficeEstime: null, roiEstime: null, seuilEstime: null });
         continue;
@@ -143,7 +155,7 @@ export function useSuggestions(limite = 10): Suggestions {
     siCoefEleve.sort((a, b) => a.seuilEstime! - b.seuilEstime!);
     aChiffrer.sort((a, b) => cle(b.eval) - cle(a.eval));
     return { surMesure, siCoefEleve, nbNonRentables, aChiffrer: aChiffrer.slice(0, limite), nbTropChers, budget, niveauMax, auto: niveauMaxSuggestions === null };
-  }, [evaluations, candidats, niveauMax, triSuggestions, limite, prixConstates, budget, taxePct, niveauMaxSuggestions, coefSuppose, roiVise, categorieHdv, jet, ctx]);
+  }, [evaluations, evaluationsMax, candidats, niveauMax, triSuggestions, limite, prixConstates, coutsCraft, budget, taxePct, niveauMaxSuggestions, coefSuppose, roiVise, categorieHdv, jet, ctx]);
 }
 
 export type KamasParPoint = { statId: StatId; label: string; kamasParPoint: number };
@@ -173,6 +185,7 @@ export function useCandidatsEvalues(): CandidatEvalue[] {
   const budget = budgetTest(kamasActuels, partBudgetTest);
   const coefs = useNotes((s) => s.coefs);
   const prixConstates = useNotes((s) => s.prixConstates);
+  const coutsCraft = useNotes((s) => s.coutsCraft);
   const taxePct = useSimu((s) => s.taxePct);
 
   return useMemo(() => {
@@ -180,11 +193,13 @@ export function useCandidatsEvalues(): CandidatEvalue[] {
     for (const c of candidats) {
       const item = parId.get(c.itemId);
       if (!item) continue;
-      const prix = prixConstates[c.itemId]?.prix ?? null;
-      const prixDate = prixConstates[c.itemId]?.date ?? null;
+      const cout = coutRetenu(prixConstates[c.itemId], coutsCraft[c.itemId]);
+      const prix = cout?.prix ?? null;
+      const prixDate = cout?.date ?? null;
       const dernier = dernierCoef(coefs[c.itemId]);
       const coef = dernier?.coef ?? null;
-      const lignes = lignesDepuisItem(item, jet);
+      // Crafté → jets max ; acheté → jets du réglage (moyens par défaut).
+      const lignes = lignesDepuisItem(item, cout?.source === 'craft' ? 'max' : jet);
       const options = { prixRevient: prix ?? 0, taxePct, nbObjets: 1 };
 
       // Meilleure stratégie au coef effectif (100 % par défaut, pour la valeur repère).
@@ -218,10 +233,10 @@ export function useCandidatsEvalues(): CandidatEvalue[] {
       const plan =
         etat === 'pret' && kamasActuels !== null && objectif !== null && prix !== null ? planifier(kamasActuels, objectif, prix, benefice) : null;
 
-      out.push({ candidat: c, item, prix, prixDate, coef, coefDate: dernier?.date ?? null, valeur100, focus, benefice, roi: coef === null ? null : bilan.roi, seuil, etat, plan });
+      out.push({ candidat: c, item, prix, prixDate, source: cout?.source ?? null, prixHdv: prixConstates[c.itemId]?.prix ?? null, coutCraft: coutsCraft[c.itemId]?.prix ?? null, coef, coefDate: dernier?.date ?? null, valeur100, focus, benefice, roi: coef === null ? null : bilan.roi, seuil, etat, plan });
     }
     return out;
-  }, [candidats, parId, ctx, jet, coefs, prixConstates, taxePct, kamasActuels, objectif, budget]);
+  }, [candidats, parId, ctx, jet, coefs, prixConstates, coutsCraft, taxePct, kamasActuels, objectif, budget]);
 }
 
 /** Stratégie retenue : choix manuel s'il est encore valable, sinon le meilleur gain par cycle. */

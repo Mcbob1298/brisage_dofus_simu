@@ -132,6 +132,10 @@
   .champ::placeholder {
     color: var(--encre-3);
   }
+  .champ:disabled {
+    opacity: 0.45;
+    background: var(--surface-2);
+  }
   .btn {
     display: inline-flex;
     align-items: center;

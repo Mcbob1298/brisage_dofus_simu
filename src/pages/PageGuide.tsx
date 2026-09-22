@@ -55,6 +55,7 @@ function Objet({ item, taille = 24 }: { item: Item; taille?: number }) {
 /** Ligne d'un candidat : prix HDV et coef lu sont les deux saisies du « test ». */
 function LigneCandidat({ e, ouvrir }: { e: CandidatEvalue; ouvrir: (item: Item) => void }) {
   const setPrixConstate = useNotes((s) => s.setPrixConstate);
+  const setCoutCraft = useNotes((s) => s.setCoutCraft);
   const ajouterCoef = useNotes((s) => s.ajouterCoef);
   const { retirerCandidat, setStatut } = useGuide();
   const [coefSaisi, setCoefSaisi] = useState<number | null>(null);
@@ -68,13 +69,25 @@ function LigneCandidat({ e, ouvrir }: { e: CandidatEvalue; ouvrir: (item: Item) 
         {formatKamas(e.valeur100)}
       </td>
       <td className="px-2 py-1">
-        <ChampNombre value={e.prix} onChange={(v) => setPrixConstate(e.item.id, v)} vide placeholder="prix HDV" className="w-24 [&>input]:h-7" aria-label={`Prix ${e.item.nom}`} />
+        <span className="flex items-center gap-1">
+          <ChampNombre value={e.prixHdv} onChange={(v) => setPrixConstate(e.item.id, v)} vide placeholder="HDV" className={`w-20 [&>input]:h-7 ${e.source === 'hdv' ? '[&>input]:border-accent' : ''}`} aria-label={`Prix HDV ${e.item.nom}`} />
+          <ChampNombre
+            value={e.coutCraft}
+            onChange={(v) => setCoutCraft(e.item.id, v)}
+            vide
+            placeholder={e.item.recetteConnue ? 'craft' : '—'}
+            disabled={!e.item.recetteConnue}
+            className={`w-20 [&>input]:h-7 ${e.source === 'craft' ? '[&>input]:border-accent' : ''}`}
+            aria-label={`Coût de craft ${e.item.nom}`}
+            title={e.item.recetteConnue ? 'Coût total du craft (ressources)' : 'Pas de recette connue'}
+          />
+        </span>
         {e.prixDate && (
           <span
             className={`block text-[10px] ${joursDepuis(e.prixDate) > JOURS_PERIME ? 'text-alerte' : 'text-encre-2'}`}
             title={joursDepuis(e.prixDate) > JOURS_PERIME ? `Prix vieux de ${joursDepuis(e.prixDate)} jours : à vérifier` : undefined}
           >
-            {joursDepuis(e.prixDate) > JOURS_PERIME ? '⚠ ' : ''}noté le {formatDate(e.prixDate)}
+            {joursDepuis(e.prixDate) > JOURS_PERIME ? '⚠ ' : ''}{e.source === 'craft' ? 'craft' : 'HDV'} retenu · {formatDate(e.prixDate)}
           </span>
         )}
       </td>
@@ -143,6 +156,7 @@ function LigneCandidat({ e, ouvrir }: { e: CandidatEvalue; ouvrir: (item: Item) 
 /** Une suggestion : prix max d'achat, lignes à reconnaître en HDV, prix saisi ici → enregistré partout. */
 function LigneSuggestion({ s, onAjouter }: { s: Suggestion; onAjouter: () => void }) {
   const setPrixConstate = useNotes((st) => st.setPrixConstate);
+  const setCoutCraft = useNotes((st) => st.setCoutCraft);
   const item = s.eval.item;
   return (
     <li className="flex items-center gap-2 px-2 py-1.5 text-sm">
@@ -168,7 +182,7 @@ function LigneSuggestion({ s, onAjouter }: { s: Suggestion; onAjouter: () => voi
           <span className="block text-[10px] text-encre-2">{formatKamas(s.eval.valeurMeilleure)} de runes</span>
         ) : s.beneficeEstime > 0 ? (
           <span className="block text-[10px] text-ok">
-            +{formatKamas(s.beneficeEstime)}{s.roiEstime !== null ? ` · ROI ${formatPct(s.roiEstime)}` : ''}
+            +{formatKamas(s.beneficeEstime)}{s.roiEstime !== null ? ` · ROI ${formatPct(s.roiEstime)}` : ''}{s.source === 'craft' ? ' · craft' : ''}
           </span>
         ) : (
           <span className="block text-[10px] text-alerte" title="À ce prix, rentable seulement si le concasseur affiche au moins ce coefficient">
@@ -176,15 +190,27 @@ function LigneSuggestion({ s, onAjouter }: { s: Suggestion; onAjouter: () => voi
           </span>
         )}
       </span>
-      <ChampNombre
-        value={s.prix}
-        onChange={(v) => setPrixConstate(item.id, v)}
-        vide
-        placeholder="prix vu"
-        className="w-22 shrink-0 [&>input]:h-7"
-        aria-label={`Prix HDV ${item.nom}`}
-        title="Prix vu en HDV : au-dessus du prix max il disparaît, en dessous il passe en bonne affaire"
-      />
+      <span className="flex shrink-0 flex-col gap-0.5">
+        <ChampNombre
+          value={s.prixHdv}
+          onChange={(v) => setPrixConstate(item.id, v)}
+          vide
+          placeholder="HDV"
+          className={`w-22 [&>input]:h-6 [&>input]:text-xs ${s.source === 'hdv' ? '[&>input]:border-accent' : ''}`}
+          aria-label={`Prix HDV ${item.nom}`}
+          title="Prix vu en HDV : au-dessus du prix max il disparaît, en dessous il passe en bonne affaire"
+        />
+        <ChampNombre
+          value={s.coutCraft}
+          onChange={(v) => setCoutCraft(item.id, v)}
+          vide
+          placeholder={item.recetteConnue ? 'craft' : '—'}
+          disabled={!item.recetteConnue}
+          className={`w-22 [&>input]:h-6 [&>input]:text-xs ${s.source === 'craft' ? '[&>input]:border-accent' : ''}`}
+          aria-label={`Coût de craft ${item.nom}`}
+          title={item.recetteConnue ? 'Coût total du craft (ressources) : comparé au même prix max ; si retenu, l\'objet est évalué en jets max' : 'Pas de recette connue'}
+        />
+      </span>
       <button onClick={onAjouter} className="btn btn-petit shrink-0 px-1.5" aria-label={`Ajouter ${item.nom}`} title="Ajouter aux objets à tester">
         +
       </button>
@@ -306,7 +332,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
                   <th className="px-2 py-1.5 text-right font-medium" title="Repère à coef. 100 %">
                     Runes @100 %
                   </th>
-                  <th className="px-2 py-1.5 font-medium">Prix HDV</th>
+                  <th className="px-2 py-1.5 font-medium">HDV / craft</th>
                   <th className="px-2 py-1.5 font-medium">Coef lu</th>
                   <th className="px-2 py-1.5 font-medium">Stratégie</th>
                   <th className="px-2 py-1.5 text-right font-medium">Bénéfice / objet</th>
@@ -419,7 +445,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
               {suggestions.aChiffrer.length === 0 && <li className="px-2 py-1 text-xs text-encre-2">Plus rien à chiffrer dans cette tranche.</li>}
             </ul>
             <p className="mt-1 text-xs text-encre-2">
-              Aucune API ne donne les prix HDV : parcours la catégorie en HDV, compare au « achète si ≤ ». Un prix noté au-dessus du prix max (ou du budget de test) retire l'objet
+              Aucune API ne donne les prix HDV ni le coût des ressources : parcours la catégorie en HDV (ou chiffre la recette), compare au « ≤ » ; le moins cher des deux est retenu, et un craft retenu est évalué en jets max. Un prix noté au-dessus du prix max (ou du budget de test) retire l'objet
               {suggestions.nbTropChers > 0 && <span className="tnum"> ({suggestions.nbTropChers} masqué{suggestions.nbTropChers > 1 ? 's' : ''} pour l'instant)</span>}, un prix
               sous le prix max le fait remonter en « bonnes affaires »
               {suggestions.nbNonRentables > 0 && (
