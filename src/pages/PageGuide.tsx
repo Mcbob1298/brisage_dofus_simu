@@ -6,7 +6,7 @@ import { Courbe } from '../components/Courbe.tsx';
 import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
 import { RechercheObjet } from '../components/RechercheObjet.tsx';
-import { strategieRetenue, useCandidatsEvalues, useSuggestions, type CandidatEvalue, type EtatCandidat } from '../hooks/useGuide.ts';
+import { strategieRetenue, useCandidatsEvalues, useSuggestions, type CandidatEvalue, type EtatCandidat, type Suggestion } from '../hooks/useGuide.ts';
 import { formatDate, formatKamas, formatNombre, formatPct, joursDepuis } from '../lib/format.ts';
 import { JOURS_PERIME } from '../store/prix.ts';
 import { useCatalogue } from '../store/catalogue.ts';
@@ -137,6 +137,38 @@ function LigneCandidat({ e, ouvrir }: { e: CandidatEvalue; ouvrir: (item: Item) 
         </button>
       </td>
     </tr>
+  );
+}
+
+/** Une suggestion : prix HDV saisi ici → enregistré partout, et la liste se recompose. */
+function LigneSuggestion({ s, onAjouter }: { s: Suggestion; onAjouter: () => void }) {
+  const setPrixConstate = useNotes((st) => st.setPrixConstate);
+  return (
+    <li className="flex items-center gap-2 px-2 py-1 text-sm">
+      <Objet item={s.eval.item} />
+      <span className="tnum ml-auto text-right text-xs text-zinc-500" title="Valeur espérée des runes à coef. 100 % · valeur ÷ niveau">
+        {formatKamas(s.eval.valeurMeilleure)}
+        {s.beneficeEstime === null ? (
+          <span className="block text-[10px]">{formatNombre(s.eval.valeurMeilleure / Math.max(20, s.eval.item.niveau))} / niv.</span>
+        ) : (
+          <span className={`block text-[10px] ${s.beneficeEstime > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`} title="Bénéfice estimé à coef. 100 %, net de taxe, avant test du coefficient">
+            {s.beneficeEstime >= 0 ? '+' : ''}
+            {formatKamas(s.beneficeEstime)} @100 %{s.roiEstime !== null ? ` · ROI ${formatPct(s.roiEstime)}` : ''}
+          </span>
+        )}
+      </span>
+      <ChampNombre
+        value={s.prix}
+        onChange={(v) => setPrixConstate(s.eval.item.id, v)}
+        vide
+        placeholder="prix HDV"
+        className="w-24 [&>input]:h-7"
+        aria-label={`Prix HDV ${s.eval.item.nom}`}
+      />
+      <button onClick={onAjouter} className="rounded border border-zinc-300 px-1.5 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800" aria-label={`Ajouter ${s.eval.item.nom}`} title="Ajouter aux objets à tester">
+        +
+      </button>
+    </li>
   );
 }
 
@@ -278,23 +310,27 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
                 <option value="valeur">valeur brute</option>
               </select>
             </div>
+            {suggestions.surMesure.length > 0 && (
+              <>
+                <div className="mb-1 mt-2 text-[11px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Sur mesure — dans ta bourse, prix notés</div>
+                <ul className="mb-2 divide-y divide-emerald-100 rounded border border-emerald-200 bg-emerald-50/40 dark:divide-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30">
+                  {suggestions.surMesure.map((s) => (
+                    <LigneSuggestion key={s.eval.item.id} s={s} onAjouter={() => g.ajouterCandidat(s.eval.item.id)} />
+                  ))}
+                </ul>
+              </>
+            )}
+            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-zinc-500">À chiffrer — note le prix HDV, la liste se met à jour</div>
             <ul className="divide-y divide-zinc-100 rounded border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-              {suggestions.liste.map((s) => (
-                <li key={s.item.id} className="flex items-center gap-2 px-2 py-1 text-sm">
-                  <Objet item={s.item} />
-                  <span className="tnum ml-auto text-right text-xs text-zinc-500" title="Valeur espérée des runes à coef. 100 % · valeur ÷ niveau">
-                    {formatKamas(s.valeurMeilleure)}
-                    <span className="block text-[10px]">{formatNombre(s.valeurMeilleure / Math.max(20, s.item.niveau))} / niv.</span>
-                  </span>
-                  <button onClick={() => g.ajouterCandidat(s.item.id)} className="rounded border border-zinc-300 px-1.5 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800" aria-label={`Ajouter ${s.item.nom}`}>
-                    +
-                  </button>
-                </li>
+              {suggestions.aChiffrer.map((s) => (
+                <LigneSuggestion key={s.eval.item.id} s={s} onAjouter={() => g.ajouterCandidat(s.eval.item.id)} />
               ))}
-              {suggestions.liste.length === 0 && <li className="px-2 py-1 text-xs text-zinc-500">Aucune suggestion dans cette tranche (prix de runes manquants ?).</li>}
+              {suggestions.aChiffrer.length === 0 && <li className="px-2 py-1 text-xs text-zinc-500">Plus rien à chiffrer dans cette tranche.</li>}
             </ul>
             <p className="mt-1 text-xs text-zinc-500">
-              Aucune API ne donne les prix HDV : vise une tranche de niveau que ta bourse permet d'acheter par lots, et note le prix réel de chaque candidat.
+              Aucune API ne donne les prix HDV : un prix noté trop cher pour ta bourse retire l'objet des suggestions
+              {suggestions.nbTropChers > 0 && <span className="tnum"> ({suggestions.nbTropChers} masqué{suggestions.nbTropChers > 1 ? 's' : ''} pour l'instant)</span>}, un prix
+              abordable le fait remonter en « sur mesure ».
             </p>
             <button onClick={() => aller('explorateur')} className="mt-1 text-xs text-sky-600 hover:underline dark:text-sky-400">
               Voir tout l'explorateur →

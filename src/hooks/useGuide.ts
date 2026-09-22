@@ -38,27 +38,65 @@ export type CandidatEvalue = {
   plan: Plan | null;
 };
 
+export type Suggestion = {
+  eval: EvaluationItem;
+  /** Prix HDV noté, s'il existe. */
+  prix: number | null;
+  /** Bénéfice estimé à coef 100 % (valeur nette de taxe − prix), si prix noté. */
+  beneficeEstime: number | null;
+  roiEstime: number | null;
+};
+
+export type Suggestions = {
+  /** Objets dont le prix noté rentre dans la bourse, classés par bénéfice estimé. */
+  surMesure: Suggestion[];
+  /** Objets sans prix noté, classés par densité ou valeur. */
+  aChiffrer: Suggestion[];
+  /** Objets écartés parce que leur prix noté dépasse la bourse. */
+  nbTropChers: number;
+  niveauMax: number;
+  auto: boolean;
+};
+
 /**
  * Suggestions : objets non droppables, aux runes toutes pricées, pas encore
- * candidats, dans la tranche de niveau choisie (ou indicative selon la bourse),
- * triés par valeur ÷ niveau (objets denses) ou par valeur brute.
+ * candidats, dans la tranche de niveau choisie (ou indicative selon la bourse).
+ * Un prix HDV noté trop cher pour la bourse retire l'objet ; un prix abordable
+ * le fait passer dans le bloc « sur mesure », classé par bénéfice estimé.
  */
-export function useSuggestions(limite = 10): { liste: EvaluationItem[]; niveauMax: number; auto: boolean } {
+export function useSuggestions(limite = 10): Suggestions {
   const items = useCatalogue((s) => s.items);
   const ctx = useContexte();
   const { jet, candidats, kamasActuels, niveauMaxSuggestions, triSuggestions } = useGuide();
+  const prixConstates = useNotes((s) => s.prixConstates);
+  const taxePct = useSimu((s) => s.taxePct);
   const niveauMax = niveauMaxSuggestions ?? niveauMaxIndicatif(kamasActuels);
   const evaluations = useMemo(() => evaluerCatalogue(items, ctx, jet), [items, ctx, jet]);
-  const liste = useMemo(() => {
+  return useMemo(() => {
     const deja = new Set(candidats.map((c) => c.itemId));
     // Diviseur plancher à 20 : sinon les objets niveau 1 (souvent des récompenses de quête) écrasent le tri.
     const cle = (e: EvaluationItem) => (triSuggestions === 'densite' ? e.valeurMeilleure / Math.max(20, e.item.niveau) : e.valeurMeilleure);
-    return evaluations
-      .filter((e) => e.item.stats.length > 0 && e.item.droppable !== true && !e.prixManquants && !deja.has(e.item.id) && e.item.niveau <= niveauMax)
-      .sort((a, b) => cle(b) - cle(a))
-      .slice(0, limite);
-  }, [evaluations, candidats, niveauMax, triSuggestions, limite]);
-  return { liste, niveauMax, auto: niveauMaxSuggestions === null };
+    const eligibles = evaluations.filter(
+      (e) => e.item.stats.length > 0 && e.item.droppable !== true && !e.prixManquants && !deja.has(e.item.id) && e.item.niveau <= niveauMax,
+    );
+    const surMesure: Suggestion[] = [];
+    const aChiffrer: Suggestion[] = [];
+    let nbTropChers = 0;
+    for (const e of eligibles) {
+      const prix = prixConstates[e.item.id]?.prix ?? null;
+      if (prix === null) {
+        aChiffrer.push({ eval: e, prix: null, beneficeEstime: null, roiEstime: null });
+      } else if (kamasActuels !== null && prix > kamasActuels) {
+        nbTropChers++;
+      } else {
+        const beneficeEstime = e.valeurMeilleure * (1 - taxePct / 100) - prix;
+        surMesure.push({ eval: e, prix, beneficeEstime, roiEstime: prix > 0 ? (beneficeEstime / prix) * 100 : null });
+      }
+    }
+    surMesure.sort((a, b) => b.beneficeEstime! - a.beneficeEstime!);
+    aChiffrer.sort((a, b) => cle(b.eval) - cle(a.eval));
+    return { surMesure, aChiffrer: aChiffrer.slice(0, limite), nbTropChers, niveauMax, auto: niveauMaxSuggestions === null };
+  }, [evaluations, candidats, niveauMax, triSuggestions, limite, prixConstates, kamasActuels, taxePct, niveauMaxSuggestions]);
 }
 
 export function useCandidatsEvalues(): CandidatEvalue[] {
