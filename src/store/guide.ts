@@ -23,6 +23,14 @@ export type PointKamas = { date: string; kamas: number };
 export type JetGuide = 'min' | 'moyen' | 'max';
 export type TriSuggestions = 'densite' | 'valeur';
 
+/** Part de la bourse qu'un seul test peut consommer, par défaut (en %). */
+export const PART_BUDGET_TEST_DEFAUT = 20;
+
+/** Budget maximal d'un test : on ne mise jamais toute la bourse sur un seul objet à tester. */
+export function budgetTest(kamas: number | null, partPct: number): number | null {
+  return kamas === null ? null : Math.floor((kamas * partPct) / 100);
+}
+
 /**
  * Tranche de niveau indicative selon la bourse. L'app ne connaît pas les prix
  * HDV : le niveau est le seul proxy de prix disponible, et cette règle n'est
@@ -41,6 +49,8 @@ type EtatGuide = {
   /** Jets supposés des objets achetés : « moyen » est prudent pour de l'HDV. */
   jet: JetGuide;
   candidats: Candidat[];
+  /** Part de la bourse (en %) qu'un test peut consommer. */
+  partBudgetTest: number;
   /** Niveau max des suggestions, null = indicatif selon la bourse. */
   niveauMaxSuggestions: number | null;
   triSuggestions: TriSuggestions;
@@ -51,6 +61,7 @@ type EtatGuide = {
   setKamas: (kamas: number | null) => void;
   setObjectif: (objectif: number | null) => void;
   setJet: (jet: JetGuide) => void;
+  setPartBudgetTest: (pct: number) => void;
   setNiveauMaxSuggestions: (n: number | null) => void;
   setTriSuggestions: (t: TriSuggestions) => void;
   ajouterCandidat: (itemId: number) => void;
@@ -67,6 +78,7 @@ const etatInitial = {
   objectif: null,
   jet: 'moyen' as JetGuide,
   candidats: [] as Candidat[],
+  partBudgetTest: PART_BUDGET_TEST_DEFAUT,
   niveauMaxSuggestions: null as number | null,
   triSuggestions: 'densite' as TriSuggestions,
   strategieItemId: null,
@@ -86,6 +98,7 @@ export const useGuide = create<EtatGuide>()(
         })),
       setObjectif: (objectif) => set({ objectif }),
       setJet: (jet) => set({ jet }),
+      setPartBudgetTest: (partBudgetTest) => set({ partBudgetTest: Math.min(100, Math.max(1, partBudgetTest)) }),
       setNiveauMaxSuggestions: (niveauMaxSuggestions) => set({ niveauMaxSuggestions }),
       setTriSuggestions: (triSuggestions) => set({ triSuggestions }),
       ajouterCandidat: (itemId) =>
@@ -122,6 +135,10 @@ export const useGuide = create<EtatGuide>()(
         }),
       reinitialiser: () => set({ ...etatInitial }),
     }),
-    { name: 'brisage.guide', version: 1 },
+    {
+      name: 'brisage.guide',
+      version: 2,
+      migrate: (persisted) => ({ partBudgetTest: PART_BUDGET_TEST_DEFAUT, ...(persisted as object) }),
+    },
   ),
 );

@@ -3,7 +3,7 @@ import { ChampNombre } from './ChampNombre.tsx';
 
 function Champ({ label, children, aide }: { label: string; children: React.ReactNode; aide?: string }) {
   return (
-    <label className="flex flex-col gap-0.5 text-xs text-zinc-500">
+    <label className="flex flex-col gap-0.5 text-xs text-encre-2">
       <span title={aide}>{label}</span>
       {children}
     </label>

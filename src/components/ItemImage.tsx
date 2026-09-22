@@ -14,7 +14,7 @@ export function ItemImage({ src, alt, fallback = '/img/placeholder/objet.svg', t
       loading="lazy"
       decoding="async"
       onError={() => setErreur(true)}
-      className={`shrink-0 rounded bg-zinc-200/60 dark:bg-zinc-800 ${className}`}
+      className={`shrink-0 rounded bg-fond-2 ${className}`}
       style={{ width: taille, height: taille, imageRendering: taille > 48 ? 'pixelated' : 'auto' }}
     />
   );

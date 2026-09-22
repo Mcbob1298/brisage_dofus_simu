@@ -78,7 +78,7 @@ export function RechercheObjet({ onChoisir }: { onChoisir: (item: Item) => void 
           aria-expanded={ouvert && resultats.length > 0}
           aria-controls="resultats-recherche"
           aria-autocomplete="list"
-          className="h-9 min-w-[16rem] flex-1 rounded border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 dark:border-zinc-700 dark:bg-zinc-900"
+          className="champ h-9 min-w-[16rem] flex-1 px-3"
         />
         <select
           value={filtres.type ?? ''}
@@ -86,7 +86,7 @@ export function RechercheObjet({ onChoisir }: { onChoisir: (item: Item) => void 
             setFiltres((f) => ({ ...f, type: e.target.value || null }));
             setOuvert(true);
           }}
-          className="h-9 rounded border border-zinc-300 bg-white px-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="champ h-9"
           aria-label="Filtrer par type"
         >
           <option value="">Tous types</option>
@@ -97,7 +97,7 @@ export function RechercheObjet({ onChoisir }: { onChoisir: (item: Item) => void 
             </option>
           ))}
         </select>
-        <span className="flex items-center gap-1 text-xs text-zinc-500">
+        <span className="flex items-center gap-1 text-xs text-encre-2">
           Niv.
           <ChampNombre value={filtres.niveauMin} onChange={setNiveau('niveauMin')} vide placeholder="min" className="w-16" aria-label="Niveau minimum" />
           –
@@ -110,7 +110,7 @@ export function RechercheObjet({ onChoisir }: { onChoisir: (item: Item) => void 
           id="resultats-recherche"
           ref={listeRef}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-96 w-full overflow-y-auto rounded border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+          className="carte absolute z-20 mt-1 max-h-96 w-full overflow-y-auto shadow-lg"
         >
           {resultats.map((item, i) => (
             <li
@@ -123,22 +123,22 @@ export function RechercheObjet({ onChoisir }: { onChoisir: (item: Item) => void 
               }}
               onMouseEnter={() => setActif(i)}
               className={`flex cursor-pointer items-center gap-2 px-2 py-1 text-sm ${
-                i === actif ? 'bg-sky-100 dark:bg-sky-900/40' : ''
+                i === actif ? 'bg-accent-doux' : ''
               }`}
             >
               <ItemImage src={item.imageLocale} alt="" fallback={placeholderPour(item.type, item.famille)} taille={28} />
               <span className="min-w-0 flex-1 truncate">{item.nom}</span>
-              <span className="tnum text-xs text-zinc-500">niv. {item.niveau}</span>
-              <span className="w-24 truncate text-right text-xs text-zinc-500">{item.type}</span>
+              <span className="tnum text-xs text-encre-2">niv. {item.niveau}</span>
+              <span className="w-24 truncate text-right text-xs text-encre-2">{item.type}</span>
             </li>
           ))}
           {resultats.length === LIMITE && (
-            <li className="px-2 py-1 text-xs text-zinc-500">Affine ta recherche pour voir plus de résultats.</li>
+            <li className="px-2 py-1 text-xs text-encre-2">Affine ta recherche pour voir plus de résultats.</li>
           )}
         </ul>
       )}
       {ouvert && resultats.length === 0 && (requete.trim() !== '' || filtresActifs) && index && (
-        <div className="absolute z-20 mt-1 w-full rounded border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-500 shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="carte absolute z-20 mt-1 w-full px-3 py-2 text-sm text-encre-2 shadow-lg">
           Aucun objet trouvé.
         </div>
       )}

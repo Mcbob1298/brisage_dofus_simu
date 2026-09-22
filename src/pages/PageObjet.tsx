@@ -14,17 +14,17 @@ import type { Onglet } from '../components/EnTete.tsx';
 
 function Badge({ children, ton = 'neutre' }: { children: React.ReactNode; ton?: 'neutre' | 'alerte' | 'ok' }) {
   const cls = {
-    neutre: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
-    alerte: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
-    ok: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    neutre: 'bg-surface-2 text-encre-2',
+    alerte: 'bg-alerte-doux text-alerte',
+    ok: 'bg-ok-doux text-ok',
   }[ton];
   return <span className={`rounded px-1.5 py-0.5 text-xs ${cls}`}>{children}</span>;
 }
 
 function Carte({ titre, children, className = '' }: { titre?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900 ${className}`}>
-      {titre && <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">{titre}</h3>}
+    <div className={`carte p-3 ${className}`}>
+      {titre && <h3 className="mb-2 titre-section">{titre}</h3>}
       {children}
     </div>
   );
@@ -40,7 +40,7 @@ function ConseilFocus({ sim, onVoir }: { sim: Simulation; onVoir: () => void }) 
   const gain = meilleur.bilan[cle].benefice - courant.bilan[cle].benefice;
   if (meilleur.focus === sim.entree.focus || gain <= 0) return null;
   return (
-    <p className="rounded border border-sky-200 bg-sky-50 px-2 py-1 text-xs text-sky-800 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-200">
+    <p className="rounded border border-info/40 bg-info-doux px-2 py-1 text-xs text-info">
       {meilleur.focus === null ? 'Le brisage naturel' : `Un focus ${STAT_BY_ID[meilleur.focus].label}`} rapporterait{' '}
       <span className="tnum font-medium">+{formatKamas(gain)}</span>.{' '}
       <button onClick={onVoir} className="underline">
@@ -61,13 +61,13 @@ export function PageObjet({ sim, aller }: { sim: Simulation | null; aller: (o: O
       <RechercheObjet onChoisir={choisirObjet} />
 
       {statut === 'erreur' && (
-        <p className="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+        <p className="rounded border border-ko/40 bg-ko-doux p-2 text-sm text-ko">
           Catalogue introuvable ({erreur}). Lance <code>npm run sync-data</code> puis recharge.
         </p>
       )}
 
       {!item && statut === 'pret' && (
-        <p className="text-sm text-zinc-500">Cherche un objet pour remplir ses caractéristiques automatiquement.</p>
+        <p className="text-sm text-encre-2">Cherche un objet pour remplir ses caractéristiques automatiquement.</p>
       )}
 
       {item && sim && (
@@ -78,7 +78,7 @@ export function PageObjet({ sim, aller }: { sim: Simulation | null; aller: (o: O
                 <ItemImage src={item.imageLocale} alt="" fallback={placeholderPour(item.type, item.famille)} taille={48} />
                 <div className="min-w-0">
                   <h2 className="truncate text-base font-semibold">{item.nom}</h2>
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-zinc-500">
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-encre-2">
                     <span className="tnum">niveau {item.niveau}</span>
                     <span>·</span>
                     <span>{item.type}</span>

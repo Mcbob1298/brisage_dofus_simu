@@ -17,14 +17,14 @@ function LigneRune({ rune }: { rune: RuneDef }) {
   const jours = enregistre ? joursDepuis(enregistre.date) : null;
   const perime = jours !== null && jours > JOURS_PERIME;
   return (
-    <tr className="border-t border-zinc-100 dark:border-zinc-800">
+    <tr className="border-t border-bord">
       <td className="w-9 py-1 pr-2">
         <RuneImage rune={rune} taille={28} />
       </td>
       <td className="py-1 text-sm">
         {rune.nom}
         {rune.tier !== 'simple' && (
-          <span className="ml-1.5 rounded bg-zinc-100 px-1 text-[10px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+          <span className="ml-1.5 rounded bg-surface-2 px-1 text-[10px] font-medium text-encre-2">
             {TIER_LABEL[rune.tier]} · {rune.valeur} pts
           </span>
         )}
@@ -42,14 +42,14 @@ function LigneRune({ rune }: { rune: RuneDef }) {
       <td className="tnum w-28 py-1 pl-2 text-right text-xs whitespace-nowrap">
         {enregistre ? (
           <span
-            className={perime ? 'rounded bg-orange-100 px-1 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' : 'text-zinc-500'}
+            className={perime ? 'rounded bg-alerte-doux px-1 text-alerte' : 'text-encre-2'}
             title={perime ? `Prix vieux de ${jours} jours` : 'Dernière mise à jour'}
           >
             {formatDate(enregistre.date)}
             {perime && ' ⚠'}
           </span>
         ) : (
-          <span className="text-zinc-400">non renseigné</span>
+          <span className="text-encre-3">non renseigné</span>
         )}
       </td>
     </tr>
@@ -60,7 +60,7 @@ function GroupeStat({ statId, runes }: { statId: StatId; runes: RuneDef[] }) {
   return (
     <tbody>
       <tr>
-        <th colSpan={4} className="bg-zinc-50 px-1 pt-3 pb-1 text-left text-xs font-medium uppercase tracking-wide text-zinc-500 dark:bg-zinc-900">
+        <th colSpan={4} className="px-1 pt-3 pb-1 text-left titre-section">
           {STAT_BY_ID[statId].label}
         </th>
       </tr>
@@ -137,13 +137,13 @@ export function PagePrix() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div role="tablist" className="inline-flex rounded border border-zinc-300 dark:border-zinc-700">
+        <div role="tablist" className="segment">
           <button
             role="tab"
             aria-selected={onglet === 'objet'}
             onClick={() => setOnglet('objet')}
             disabled={!item}
-            className={`rounded-l px-3 py-1 text-sm disabled:opacity-40 ${onglet === 'objet' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : ''}`}
+            className={`rounded-l px-3 py-1 text-sm disabled:opacity-40 ${onglet === 'objet' ? 'bg-accent text-white dark:text-[#1a1208]' : ''}`}
           >
             {item ? `Runes de « ${item.nom} »` : 'Objet en cours'}
           </button>
@@ -151,7 +151,7 @@ export function PagePrix() {
             role="tab"
             aria-selected={onglet === 'toutes'}
             onClick={() => setOnglet('toutes')}
-            className={`rounded-r px-3 py-1 text-sm ${onglet === 'toutes' ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : ''}`}
+            className={`rounded-r px-3 py-1 text-sm ${onglet === 'toutes' ? 'bg-accent text-white dark:text-[#1a1208]' : ''}`}
           >
             Toutes les runes
           </button>
@@ -162,18 +162,18 @@ export function PagePrix() {
             value={recherche}
             onChange={(e) => setRecherche(e.target.value)}
             placeholder="Filtrer (Fo, Vitalité, Ra…)"
-            className="h-8 w-56 rounded border border-zinc-300 bg-white px-2 text-sm outline-none focus:border-sky-500 dark:border-zinc-700 dark:bg-zinc-900"
+            className="champ w-56"
           />
         )}
-        <span className="tnum text-xs text-zinc-500">
+        <span className="tnum text-xs text-encre-2">
           {nbRenseignes}/{runes.length} prix renseignés
-          {nbPerimes > 0 && <span className="ml-1 text-orange-600 dark:text-orange-400">· {nbPerimes} périmés (&gt; {JOURS_PERIME} j)</span>}
+          {nbPerimes > 0 && <span className="ml-1 text-alerte">· {nbPerimes} périmés (&gt; {JOURS_PERIME} j)</span>}
         </span>
         <div className="ml-auto flex items-center gap-1">
-          <button onClick={telecharger} className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800">
+          <button onClick={telecharger} className="btn btn-petit">
             Exporter JSON
           </button>
-          <button onClick={() => fichierRef.current?.click()} className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800">
+          <button onClick={() => fichierRef.current?.click()} className="btn btn-petit">
             Importer JSON
           </button>
           <input ref={fichierRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => void charger(e.target.files?.[0])} />
@@ -182,7 +182,7 @@ export function PagePrix() {
               onClick={() => {
                 if (confirm('Effacer tous les prix enregistrés ?')) toutEffacer();
               }}
-              className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+              className="btn btn-petit border-transparent text-ko hover:bg-ko-doux"
             >
               Tout effacer
             </button>
@@ -191,7 +191,7 @@ export function PagePrix() {
       </div>
 
       {message && (
-        <p className="rounded border border-sky-200 bg-sky-50 px-2 py-1 text-xs text-sky-800 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-200">
+        <p className="rounded border border-info/40 bg-info-doux px-2 py-1 text-xs text-info">
           {message}{' '}
           <button onClick={() => setMessage(null)} className="ml-1 underline">
             ok
@@ -200,11 +200,11 @@ export function PagePrix() {
       )}
 
       {onglet === 'objet' && item && statsObjet.size === 0 && (
-        <p className="text-sm text-zinc-500">Cet objet n'a aucune ligne brisable.</p>
+        <p className="text-sm text-encre-2">Cet objet n'a aucune ligne brisable.</p>
       )}
 
       {groupes.length > 0 && (
-        <div className="rounded border border-zinc-200 bg-white px-2 pb-2 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="carte px-2 pb-2">
           <table className="w-full">
             {groupes.map(([statId, rs]) => (
               <GroupeStat key={statId} statId={statId} runes={rs} />
@@ -213,7 +213,7 @@ export function PagePrix() {
         </div>
       )}
 
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-encre-2">
         Les prix sont enregistrés immédiatement dans ce navigateur uniquement. Tab passe au champ suivant ;
         vider un champ supprime le prix.
       </p>

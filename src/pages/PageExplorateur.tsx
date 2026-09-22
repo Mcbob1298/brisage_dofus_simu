@@ -115,7 +115,7 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
   return (
     <div className="space-y-3">
       {nbPrix === 0 && (
-        <p className="rounded border border-orange-200 bg-orange-50 px-2 py-1 text-sm text-orange-800 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-200">
+        <p className="rounded border border-alerte/40 bg-alerte-doux px-2 py-1 text-sm text-alerte">
           Aucun prix de rune renseigné : toutes les valeurs sont à 0.{' '}
           <button onClick={() => aller('prix')} className="underline">
             Renseigner les prix
@@ -123,10 +123,10 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
         </p>
       )}
 
-      <div className="flex flex-wrap items-end gap-x-3 gap-y-2 text-xs text-zinc-500">
+      <div className="flex flex-wrap items-end gap-x-3 gap-y-2 text-xs text-encre-2">
         <label className="flex flex-col gap-0.5">
           Type
-          <select value={type} onChange={(e) => setType(e.target.value)} className="h-8 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+          <select value={type} onChange={(e) => setType(e.target.value)} className="champ">
             <option value="">Tous</option>
             <option value="Arme">Toutes armes</option>
             {index?.types.map((t) => (
@@ -150,7 +150,7 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
         </label>
         <label className="flex flex-col gap-0.5">
           Jet
-          <select value={jet} onChange={(e) => setJet(e.target.value as JetChoisi)} className="h-8 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+          <select value={jet} onChange={(e) => setJet(e.target.value as JetChoisi)} className="champ">
             <option value="max">max</option>
             <option value="moyen">moyen</option>
             <option value="min">min</option>
@@ -173,10 +173,10 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="carte overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="text-xs text-zinc-500">
-            <tr className="border-b border-zinc-200 dark:border-zinc-800">
+          <thead className="text-xs text-encre-2">
+            <tr className="border-b border-bord">
               <En t="nom" label="Objet" right={false} />
               <En t="niveau" label="Niv." />
               <th className="px-2 py-1.5 text-left font-medium">Type</th>
@@ -200,7 +200,7 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
               const coef = dernierCoef(coefs[it.id]);
               const m = lignes.marge(e);
               return (
-                <tr key={it.id} className="border-t border-zinc-100 dark:border-zinc-800">
+                <tr key={it.id} className="border-t border-bord">
                   <td className="px-2 py-1">
                     <span className="flex items-center gap-2">
                       <ItemImage src={it.imageLocale} alt="" fallback={placeholderPour(it.type, it.famille)} taille={24} />
@@ -208,32 +208,32 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
                         {it.nom}
                       </span>
                       {it.droppable === true && (
-                        <span className="rounded bg-orange-100 px-1 text-[10px] text-orange-700 dark:bg-orange-900/40 dark:text-orange-300" title="Droppable : les joueurs le brisent par flemme, coefficient souvent écrasé">
+                        <span className="rounded bg-alerte-doux px-1 text-[10px] text-alerte" title="Droppable : les joueurs le brisent par flemme, coefficient souvent écrasé">
                           drop
                         </span>
                       )}
                       {e.prixManquants && (
-                        <span className="text-orange-600 dark:text-orange-400" title="Au moins une rune sans prix : valeur sous-estimée">
+                        <span className="text-alerte" title="Au moins une rune sans prix : valeur sous-estimée">
                           ⚠
                         </span>
                       )}
                     </span>
                   </td>
                   <td className="tnum px-2 py-1 text-right">{it.niveau}</td>
-                  <td className="px-2 py-1 text-xs text-zinc-500">{it.type}</td>
+                  <td className="px-2 py-1 text-xs text-encre-2">{it.type}</td>
                   <td className="tnum px-2 py-1 text-right">{formatKamas(e.valeurNaturel)}</td>
-                  <td className="px-2 py-1 text-xs">{e.meilleurFocus ? STAT_BY_ID[e.meilleurFocus].label : <span className="text-zinc-400">naturel</span>}</td>
+                  <td className="px-2 py-1 text-xs">{e.meilleurFocus ? STAT_BY_ID[e.meilleurFocus].label : <span className="text-encre-3">naturel</span>}</td>
                   <td className="tnum px-2 py-1 text-right font-medium">{formatKamas(e.valeurMeilleure)}</td>
-                  {colDensite && <td className="tnum px-2 py-1 text-right text-zinc-500">{formatNombre(e.valeurMeilleure / Math.max(1, it.niveau))}</td>}
-                  <td className="tnum px-2 py-1 text-right text-zinc-500">{coef ? formatPct(coef.coef, 0) : '—'}</td>
+                  {colDensite && <td className="tnum px-2 py-1 text-right text-encre-2">{formatNombre(e.valeurMeilleure / Math.max(1, it.niveau))}</td>}
+                  <td className="tnum px-2 py-1 text-right text-encre-2">{coef ? formatPct(coef.coef, 0) : '—'}</td>
                   <td className="px-2 py-1 text-right">
                     <PrixConstate item={it} />
                   </td>
-                  <td className={`tnum px-2 py-1 text-right ${m === null ? 'text-zinc-400' : m > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                  <td className={`tnum px-2 py-1 text-right ${m === null ? 'text-encre-3' : m > 0 ? 'text-ok' : 'text-ko'}`}>
                     {m === null ? '—' : formatKamas(m)}
                   </td>
                   <td className="px-2 py-1 text-right">
-                    <button onClick={() => simuler(e)} className="text-xs text-sky-600 hover:underline dark:text-sky-400">
+                    <button onClick={() => simuler(e)} className="text-xs lien">
                       simuler →
                     </button>
                   </td>
@@ -243,14 +243,14 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
           </tbody>
         </table>
         {lignes.total > limite && (
-          <div className="border-t border-zinc-200 p-2 text-center dark:border-zinc-800">
-            <button onClick={() => setLimite((l) => l + PAGE)} className="text-xs text-sky-600 hover:underline dark:text-sky-400">
+          <div className="border-t border-bord p-2 text-center">
+            <button onClick={() => setLimite((l) => l + PAGE)} className="text-xs lien">
               Afficher {Math.min(PAGE, lignes.total - limite)} de plus ({formatNombre(lignes.total - limite)} restants)
             </button>
           </div>
         )}
       </div>
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-encre-2">
         Classement sur la valeur produite (le prix d'achat en HDV n'existe dans aucune API). Saisis un prix constaté pour voir la marge, puis « simuler » pour passer
         l'objet, son prix et son meilleur focus dans le simulateur.
       </p>

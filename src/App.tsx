@@ -37,10 +37,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <div className="min-h-screen text-encre">
       <EnTete onglet={onglet} onChange={changerOnglet} />
       {onglet !== 'guide' && <BarreBilan sim={sim} />}
-      <main className="mx-auto max-w-6xl px-3 py-3">
+      <main className="mx-auto max-w-6xl px-3 py-4">
         {onglet === 'guide' && <PageGuide aller={changerOnglet} />}
         {onglet === 'objet' && <PageObjet sim={sim} aller={changerOnglet} />}
         {onglet === 'prix' && <PagePrix />}

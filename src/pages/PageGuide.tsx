@@ -10,7 +10,7 @@ import { strategieRetenue, useCandidatsEvalues, useSuggestions, type CandidatEva
 import { formatDate, formatKamas, formatNombre, formatPct, joursDepuis } from '../lib/format.ts';
 import { JOURS_PERIME } from '../store/prix.ts';
 import { useCatalogue } from '../store/catalogue.ts';
-import { useGuide, type JetGuide } from '../store/guide.ts';
+import { budgetTest, useGuide, type JetGuide } from '../store/guide.ts';
 import { useNotes } from '../store/notes.ts';
 import { useSimu } from '../store/simu.ts';
 
@@ -18,11 +18,11 @@ const TRANCHES = [60, 120, 160, 200];
 
 function Etape({ n, titre, actif, children, aide }: { n: number; titre: string; actif: boolean; children: React.ReactNode; aide?: string }) {
   return (
-    <section className={`rounded border bg-white p-3 dark:bg-zinc-900 ${actif ? 'border-zinc-200 dark:border-zinc-800' : 'border-zinc-100 opacity-50 dark:border-zinc-900'}`}>
-      <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-xs text-white dark:bg-zinc-100 dark:text-zinc-900">{n}</span>
+    <section className={`carte p-4 transition-opacity ${actif ? '' : 'opacity-50'}`}>
+      <h2 className="mb-3 flex items-center gap-2.5 text-base font-semibold">
+        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${actif ? 'bg-accent text-white dark:text-[#1a1208]' : 'bg-fond-2 text-encre-2'}`}>{n}</span>
         {titre}
-        {aide && <span className="ml-1 text-xs font-normal text-zinc-500">{aide}</span>}
+        {aide && <span className="ml-1 text-xs font-normal text-encre-2">{aide}</span>}
       </h2>
       {actif ? children : null}
     </section>
@@ -30,12 +30,12 @@ function Etape({ n, titre, actif, children, aide }: { n: number; titre: string; 
 }
 
 const ETAT: Record<EtatCandidat, { label: string; cls: string }> = {
-  manquePrix: { label: 'prix ?', cls: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400' },
-  tropCher: { label: 'trop cher', cls: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
-  aTester: { label: 'à tester', cls: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' },
-  pret: { label: 'rentable', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
-  perte: { label: 'à perte', cls: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
-  ecarte: { label: 'écarté', cls: 'bg-zinc-100 text-zinc-400 line-through dark:bg-zinc-800' },
+  manquePrix: { label: 'prix ?', cls: 'bg-surface-2 text-encre-2' },
+  tropCher: { label: 'dépasse le budget de test', cls: 'bg-alerte-doux text-alerte' },
+  aTester: { label: 'à tester', cls: 'bg-info-doux text-info' },
+  pret: { label: 'rentable', cls: 'bg-ok-doux text-ok' },
+  perte: { label: 'à perte', cls: 'bg-ko-doux text-ko' },
+  ecarte: { label: 'écarté', cls: 'bg-surface-2 text-encre-3 line-through' },
 };
 
 function Objet({ item, taille = 24 }: { item: Item; taille?: number }) {
@@ -44,7 +44,7 @@ function Objet({ item, taille = 24 }: { item: Item; taille?: number }) {
       <ItemImage src={item.imageLocale} alt="" fallback={placeholderPour(item.type, item.famille)} taille={taille} />
       <span className="min-w-0">
         <span className="block truncate">{item.nom}</span>
-        <span className="tnum block text-[11px] text-zinc-500">
+        <span className="tnum block text-[11px] text-encre-2">
           niv. {item.niveau} · {item.type}
         </span>
       </span>
@@ -60,18 +60,18 @@ function LigneCandidat({ e, ouvrir }: { e: CandidatEvalue; ouvrir: (item: Item) 
   const [coefSaisi, setCoefSaisi] = useState<number | null>(null);
   const et = ETAT[e.etat];
   return (
-    <tr className={`border-t border-zinc-100 dark:border-zinc-800 ${e.etat === 'ecarte' ? 'opacity-60' : ''}`}>
+    <tr className={`border-t border-bord ${e.etat === 'ecarte' ? 'opacity-60' : ''}`}>
       <td className="px-2 py-1">
         <Objet item={e.item} />
       </td>
-      <td className="tnum px-2 py-1 text-right text-zinc-500" title="Valeur espérée des runes à coef. 100 %, meilleur focus">
+      <td className="tnum px-2 py-1 text-right text-encre-2" title="Valeur espérée des runes à coef. 100 %, meilleur focus">
         {formatKamas(e.valeur100)}
       </td>
       <td className="px-2 py-1">
         <ChampNombre value={e.prix} onChange={(v) => setPrixConstate(e.item.id, v)} vide placeholder="prix HDV" className="w-24 [&>input]:h-7" aria-label={`Prix ${e.item.nom}`} />
         {e.prixDate && (
           <span
-            className={`block text-[10px] ${joursDepuis(e.prixDate) > JOURS_PERIME ? 'text-orange-600 dark:text-orange-400' : 'text-zinc-500'}`}
+            className={`block text-[10px] ${joursDepuis(e.prixDate) > JOURS_PERIME ? 'text-alerte' : 'text-encre-2'}`}
             title={joursDepuis(e.prixDate) > JOURS_PERIME ? `Prix vieux de ${joursDepuis(e.prixDate)} jours : à vérifier` : undefined}
           >
             {joursDepuis(e.prixDate) > JOURS_PERIME ? '⚠ ' : ''}noté le {formatDate(e.prixDate)}
@@ -98,41 +98,41 @@ function LigneCandidat({ e, ouvrir }: { e: CandidatEvalue; ouvrir: (item: Item) 
               }
             }}
             disabled={coefSaisi === null}
-            className="rounded border border-zinc-300 px-1.5 text-xs disabled:opacity-40 dark:border-zinc-700"
+            className="btn btn-petit px-1.5"
             title="Enregistrer ce coefficient dans le journal"
           >
             noter
           </button>
         </span>
-        {e.coefDate && <span className="block text-[10px] text-zinc-500">noté le {formatDate(e.coefDate)}</span>}
+        {e.coefDate && <span className="block text-[10px] text-encre-2">noté le {formatDate(e.coefDate)}</span>}
       </td>
       <td className="px-2 py-1 text-xs">{e.focus ? `Focus ${STAT_BY_ID[e.focus].label}` : 'Naturel'}</td>
-      <td className={`tnum px-2 py-1 text-right ${e.coef === null ? 'text-zinc-400' : e.benefice > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+      <td className={`tnum px-2 py-1 text-right ${e.coef === null ? 'text-encre-3' : e.benefice > 0 ? 'text-ok' : 'text-ko'}`}>
         {e.coef === null || e.prix === null ? '—' : formatKamas(e.benefice)}
-        {e.roi !== null && e.prix !== null && <span className="block text-[10px] text-zinc-500">ROI {formatPct(e.roi)}</span>}
+        {e.roi !== null && e.prix !== null && <span className="block text-[10px] text-encre-2">ROI {formatPct(e.roi)}</span>}
       </td>
-      <td className="tnum px-2 py-1 text-right text-zinc-500" title="Coefficient minimum pour être rentable à ce prix">
+      <td className="tnum px-2 py-1 text-right text-encre-2" title="Coefficient minimum pour être rentable à ce prix">
         {e.seuil === null ? '—' : e.seuil <= 1 ? '≤ 1 %' : formatPct(e.seuil, 0)}
       </td>
       <td className="px-2 py-1">
         <span className={`rounded px-1.5 py-0.5 text-[11px] ${et.cls}`}>{et.label}</span>
       </td>
       <td className="px-2 py-1 text-right whitespace-nowrap text-xs">
-        <button onClick={() => ouvrir(e.item)} className="text-sky-600 hover:underline dark:text-sky-400">
+        <button onClick={() => ouvrir(e.item)} className="lien">
           détail
         </button>
         {' · '}
         {e.etat === 'ecarte' ? (
-          <button onClick={() => setStatut(e.item.id, 'aTester')} className="text-sky-600 hover:underline dark:text-sky-400">
+          <button onClick={() => setStatut(e.item.id, 'aTester')} className="lien">
             reprendre
           </button>
         ) : (
-          <button onClick={() => setStatut(e.item.id, 'ecarte')} className="text-zinc-500 hover:underline">
+          <button onClick={() => setStatut(e.item.id, 'ecarte')} className="text-encre-2 hover:underline">
             écarter
           </button>
         )}
         {' · '}
-        <button onClick={() => retirerCandidat(e.item.id)} className="text-zinc-400 hover:text-red-600" aria-label="Retirer">
+        <button onClick={() => retirerCandidat(e.item.id)} className="text-encre-3 hover:text-ko" aria-label="Retirer">
           ✕
         </button>
       </td>
@@ -146,16 +146,16 @@ function LigneSuggestion({ s, onAjouter }: { s: Suggestion; onAjouter: () => voi
   return (
     <li className="flex items-center gap-2 px-2 py-1 text-sm">
       <Objet item={s.eval.item} />
-      <span className="tnum ml-auto text-right text-xs text-zinc-500" title="Valeur espérée des runes à coef. 100 % · valeur ÷ niveau">
+      <span className="tnum ml-auto text-right text-xs text-encre-2" title="Valeur espérée des runes à coef. 100 % · valeur ÷ niveau">
         {formatKamas(s.eval.valeurMeilleure)}
         {s.beneficeEstime === null ? (
           <span className="block text-[10px]">{formatNombre(s.eval.valeurMeilleure / Math.max(20, s.eval.item.niveau))} / niv.</span>
         ) : s.beneficeEstime > 0 ? (
-          <span className="block text-[10px] text-emerald-600 dark:text-emerald-400" title="Bénéfice estimé à coef. 100 %, net de taxe, avant test du coefficient">
+          <span className="block text-[10px] text-ok" title="Bénéfice estimé à coef. 100 %, net de taxe, avant test du coefficient">
             +{formatKamas(s.beneficeEstime)} @100 %{s.roiEstime !== null ? ` · ROI ${formatPct(s.roiEstime)}` : ''}
           </span>
         ) : (
-          <span className="block text-[10px] text-orange-600 dark:text-orange-400" title="À ce prix, rentable seulement si le concasseur affiche au moins ce coefficient">
+          <span className="block text-[10px] text-alerte" title="À ce prix, rentable seulement si le concasseur affiche au moins ce coefficient">
             rentable si coef ≥ {s.seuilEstime === null ? '—' : formatPct(s.seuilEstime, 0)}
           </span>
         )}
@@ -168,7 +168,7 @@ function LigneSuggestion({ s, onAjouter }: { s: Suggestion; onAjouter: () => voi
         className="w-24 [&>input]:h-7"
         aria-label={`Prix HDV ${s.eval.item.nom}`}
       />
-      <button onClick={onAjouter} className="rounded border border-zinc-300 px-1.5 text-xs hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800" aria-label={`Ajouter ${s.eval.item.nom}`} title="Ajouter aux objets à tester">
+      <button onClick={onAjouter} className="btn btn-petit px-1.5" aria-label={`Ajouter ${s.eval.item.nom}`} title="Ajouter aux objets à tester">
         +
       </button>
     </li>
@@ -188,6 +188,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
   const ajouterCoef = useNotes((s) => s.ajouterCoef);
 
   const objectifOk = g.kamasActuels !== null && g.objectif !== null && g.objectif > 0;
+  const budget = budgetTest(g.kamasActuels, g.partBudgetTest);
   const strategie = strategieRetenue(evalues, g.strategieItemId);
   const prets = evalues.filter((e) => e.etat === 'pret').sort((a, b) => (b.plan?.gainPremierCycle ?? 0) - (a.plan?.gainPremierCycle ?? 0));
   const [sessionItemId, setSessionItemId] = useState<number | null>(null);
@@ -218,32 +219,39 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
       {/* 1. Objectif */}
       <Etape n={1} titre="Ton objectif" actif>
         <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-0.5 text-xs text-zinc-500">
+          <label className="flex flex-col gap-0.5 text-xs text-encre-2">
             Kamas actuels
             <ChampNombre value={g.kamasActuels} onChange={g.setKamas} vide placeholder="ex. 2,5M" className="w-32" />
           </label>
-          <label className="flex flex-col gap-0.5 text-xs text-zinc-500">
+          <label className="flex flex-col gap-0.5 text-xs text-encre-2">
             Objectif
             <ChampNombre value={g.objectif} onChange={g.setObjectif} vide placeholder="ex. 10M" className="w-32" />
           </label>
-          <label className="flex flex-col gap-0.5 text-xs text-zinc-500" title="Jets supposés des objets que tu achètes : « moyen » est prudent pour de l'HDV, « max » si tu craftes">
+          <label className="flex flex-col gap-0.5 text-xs text-encre-2" title="Jets supposés des objets que tu achètes : « moyen » est prudent pour de l'HDV, « max » si tu craftes">
             Jets des objets
-            <select value={g.jet} onChange={(e) => g.setJet(e.target.value as JetGuide)} className="h-8 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+            <select value={g.jet} onChange={(e) => g.setJet(e.target.value as JetGuide)} className="champ">
               <option value="moyen">moyens (prudent)</option>
               <option value="max">max (craft)</option>
               <option value="min">min</option>
             </select>
           </label>
+          <label className="flex flex-col gap-0.5 text-xs text-encre-2" title="Un test ne doit pas engloutir la bourse : plafond de prix pour un objet à tester">
+            Budget par test
+            <span className="flex items-center gap-1">
+              <ChampNombre value={g.partBudgetTest} onChange={(v) => g.setPartBudgetTest(v ?? 20)} suffixe="%" className="w-20" />
+              {budget !== null && <span className="tnum text-xs text-encre-2">= {formatKamas(budget)}</span>}
+            </span>
+          </label>
           {objectifOk && (
             <div className="min-w-56 flex-1">
-              <div className="mb-1 flex justify-between text-xs text-zinc-500">
+              <div className="mb-1 flex justify-between text-xs text-encre-2">
                 <span className="tnum">{formatKamas(g.kamasActuels!)}</span>
                 <span className="tnum">
                   {atteint ? 'objectif atteint 🎉' : `reste ${formatKamas(g.objectif! - g.kamasActuels!)}`} · {formatKamas(g.objectif!)}
                 </span>
               </div>
-              <div className="h-2 overflow-hidden rounded bg-zinc-200 dark:bg-zinc-800">
-                <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progression * 100}%` }} />
+              <div className="h-2.5 overflow-hidden rounded-full bg-fond-2">
+                <div className="h-full rounded-full bg-gradient-to-r from-accent to-ok transition-all" style={{ width: `${progression * 100}%` }} />
               </div>
             </div>
           )}
@@ -251,13 +259,18 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
       </Etape>
 
       {/* 2. Candidats */}
-      <Etape n={2} titre="Objets à tester" actif={objectifOk} aide="ajoute des objets, note leur prix HDV et le coefficient lu au concasseur">
-        {nbPrixRunes === 0 && <p className="text-sm text-orange-600">Catalogue non chargé.</p>}
+      <Etape
+        n={2}
+        titre="Objets à tester"
+        actif={objectifOk}
+        aide={budget !== null ? `un test ≤ ${formatKamas(budget)} : ta bourse en permet environ ${Math.max(1, Math.floor(100 / g.partBudgetTest))} en parallèle` : undefined}
+      >
+        {nbPrixRunes === 0 && <p className="text-sm text-alerte">Catalogue non chargé.</p>}
         {evalues.length > 0 && (
-          <div className="mb-3 overflow-x-auto rounded border border-zinc-200 dark:border-zinc-800">
+          <div className="carte mb-3 overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs text-zinc-500">
-                <tr className="border-b border-zinc-200 dark:border-zinc-800">
+              <thead className="text-left text-xs text-encre-2">
+                <tr className="border-b border-bord">
                   <th className="px-2 py-1.5 font-medium">Objet</th>
                   <th className="px-2 py-1.5 text-right font-medium" title="Repère à coef. 100 %">
                     Runes @100 %
@@ -282,32 +295,32 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
 
         <div className="grid gap-3 md:grid-cols-2">
           <div>
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">Suggestions (non droppables, runes toutes pricées)</h3>
+            <h3 className="mb-1 titre-section">Suggestions (non droppables, runes toutes pricées)</h3>
             <div className="mb-1 flex flex-wrap items-center gap-1 text-xs">
-              <span className="text-zinc-500">Niveau ≤</span>
+              <span className="text-encre-2">Niveau ≤</span>
               {TRANCHES.map((n) => (
                 <button
                   key={n}
                   onClick={() => g.setNiveauMaxSuggestions(n)}
-                  className={`rounded border px-1.5 py-0.5 ${suggestions.niveauMax === n ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900' : 'border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400'}`}
+                  className={`rounded border px-1.5 py-0.5 ${suggestions.niveauMax === n ? 'border-accent bg-accent text-white dark:text-[#1a1208]' : 'border-bord-fort text-encre-2'}`}
                 >
                   {n}
                 </button>
               ))}
               {suggestions.auto ? (
-                <span className="text-zinc-500" title="L'app ne connaît pas les prix HDV : le niveau est le seul repère de prix. Tranche pré-choisie d'après ta bourse, à ajuster.">
+                <span className="text-encre-2" title="L'app ne connaît pas les prix HDV : le niveau est le seul repère de prix. Tranche pré-choisie d'après ta bourse, à ajuster.">
                   (indicatif d'après ta bourse)
                 </span>
               ) : (
-                <button onClick={() => g.setNiveauMaxSuggestions(null)} className="text-sky-600 hover:underline dark:text-sky-400">
+                <button onClick={() => g.setNiveauMaxSuggestions(null)} className="lien">
                   auto
                 </button>
               )}
-              <span className="ml-auto text-zinc-500">tri</span>
+              <span className="ml-auto text-encre-2">tri</span>
               <select
                 value={g.triSuggestions}
                 onChange={(e) => g.setTriSuggestions(e.target.value as 'densite' | 'valeur')}
-                className="h-6 rounded border border-zinc-300 bg-white px-1 text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                className="champ h-6 px-1 text-xs"
               >
                 <option value="densite">valeur ÷ niveau</option>
                 <option value="valeur">valeur brute</option>
@@ -315,8 +328,8 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
             </div>
             {suggestions.surMesure.length > 0 && (
               <>
-                <div className="mb-1 mt-2 text-[11px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Sur mesure — dans ta bourse et rentables à 100 %</div>
-                <ul className="mb-2 divide-y divide-emerald-100 rounded border border-emerald-200 bg-emerald-50/40 dark:divide-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30">
+                <div className="mb-1 mt-2 text-[11px] font-medium uppercase tracking-wide text-ok">Sur mesure — sous le budget de test et rentables à 100 %</div>
+                <ul className="mb-2 divide-y divide-ok/30 rounded-lg border border-ok/40 bg-ok-doux/50">
                   {suggestions.surMesure.map((s) => (
                     <LigneSuggestion key={s.eval.item.id} s={s} onAjouter={() => g.ajouterCandidat(s.eval.item.id)} />
                   ))}
@@ -325,25 +338,25 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
             )}
             {suggestions.siCoefEleve.length > 0 && (
               <details className="mb-2">
-                <summary className="cursor-pointer text-[11px] font-medium uppercase tracking-wide text-orange-700 dark:text-orange-400">
+                <summary className="cursor-pointer text-[11px] font-medium uppercase tracking-wide text-alerte">
                   Rentables seulement si le coef est haut ({suggestions.siCoefEleve.length}) — à tester au concasseur
                 </summary>
-                <ul className="mt-1 divide-y divide-orange-100 rounded border border-orange-200 dark:divide-orange-900 dark:border-orange-900">
+                <ul className="mt-1 divide-y divide-alerte/30 rounded-lg border border-alerte/40">
                   {suggestions.siCoefEleve.map((s) => (
                     <LigneSuggestion key={s.eval.item.id} s={s} onAjouter={() => g.ajouterCandidat(s.eval.item.id)} />
                   ))}
                 </ul>
               </details>
             )}
-            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-zinc-500">À chiffrer — note le prix HDV, la liste se met à jour</div>
-            <ul className="divide-y divide-zinc-100 rounded border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+            <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-encre-2">À chiffrer — note le prix HDV, la liste se met à jour</div>
+            <ul className="carte divide-y divide-bord">
               {suggestions.aChiffrer.map((s) => (
                 <LigneSuggestion key={s.eval.item.id} s={s} onAjouter={() => g.ajouterCandidat(s.eval.item.id)} />
               ))}
-              {suggestions.aChiffrer.length === 0 && <li className="px-2 py-1 text-xs text-zinc-500">Plus rien à chiffrer dans cette tranche.</li>}
+              {suggestions.aChiffrer.length === 0 && <li className="px-2 py-1 text-xs text-encre-2">Plus rien à chiffrer dans cette tranche.</li>}
             </ul>
-            <p className="mt-1 text-xs text-zinc-500">
-              Aucune API ne donne les prix HDV : un prix noté trop cher pour ta bourse retire l'objet des suggestions
+            <p className="mt-1 text-xs text-encre-2">
+              Aucune API ne donne les prix HDV : un prix noté au-dessus du budget de test retire l'objet des suggestions
               {suggestions.nbTropChers > 0 && <span className="tnum"> ({suggestions.nbTropChers} masqué{suggestions.nbTropChers > 1 ? 's' : ''} pour l'instant)</span>}, un prix
               abordable et rentable à 100 % le fait remonter en « sur mesure »
               {suggestions.nbNonRentables > 0 && (
@@ -354,14 +367,14 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
               )}
               .
             </p>
-            <button onClick={() => aller('explorateur')} className="mt-1 text-xs text-sky-600 hover:underline dark:text-sky-400">
+            <button onClick={() => aller('explorateur')} className="mt-1 text-xs lien">
               Voir tout l'explorateur →
             </button>
           </div>
           <div>
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">Ajouter un objet précis</h3>
+            <h3 className="mb-1 titre-section">Ajouter un objet précis</h3>
             <RechercheObjet onChoisir={(it) => g.ajouterCandidat(it.id)} />
-            <p className="mt-2 text-xs text-zinc-500">
+            <p className="mt-2 text-xs text-encre-2">
               Le test : achète (ou crafte) un exemplaire, note son prix, ouvre le concasseur et note le coefficient affiché. Le bénéfice par objet et le seuil se
               calculent avec tes prix de runes. Tu ne notes que tes candidats (5 à 10 objets), jamais tout le catalogue ; un prix reste valable jusqu'à ce que tu le
               changes, et passe en orange au bout de {JOURS_PERIME} jours.
@@ -374,7 +387,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
       <Etape n={3} titre="Stratégie" actif={objectifOk && prets.length > 0} aide={prets.length === 0 ? 'apparaît dès qu’un objet testé est rentable' : undefined}>
         {strategie && strategie.plan && (
           <div className="space-y-2">
-            <div className="rounded border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900 dark:bg-emerald-950">
+            <div className="rounded border border-ok/40 bg-ok-doux p-3">
               <div className="flex flex-wrap items-center gap-3">
                 <Objet item={strategie.item} taille={40} />
                 <div className="text-sm">
@@ -385,31 +398,31 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
               </div>
               <div className="tnum mt-2 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
                 <div>
-                  <div className="text-[11px] uppercase text-zinc-500">Ce cycle</div>
+                  <div className="text-[11px] uppercase text-encre-2">Ce cycle</div>
                   <div className="font-semibold">{formatNombre(strategie.plan.objetsPremierCycle)} objets</div>
-                  <div className="text-xs text-zinc-500">≈ {formatKamas(strategie.plan.objetsPremierCycle * (strategie.prix ?? 0))} investis</div>
+                  <div className="text-xs text-encre-2">≈ {formatKamas(strategie.plan.objetsPremierCycle * (strategie.prix ?? 0))} investis</div>
                 </div>
                 <div>
-                  <div className="text-[11px] uppercase text-zinc-500">Gain du cycle</div>
-                  <div className="font-semibold text-emerald-600 dark:text-emerald-400">+{formatKamas(strategie.plan.gainPremierCycle)}</div>
+                  <div className="text-[11px] uppercase text-encre-2">Gain du cycle</div>
+                  <div className="font-semibold text-ok">+{formatKamas(strategie.plan.gainPremierCycle)}</div>
                 </div>
                 <div>
-                  <div className="text-[11px] uppercase text-zinc-500">Cycles jusqu'à l'objectif</div>
+                  <div className="text-[11px] uppercase text-encre-2">Cycles jusqu'à l'objectif</div>
                   <div className="font-semibold">{strategie.plan.cycles === null ? 'hors de portée' : strategie.plan.cycles === 0 ? 'atteint' : strategie.plan.cycles}</div>
-                  <div className="text-xs text-zinc-500">en réinvestissant tout</div>
+                  <div className="text-xs text-encre-2">en réinvestissant tout</div>
                 </div>
                 <div>
-                  <div className="text-[11px] uppercase text-zinc-500">Objets au total</div>
+                  <div className="text-[11px] uppercase text-encre-2">Objets au total</div>
                   <div className="font-semibold">{strategie.plan.cycles ? formatNombre(strategie.plan.objetsTotal) : '—'}</div>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+              <p className="mt-2 text-xs text-encre-2">
                 Le coefficient baisse à chaque brisage : re-note-le après chaque session (étape 4). Dès qu'il passe sous le seuil, bascule sur le suivant.
               </p>
             </div>
             {prets.length > 1 && (
               <table className="w-full text-sm">
-                <thead className="text-left text-xs text-zinc-500">
+                <thead className="text-left text-xs text-encre-2">
                   <tr>
                     <th className="px-2 py-1 font-medium">Alternatives rentables</th>
                     <th className="px-2 py-1 text-right font-medium">Bénéfice / objet</th>
@@ -420,9 +433,9 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
                 </thead>
                 <tbody>
                   {prets.map((e) => (
-                    <tr key={e.item.id} className={`border-t border-zinc-100 dark:border-zinc-800 ${e === strategie ? 'font-medium' : ''}`}>
+                    <tr key={e.item.id} className={`border-t border-bord ${e === strategie ? 'font-medium' : ''}`}>
                       <td className="px-2 py-1">
-                        {e === strategie && <span className="mr-1 text-emerald-600">★</span>}
+                        {e === strategie && <span className="mr-1 text-ok">★</span>}
                         {e.item.nom}
                       </td>
                       <td className="tnum px-2 py-1 text-right">{formatKamas(e.benefice)}</td>
@@ -430,7 +443,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
                       <td className="tnum px-2 py-1 text-right">{e.plan?.cycles ?? '—'}</td>
                       <td className="px-2 py-1 text-right">
                         {e !== strategie && (
-                          <button onClick={() => g.retenir(e.item.id)} className="text-xs text-sky-600 hover:underline dark:text-sky-400">
+                          <button onClick={() => g.retenir(e.item.id)} className="text-xs lien">
                             retenir
                           </button>
                         )}
@@ -448,14 +461,14 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
       <Etape n={4} titre="Suivi" actif={objectifOk && (strategie !== null || g.sessions.length > 0)}>
         <div className="grid gap-3 md:grid-cols-2">
           <div>
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">Enregistrer une session</h3>
+            <h3 className="mb-1 titre-section">Enregistrer une session</h3>
             <div className="flex flex-wrap items-end gap-2">
-              <label className="flex flex-col gap-0.5 text-xs text-zinc-500">
+              <label className="flex flex-col gap-0.5 text-xs text-encre-2">
                 Objet
                 <select
                   value={itemSession?.id ?? ''}
                   onChange={(e) => setSessionItemId(Number(e.target.value))}
-                  className="h-8 max-w-48 rounded border border-zinc-300 bg-white px-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                  className="champ max-w-48"
                 >
                   {evalues
                     .filter((e) => e.etat !== 'ecarte')
@@ -466,39 +479,39 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
                     ))}
                 </select>
               </label>
-              <label className="flex flex-col gap-0.5 text-xs text-zinc-500">
+              <label className="flex flex-col gap-0.5 text-xs text-encre-2">
                 Brisés
                 <ChampNombre value={nbSession} onChange={setNbSession} vide className="w-16" />
               </label>
-              <label className="flex flex-col gap-0.5 text-xs text-zinc-500" title="Ventes de runes − achats d'objets, taxe déduite">
+              <label className="flex flex-col gap-0.5 text-xs text-encre-2" title="Ventes de runes − achats d'objets, taxe déduite">
                 Gain net (kamas)
                 <ChampNombre value={gainSession} onChange={setGainSession} vide placeholder="ex. 450k" className="w-28" />
               </label>
-              <label className="flex flex-col gap-0.5 text-xs text-zinc-500">
+              <label className="flex flex-col gap-0.5 text-xs text-encre-2">
                 Coef en fin de session
                 <ChampNombre value={coefSession} onChange={setCoefSession} vide suffixe="%" decimales={1} className="w-24" />
               </label>
               <button
                 onClick={enregistrerSession}
                 disabled={!itemSession || nbSession === null || gainSession === null}
-                className="h-8 rounded bg-zinc-900 px-3 text-sm text-white disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900"
+                className="btn btn-primaire"
               >
                 Enregistrer
               </button>
             </div>
-            <p className="mt-1 text-xs text-zinc-500">Le gain s'ajoute à tes kamas actuels ; le coef noté met à jour la stratégie.</p>
+            <p className="mt-1 text-xs text-encre-2">Le gain s'ajoute à tes kamas actuels ; le coef noté met à jour la stratégie.</p>
             {g.sessions.length > 0 && (
-              <ul className="mt-2 max-h-48 divide-y divide-zinc-100 overflow-y-auto text-xs dark:divide-zinc-800">
+              <ul className="mt-2 max-h-48 divide-y divide-bord overflow-y-auto text-xs">
                 {[...g.sessions].reverse().map((s) => (
                   <li key={s.id} className="flex items-center gap-2 py-1">
-                    <span className="tnum w-20 text-zinc-500">{formatDate(s.date)}</span>
+                    <span className="tnum w-20 text-encre-2">{formatDate(s.date)}</span>
                     <span className="truncate">{parId.get(s.itemId)?.nom ?? `#${s.itemId}`}</span>
-                    <span className="tnum text-zinc-500">× {s.nbObjets}</span>
-                    <span className={`tnum ml-auto font-medium ${s.gain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                    <span className="tnum text-encre-2">× {s.nbObjets}</span>
+                    <span className={`tnum ml-auto font-medium ${s.gain >= 0 ? 'text-ok' : 'text-ko'}`}>
                       {s.gain >= 0 ? '+' : ''}
                       {formatKamas(s.gain)}
                     </span>
-                    <button onClick={() => g.supprimerSession(s.id)} className="text-zinc-400 hover:text-red-600" aria-label="Supprimer la session">
+                    <button onClick={() => g.supprimerSession(s.id)} className="text-encre-3 hover:text-ko" aria-label="Supprimer la session">
                       ✕
                     </button>
                   </li>
@@ -507,7 +520,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
             )}
           </div>
           <div>
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">Progression</h3>
+            <h3 className="mb-1 titre-section">Progression</h3>
             {g.historiqueKamas.length >= 2 ? (
               <Courbe
                 points={g.historiqueKamas.map((p) => ({ date: p.date, valeur: p.kamas }))}
@@ -516,10 +529,10 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
                 ariaLabel="Évolution des kamas"
               />
             ) : (
-              <p className="text-xs text-zinc-500">La courbe apparaît après ta première session.</p>
+              <p className="text-xs text-encre-2">La courbe apparaît après ta première session.</p>
             )}
             {g.sessions.length > 0 && (
-              <p className="tnum mt-1 text-xs text-zinc-500">
+              <p className="tnum mt-1 text-xs text-encre-2">
                 {g.sessions.length} session(s) · {formatNombre(g.sessions.reduce((n, s) => n + s.nbObjets, 0))} objets brisés ·{' '}
                 {formatKamas(g.sessions.reduce((n, s) => n + s.gain, 0))} gagnés
               </p>
@@ -533,7 +546,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
           onClick={() => {
             if (confirm('Réinitialiser le guide (objectif, candidats, sessions) ? Les prix et coefficients notés sont conservés.')) g.reinitialiser();
           }}
-          className="text-xs text-zinc-400 hover:text-red-600"
+          className="text-xs text-encre-3 hover:text-ko"
         >
           Réinitialiser le guide
         </button>

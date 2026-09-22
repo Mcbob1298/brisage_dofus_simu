@@ -45,7 +45,7 @@ export function Courbe({ points, formatY, reference, yMin, ariaLabel }: Props) {
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      className="h-40 w-full text-zinc-500"
+      className="h-40 w-full text-encre-2"
       role="img"
       aria-label={ariaLabel}
       onMouseLeave={() => setSurvol(null)}
@@ -67,8 +67,8 @@ export function Courbe({ points, formatY, reference, yMin, ariaLabel }: Props) {
       ))}
       {reference && (
         <g>
-          <line x1={L} x2={W - R} y1={geo.y(reference.valeur)} y2={geo.y(reference.valeur)} stroke="#059669" strokeWidth={1.5} strokeDasharray="4 3" />
-          <text x={W - R} y={geo.y(reference.valeur) - 3} textAnchor="end" fontSize={10} fill="#059669">
+          <line x1={L} x2={W - R} y1={geo.y(reference.valeur)} y2={geo.y(reference.valeur)} stroke="var(--ok)" strokeWidth={1.5} strokeDasharray="4 3" />
+          <text x={W - R} y={geo.y(reference.valeur) - 3} textAnchor="end" fontSize={10} fill="var(--ok)">
             {reference.label}
           </text>
         </g>
@@ -82,17 +82,17 @@ export function Courbe({ points, formatY, reference, yMin, ariaLabel }: Props) {
         </text>
       )}
       {s && <line x1={s.x} x2={s.x} y1={T} y2={H - B} stroke="currentColor" strokeOpacity={0.3} strokeDasharray="3 3" />}
-      <path d={chemin} fill="none" stroke="#0284c7" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+      <path d={chemin} fill="none" stroke="var(--accent)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
       {geo.pts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={survol === i ? 5 : 4} fill="#0284c7" stroke="#fff" strokeWidth={2} className="dark:[stroke:#18181b]" />
+        <circle key={i} cx={p.x} cy={p.y} r={survol === i ? 5 : 4} fill="var(--accent)" stroke="var(--surface)" strokeWidth={2} />
       ))}
       {s && (
         <g transform={`translate(${Math.min(s.x + 8, W - 120)},${Math.max(T, s.y - 30)})`}>
-          <rect width={110} height={26} rx={3} fill="#18181b" fillOpacity={0.9} />
-          <text x={6} y={11} fontSize={10} fill="#fff">
+          <rect width={110} height={26} rx={4} fill="var(--encre)" fillOpacity={0.9} />
+          <text x={6} y={11} fontSize={10} fill="var(--surface)">
             {formatDate(s.p.date)}
           </text>
-          <text x={6} y={22} fontSize={10} fontWeight="bold" fill="#fff">
+          <text x={6} y={22} fontSize={10} fontWeight="bold" fill="var(--surface)">
             {formatY(s.p.valeur)}
           </text>
         </g>

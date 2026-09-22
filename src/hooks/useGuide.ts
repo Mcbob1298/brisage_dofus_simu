@@ -12,7 +12,7 @@ import {
   type Plan,
 } from '../engine/index.ts';
 import { useCatalogue } from '../store/catalogue.ts';
-import { niveauMaxIndicatif, useGuide, type Candidat } from '../store/guide.ts';
+import { budgetTest, niveauMaxIndicatif, useGuide, type Candidat } from '../store/guide.ts';
 import { dernierCoef, useNotes } from '../store/notes.ts';
 import { useSimu } from '../store/simu.ts';
 import { useContexte } from './useSimulation.ts';
@@ -61,8 +61,10 @@ export type Suggestions = {
   nbNonRentables: number;
   /** Objets sans prix noté, classés par densité ou valeur. */
   aChiffrer: Suggestion[];
-  /** Objets écartés parce que leur prix noté dépasse la bourse. */
+  /** Objets écartés parce que leur prix noté dépasse le budget d'un test. */
   nbTropChers: number;
+  /** Budget maximal d'un test (part de la bourse). */
+  budget: number | null;
   niveauMax: number;
   auto: boolean;
 };
@@ -76,7 +78,8 @@ export type Suggestions = {
 export function useSuggestions(limite = 10): Suggestions {
   const items = useCatalogue((s) => s.items);
   const ctx = useContexte();
-  const { jet, candidats, kamasActuels, niveauMaxSuggestions, triSuggestions } = useGuide();
+  const { jet, candidats, kamasActuels, niveauMaxSuggestions, triSuggestions, partBudgetTest } = useGuide();
+  const budget = budgetTest(kamasActuels, partBudgetTest);
   const prixConstates = useNotes((s) => s.prixConstates);
   const taxePct = useSimu((s) => s.taxePct);
   const niveauMax = niveauMaxSuggestions ?? niveauMaxIndicatif(kamasActuels);
@@ -99,7 +102,7 @@ export function useSuggestions(limite = 10): Suggestions {
         aChiffrer.push({ eval: e, prix: null, beneficeEstime: null, roiEstime: null, seuilEstime: null });
         continue;
       }
-      if (kamasActuels !== null && prix > kamasActuels) {
+      if (budget !== null && prix > budget) {
         nbTropChers++;
         continue;
       }
@@ -115,14 +118,15 @@ export function useSuggestions(limite = 10): Suggestions {
     surMesure.sort((a, b) => b.beneficeEstime! - a.beneficeEstime!);
     siCoefEleve.sort((a, b) => a.seuilEstime! - b.seuilEstime!);
     aChiffrer.sort((a, b) => cle(b.eval) - cle(a.eval));
-    return { surMesure, siCoefEleve, nbNonRentables, aChiffrer: aChiffrer.slice(0, limite), nbTropChers, niveauMax, auto: niveauMaxSuggestions === null };
-  }, [evaluations, candidats, niveauMax, triSuggestions, limite, prixConstates, kamasActuels, taxePct, niveauMaxSuggestions]);
+    return { surMesure, siCoefEleve, nbNonRentables, aChiffrer: aChiffrer.slice(0, limite), nbTropChers, budget, niveauMax, auto: niveauMaxSuggestions === null };
+  }, [evaluations, candidats, niveauMax, triSuggestions, limite, prixConstates, budget, taxePct, niveauMaxSuggestions]);
 }
 
 export function useCandidatsEvalues(): CandidatEvalue[] {
   const parId = useCatalogue((s) => s.parId);
   const ctx = useContexte();
-  const { candidats, jet, kamasActuels, objectif } = useGuide();
+  const { candidats, jet, kamasActuels, objectif, partBudgetTest } = useGuide();
+  const budget = budgetTest(kamasActuels, partBudgetTest);
   const coefs = useNotes((s) => s.coefs);
   const prixConstates = useNotes((s) => s.prixConstates);
   const taxePct = useSimu((s) => s.taxePct);
@@ -162,7 +166,7 @@ export function useCandidatsEvalues(): CandidatEvalue[] {
       let etat: EtatCandidat;
       if (c.statut === 'ecarte') etat = 'ecarte';
       else if (prix === null) etat = 'manquePrix';
-      else if (kamasActuels !== null && prix > kamasActuels) etat = 'tropCher';
+      else if (budget !== null && prix > budget && coef === null) etat = 'tropCher';
       else if (coef === null) etat = 'aTester';
       else if (benefice <= 0) etat = 'perte';
       else etat = 'pret';
@@ -173,7 +177,7 @@ export function useCandidatsEvalues(): CandidatEvalue[] {
       out.push({ candidat: c, item, prix, prixDate, coef, coefDate: dernier?.date ?? null, valeur100, focus, benefice, roi: coef === null ? null : bilan.roi, seuil, etat, plan });
     }
     return out;
-  }, [candidats, parId, ctx, jet, coefs, prixConstates, taxePct, kamasActuels, objectif]);
+  }, [candidats, parId, ctx, jet, coefs, prixConstates, taxePct, kamasActuels, objectif, budget]);
 }
 
 /** Stratégie retenue : choix manuel s'il est encore valable, sinon le meilleur gain par cycle. */

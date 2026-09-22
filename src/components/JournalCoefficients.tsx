@@ -25,31 +25,31 @@ export function JournalCoefficients({ itemId, onAppliquer }: { itemId: number; o
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-0.5 text-xs text-zinc-500">
+        <label className="flex flex-col gap-0.5 text-xs text-encre-2">
           Coefficient lu en jeu
           <ChampNombre value={coef} onChange={setCoef} vide suffixe="%" decimales={1} placeholder="ex. 132" className="w-28" />
         </label>
-        <label className="flex flex-col gap-0.5 text-xs text-zinc-500">
+        <label className="flex flex-col gap-0.5 text-xs text-encre-2">
           Date
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="h-8 rounded border border-zinc-300 bg-white px-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="champ"
           />
         </label>
         <button
           onClick={ajouter}
           disabled={coef === null}
-          className="h-8 rounded bg-zinc-900 px-3 text-sm text-white disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900"
+          className="btn btn-primaire"
         >
           Noter
         </button>
         {dernier && (
-          <span className="tnum ml-auto text-xs text-zinc-500">
-            dernier : <strong className="text-zinc-900 dark:text-zinc-100">{formatPct(dernier.coef, 1)}</strong> le {formatDate(dernier.date)}
+          <span className="tnum ml-auto text-xs text-encre-2">
+            dernier : <strong className="text-encre">{formatPct(dernier.coef, 1)}</strong> le {formatDate(dernier.date)}
             {tendance !== null && (
-              <span className={tendance > 0 ? 'text-emerald-600 dark:text-emerald-400' : tendance < 0 ? 'text-red-600 dark:text-red-400' : ''}>
+              <span className={tendance > 0 ? 'text-ok' : tendance < 0 ? 'text-ko' : ''}>
                 {' '}
                 ({tendance > 0 ? '↑' : tendance < 0 ? '↓' : '='} {formatPct(Math.abs(tendance), 1)})
               </span>
@@ -58,25 +58,25 @@ export function JournalCoefficients({ itemId, onAppliquer }: { itemId: number; o
         )}
       </div>
 
-      {entrees.length === 0 && <p className="text-xs text-zinc-500">Aucun relevé. Note le coefficient affiché par le concasseur pour suivre sa tendance.</p>}
+      {entrees.length === 0 && <p className="text-xs text-encre-2">Aucun relevé. Note le coefficient affiché par le concasseur pour suivre sa tendance.</p>}
       {entrees.length >= 2 && (
         <Courbe points={entrees.map((e) => ({ date: e.date, valeur: e.coef }))} formatY={(v) => `${Math.round(v)} %`} yMin={0} ariaLabel="Évolution du coefficient" />
       )}
 
       {entrees.length > 0 && (
-        <ul className="max-h-40 divide-y divide-zinc-100 overflow-y-auto text-xs dark:divide-zinc-800">
+        <ul className="max-h-40 divide-y divide-bord overflow-y-auto text-xs">
           {[...entrees].reverse().map((e, iInv) => {
             const i = entrees.length - 1 - iInv;
             return (
               <li key={`${e.date}-${i}`} className="flex items-center gap-2 py-0.5">
-                <span className="tnum w-20 text-zinc-500">{formatDate(e.date)}</span>
+                <span className="tnum w-20 text-encre-2">{formatDate(e.date)}</span>
                 <span className="tnum font-medium">{formatPct(e.coef, 1)}</span>
                 {onAppliquer && (
-                  <button onClick={() => onAppliquer(e.coef)} className="text-sky-600 hover:underline dark:text-sky-400">
+                  <button onClick={() => onAppliquer(e.coef)} className="lien">
                     utiliser
                   </button>
                 )}
-                <button onClick={() => supprimerCoef(itemId, i)} className="ml-auto text-zinc-400 hover:text-red-600" aria-label="Supprimer ce relevé">
+                <button onClick={() => supprimerCoef(itemId, i)} className="ml-auto text-encre-3 hover:text-ko" aria-label="Supprimer ce relevé">
                   ✕
                 </button>
               </li>

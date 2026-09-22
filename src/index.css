@@ -4,11 +4,232 @@
    sinon on suit prefers-color-scheme (géré en JS dans le store thème). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --font-mono: ui-monospace, "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+/* ---------- Palette : parchemin chaud + ambre (clair), ardoise profonde + ambre (sombre) ---------- */
+:root {
+  --fond: #f4efe6;
+  --fond-2: #ebe4d7;
+  --surface: #fffdf9;
+  --surface-2: #f7f2ea;
+  --bord: #e3dacb;
+  --bord-fort: #cfc3ad;
+  --encre: #221c14;
+  --encre-2: #6b604f;
+  --encre-3: #9c917f;
+  --accent: #b8741a;
+  --accent-fort: #8f5a12;
+  --accent-doux: #fbe9c9;
+  --lien: #9a5f0f;
+  --ok: #1f7a4d;
+  --ok-doux: #dcf3e5;
+  --ko: #b3261e;
+  --ko-doux: #fbe1de;
+  --alerte: #b45309;
+  --alerte-doux: #fde9cf;
+  --info: #1d5f8a;
+  --info-doux: #dcecf7;
+  --ombre: 0 1px 2px rgb(60 40 10 / 0.06), 0 4px 16px -8px rgb(60 40 10 / 0.12);
+}
+.dark {
+  --fond: #14110e;
+  --fond-2: #1b1713;
+  --surface: #1f1a16;
+  --surface-2: #27211c;
+  --bord: #342c25;
+  --bord-fort: #4a3f34;
+  --encre: #f1e9dc;
+  --encre-2: #b3a48f;
+  --encre-3: #7d7060;
+  --accent: #e0a13a;
+  --accent-fort: #f2bb5c;
+  --accent-doux: #3a2a12;
+  --lien: #e6ac4e;
+  --ok: #4ccb86;
+  --ok-doux: #15311f;
+  --ko: #ff7b70;
+  --ko-doux: #3b1a17;
+  --alerte: #f5a54a;
+  --alerte-doux: #3b2a12;
+  --info: #6fb4e6;
+  --info-doux: #14283a;
+  --ombre: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 20px -8px rgb(0 0 0 / 0.6);
 }
 
-.tnum {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
+@theme inline {
+  --font-sans: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --color-fond: var(--fond);
+  --color-fond-2: var(--fond-2);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-bord: var(--bord);
+  --color-bord-fort: var(--bord-fort);
+  --color-encre: var(--encre);
+  --color-encre-2: var(--encre-2);
+  --color-encre-3: var(--encre-3);
+  --color-accent: var(--accent);
+  --color-accent-fort: var(--accent-fort);
+  --color-accent-doux: var(--accent-doux);
+  --color-lien: var(--lien);
+  --color-ok: var(--ok);
+  --color-ok-doux: var(--ok-doux);
+  --color-ko: var(--ko);
+  --color-ko-doux: var(--ko-doux);
+  --color-alerte: var(--alerte);
+  --color-alerte-doux: var(--alerte-doux);
+  --color-info: var(--info);
+  --color-info-doux: var(--info-doux);
+  --shadow-carte: var(--ombre);
+}
+
+@layer base {
+  html {
+    background: var(--fond);
+    color: var(--encre);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background:
+      radial-gradient(1200px 500px at 10% -10%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 60%),
+      var(--fond);
+    min-height: 100vh;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 35%, transparent);
+  }
+  input[type="date"],
+  select {
+    color-scheme: light dark;
+  }
+}
+
+@layer components {
+  .tnum {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .carte {
+    background: var(--surface);
+    border: 1px solid var(--bord);
+    border-radius: 0.875rem;
+    box-shadow: var(--ombre);
+  }
+  .champ {
+    height: 2rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--bord-fort);
+    background: var(--surface);
+    color: var(--encre);
+    padding: 0 0.5rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 120ms, box-shadow 120ms;
+  }
+  .champ:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 25%, transparent);
+  }
+  .champ::placeholder {
+    color: var(--encre-3);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    height: 2rem;
+    padding: 0 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid var(--bord-fort);
+    background: var(--surface);
+    color: var(--encre);
+    transition: background 120ms, border-color 120ms, transform 80ms;
+  }
+  .btn:hover {
+    background: var(--surface-2);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+  .btn-primaire {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn-primaire:hover {
+    background: var(--accent-fort);
+    border-color: var(--accent-fort);
+  }
+  .dark .btn-primaire {
+    color: #1a1208;
+  }
+  .btn-petit {
+    height: 1.5rem;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+  }
+  .lien {
+    color: var(--lien);
+    text-decoration: none;
+  }
+  .lien:hover {
+    text-decoration: underline;
+  }
+  .badge {
+    display: inline-block;
+    border-radius: 0.375rem;
+    padding: 0.0625rem 0.375rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+  }
+  .titre-section {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--encre-2);
+  }
+  .segment {
+    display: inline-flex;
+    border: 1px solid var(--bord-fort);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .segment > button {
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+    color: var(--encre-2);
+  }
+  .segment > button:hover {
+    background: var(--surface-2);
+  }
+  .segment > button[aria-checked="true"],
+  .segment > button[aria-selected="true"] {
+    background: var(--accent);
+    color: #fff;
+  }
+  .dark .segment > button[aria-checked="true"],
+  .dark .segment > button[aria-selected="true"] {
+    color: #1a1208;
+  }
+  .tableau thead th {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--encre-2);
+  }
+  .tableau tbody tr {
+    border-top: 1px solid var(--bord);
+  }
+  .tableau tbody tr:hover {
+    background: color-mix(in oklab, var(--accent) 5%, transparent);
+  }
 }
