@@ -45,11 +45,20 @@ export type Suggestion = {
   /** Bénéfice estimé à coef 100 % (valeur nette de taxe − prix), si prix noté. */
   beneficeEstime: number | null;
   roiEstime: number | null;
+  /** Coefficient à partir duquel l'objet devient rentable à ce prix (estimation linéaire). */
+  seuilEstime: number | null;
 };
 
+/** Au-delà de ce coefficient requis, on ne propose même plus l'objet. */
+export const SEUIL_MAX_SUGGESTION = 300;
+
 export type Suggestions = {
-  /** Objets dont le prix noté rentre dans la bourse, classés par bénéfice estimé. */
+  /** Objets dont le prix noté rentre dans la bourse ET rentables à coef 100 %, classés par bénéfice estimé. */
   surMesure: Suggestion[];
+  /** Abordables mais rentables seulement au-dessus de 100 % (jusqu'à SEUIL_MAX_SUGGESTION), classés par seuil croissant. */
+  siCoefEleve: Suggestion[];
+  /** Abordables mais jamais rentables sous SEUIL_MAX_SUGGESTION. */
+  nbNonRentables: number;
   /** Objets sans prix noté, classés par densité ou valeur. */
   aChiffrer: Suggestion[];
   /** Objets écartés parce que leur prix noté dépasse la bourse. */
@@ -80,22 +89,33 @@ export function useSuggestions(limite = 10): Suggestions {
       (e) => e.item.stats.length > 0 && e.item.droppable !== true && !e.prixManquants && !deja.has(e.item.id) && e.item.niveau <= niveauMax,
     );
     const surMesure: Suggestion[] = [];
+    const siCoefEleve: Suggestion[] = [];
     const aChiffrer: Suggestion[] = [];
     let nbTropChers = 0;
+    let nbNonRentables = 0;
     for (const e of eligibles) {
       const prix = prixConstates[e.item.id]?.prix ?? null;
       if (prix === null) {
-        aChiffrer.push({ eval: e, prix: null, beneficeEstime: null, roiEstime: null });
-      } else if (kamasActuels !== null && prix > kamasActuels) {
-        nbTropChers++;
-      } else {
-        const beneficeEstime = e.valeurMeilleure * (1 - taxePct / 100) - prix;
-        surMesure.push({ eval: e, prix, beneficeEstime, roiEstime: prix > 0 ? (beneficeEstime / prix) * 100 : null });
+        aChiffrer.push({ eval: e, prix: null, beneficeEstime: null, roiEstime: null, seuilEstime: null });
+        continue;
       }
+      if (kamasActuels !== null && prix > kamasActuels) {
+        nbTropChers++;
+        continue;
+      }
+      const valeurNette100 = e.valeurMeilleure * (1 - taxePct / 100);
+      const beneficeEstime = valeurNette100 - prix;
+      // La valeur des runes est linéaire en coef : seuil ≈ prix / valeur nette à 100 %.
+      const seuilEstime = valeurNette100 > 0 ? (prix / valeurNette100) * 100 : null;
+      const s: Suggestion = { eval: e, prix, beneficeEstime, roiEstime: prix > 0 ? (beneficeEstime / prix) * 100 : null, seuilEstime };
+      if (beneficeEstime > 0) surMesure.push(s);
+      else if (seuilEstime !== null && seuilEstime <= SEUIL_MAX_SUGGESTION) siCoefEleve.push(s);
+      else nbNonRentables++;
     }
     surMesure.sort((a, b) => b.beneficeEstime! - a.beneficeEstime!);
+    siCoefEleve.sort((a, b) => a.seuilEstime! - b.seuilEstime!);
     aChiffrer.sort((a, b) => cle(b.eval) - cle(a.eval));
-    return { surMesure, aChiffrer: aChiffrer.slice(0, limite), nbTropChers, niveauMax, auto: niveauMaxSuggestions === null };
+    return { surMesure, siCoefEleve, nbNonRentables, aChiffrer: aChiffrer.slice(0, limite), nbTropChers, niveauMax, auto: niveauMaxSuggestions === null };
   }, [evaluations, candidats, niveauMax, triSuggestions, limite, prixConstates, kamasActuels, taxePct, niveauMaxSuggestions]);
 }
 

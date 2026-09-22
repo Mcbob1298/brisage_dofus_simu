@@ -150,10 +150,13 @@ function LigneSuggestion({ s, onAjouter }: { s: Suggestion; onAjouter: () => voi
         {formatKamas(s.eval.valeurMeilleure)}
         {s.beneficeEstime === null ? (
           <span className="block text-[10px]">{formatNombre(s.eval.valeurMeilleure / Math.max(20, s.eval.item.niveau))} / niv.</span>
+        ) : s.beneficeEstime > 0 ? (
+          <span className="block text-[10px] text-emerald-600 dark:text-emerald-400" title="Bénéfice estimé à coef. 100 %, net de taxe, avant test du coefficient">
+            +{formatKamas(s.beneficeEstime)} @100 %{s.roiEstime !== null ? ` · ROI ${formatPct(s.roiEstime)}` : ''}
+          </span>
         ) : (
-          <span className={`block text-[10px] ${s.beneficeEstime > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`} title="Bénéfice estimé à coef. 100 %, net de taxe, avant test du coefficient">
-            {s.beneficeEstime >= 0 ? '+' : ''}
-            {formatKamas(s.beneficeEstime)} @100 %{s.roiEstime !== null ? ` · ROI ${formatPct(s.roiEstime)}` : ''}
+          <span className="block text-[10px] text-orange-600 dark:text-orange-400" title="À ce prix, rentable seulement si le concasseur affiche au moins ce coefficient">
+            rentable si coef ≥ {s.seuilEstime === null ? '—' : formatPct(s.seuilEstime, 0)}
           </span>
         )}
       </span>
@@ -312,13 +315,25 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
             </div>
             {suggestions.surMesure.length > 0 && (
               <>
-                <div className="mb-1 mt-2 text-[11px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Sur mesure — dans ta bourse, prix notés</div>
+                <div className="mb-1 mt-2 text-[11px] font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">Sur mesure — dans ta bourse et rentables à 100 %</div>
                 <ul className="mb-2 divide-y divide-emerald-100 rounded border border-emerald-200 bg-emerald-50/40 dark:divide-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30">
                   {suggestions.surMesure.map((s) => (
                     <LigneSuggestion key={s.eval.item.id} s={s} onAjouter={() => g.ajouterCandidat(s.eval.item.id)} />
                   ))}
                 </ul>
               </>
+            )}
+            {suggestions.siCoefEleve.length > 0 && (
+              <details className="mb-2">
+                <summary className="cursor-pointer text-[11px] font-medium uppercase tracking-wide text-orange-700 dark:text-orange-400">
+                  Rentables seulement si le coef est haut ({suggestions.siCoefEleve.length}) — à tester au concasseur
+                </summary>
+                <ul className="mt-1 divide-y divide-orange-100 rounded border border-orange-200 dark:divide-orange-900 dark:border-orange-900">
+                  {suggestions.siCoefEleve.map((s) => (
+                    <LigneSuggestion key={s.eval.item.id} s={s} onAjouter={() => g.ajouterCandidat(s.eval.item.id)} />
+                  ))}
+                </ul>
+              </details>
             )}
             <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-zinc-500">À chiffrer — note le prix HDV, la liste se met à jour</div>
             <ul className="divide-y divide-zinc-100 rounded border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
@@ -330,7 +345,14 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
             <p className="mt-1 text-xs text-zinc-500">
               Aucune API ne donne les prix HDV : un prix noté trop cher pour ta bourse retire l'objet des suggestions
               {suggestions.nbTropChers > 0 && <span className="tnum"> ({suggestions.nbTropChers} masqué{suggestions.nbTropChers > 1 ? 's' : ''} pour l'instant)</span>}, un prix
-              abordable le fait remonter en « sur mesure ».
+              abordable et rentable à 100 % le fait remonter en « sur mesure »
+              {suggestions.nbNonRentables > 0 && (
+                <span className="tnum">
+                  {' '}
+                  ; {suggestions.nbNonRentables} abordable{suggestions.nbNonRentables > 1 ? 's' : ''} mais jamais rentable{suggestions.nbNonRentables > 1 ? 's' : ''} sous 300 %
+                </span>
+              )}
+              .
             </p>
             <button onClick={() => aller('explorateur')} className="mt-1 text-xs text-sky-600 hover:underline dark:text-sky-400">
               Voir tout l'explorateur →
