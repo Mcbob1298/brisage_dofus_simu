@@ -20,8 +20,8 @@ Spécification complète : [spec_brisage.md](spec_brisage.md).
 - `src/data/statMapping.ts` — référentiel des caractéristiques (`StatId`), mapping des effets API, effets ignorés, types conservés.
 - `src/engine/` — moteur pur : formule du brisage, focus, conversion points → runes (3 modes), bilan, coefficient seuil, comparateur, évaluation du catalogue.
 - `src/store/` — état zustand : catalogue, simulation, prix des runes, réglages (poids, mode), notes (journal des coefficients, prix constatés), thème.
-- `src/pages/` — Objet, Prix des runes, Comparateur, Explorateur.
+- `src/pages/` — Guide (objectif → objets à tester → stratégie → suivi), Objet, Prix des runes, Comparateur, Explorateur.
 
 ## Données persistées (localStorage)
 
-`brisage.simu`, `brisage.prix` (exportable/importable en JSON depuis l'écran Prix), `brisage.reglages`, `brisage.notes`, `brisage.theme`.
+`brisage.guide`, `brisage.simu`, `brisage.prix` (exportable/importable en JSON depuis l'écran Prix), `brisage.reglages`, `brisage.notes`, `brisage.theme`.
