@@ -114,3 +114,14 @@ describe('filtres de cibles', () => {
     expect(evaluerFarm([normal, patron], parId, ctx, { ...OPT, inclureBoss: false }).map((m) => m.monstre.id)).toEqual([1]);
   });
 });
+
+describe('objets non brisables', () => {
+  it('un drop que le concasseur refuse ne rapporte rien', () => {
+    const ctx = contexte('toutSimple');
+    const lie: Item = { ...objet(3, 'Objet lié'), nonBrisable: true };
+    const parIdAvecLie = new Map([...parId, [lie.id, lie]]);
+    const m = evaluerMonstre(monstre([{ itemId: 3, taux: 50 }]), parIdAvecLie, ctx, OPT);
+    expect(m.drops).toEqual([]);
+    expect(m.valeurParCombat).toBe(0);
+  });
+});

@@ -24,6 +24,18 @@ export type Item = {
   recetteConnue?: boolean;
   /** `undefined` si la source de drops n'a pas répondu pendant le sync. */
   droppable?: boolean;
+  /**
+   * Le concasseur refuse l'objet : il est « Lié au personnage » (effet #81) ou
+   * marqué « Fabrication coopérative impossible » (effet #83), marqueur que
+   * portent les objets de quête — les cinq katanas Pandala, le Pandaclier, le
+   * Bâton en bambou spirituel…
+   * Constaté en jeu sur le Katana de la Feuille et le Katana de la Roche :
+   * « Vous ne pouvez pas briser cet objet ». Aucune source officielle ne
+   * documente la règle, d'où le doute affiché dans l'interface.
+   */
+  nonBrisable?: boolean;
+  /** Effet #0 « Échangeable : N » : nombre d'échanges limité. */
+  echangesLimites?: boolean;
 };
 
 export type RuneTier = 'simple' | 'pa' | 'ra';

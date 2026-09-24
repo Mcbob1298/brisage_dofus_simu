@@ -31,6 +31,7 @@ function Etape({ n, titre, actif, children, aide }: { n: number; titre: string; 
 }
 
 const ETAT: Record<EtatCandidat, { label: string; cls: string }> = {
+  nonBrisable: { label: 'non brisable', cls: 'bg-ko-doux text-ko' },
   manquePrix: { label: 'prix ?', cls: 'bg-surface-2 text-encre-2' },
   tropCher: { label: 'dépasse le budget de test', cls: 'bg-alerte-doux text-alerte' },
   aTester: { label: 'à tester', cls: 'bg-info-doux text-info' },

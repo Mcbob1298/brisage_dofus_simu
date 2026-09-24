@@ -38,6 +38,8 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
   const [masquerDroppables, setMasquerDroppables] = useState(false);
   const [masquerSansPrix, setMasquerSansPrix] = useState(false);
   const [colDensite, setColDensite] = useState(false);
+  // Objets liés ou de quête : le concasseur les refuse.
+  const [inclureNonBrisables, setInclureNonBrisables] = useState(false);
   const [tri, setTri] = useState<Tri>('valeurMeilleure');
   const [desc, setDesc] = useState(true);
   const [limite, setLimite] = useState(PAGE);
@@ -61,6 +63,7 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
       if (valeurMin !== null && e.valeurMeilleure < valeurMin) return false;
       if (masquerDroppables && it.droppable === true) return false;
       if (masquerSansPrix && e.prixManquants) return false;
+      if (!inclureNonBrisables && it.nonBrisable) return false;
       return it.stats.length > 0;
     });
     const cle = (e: EvaluationItem): number | string => {
@@ -86,7 +89,7 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
       return (desc ? -c : c) || a.item.nom.localeCompare(b.item.nom, 'fr');
     });
     return { total: l.length, visibles: l.slice(0, limite), marge };
-  }, [evaluations, type, niveauMin, niveauMax, valeurMin, masquerDroppables, masquerSansPrix, tri, desc, limite, prixConstates, taxePct]);
+  }, [evaluations, type, niveauMin, niveauMax, valeurMin, masquerDroppables, masquerSansPrix, inclureNonBrisables, tri, desc, limite, prixConstates, taxePct]);
 
   const trierPar = (t: Tri) => {
     if (tri === t) setDesc((d) => !d);
@@ -167,6 +170,10 @@ export function PageExplorateur({ aller }: { aller: (o: Onglet) => void }) {
         <label className="flex items-center gap-1 pb-2">
           <input type="checkbox" checked={colDensite} onChange={(e) => setColDensite(e.target.checked)} />
           Colonne valeur ÷ niveau
+        </label>
+        <label className="flex items-center gap-1 pb-2" title="Objets liés au personnage ou de quête : le concasseur les refuse">
+          <input type="checkbox" checked={inclureNonBrisables} onChange={(e) => setInclureNonBrisables(e.target.checked)} />
+          Inclure les non brisables
         </label>
         <span className="tnum ml-auto pb-2">
           {formatNombre(lignes.total)} objets · coef. 100 % · brut

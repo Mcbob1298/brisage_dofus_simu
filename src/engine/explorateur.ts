@@ -30,6 +30,10 @@ export function lignesDepuisItem(item: Item, jet: JetChoisi): LigneBrisage[] {
 }
 
 export function evaluerItem(item: Item, ctx: Contexte, jet: JetChoisi = 'max', coefficient = 100): EvaluationItem {
+  // Le concasseur refuse les objets liés ou de quête : ils ne valent aucune rune.
+  if (item.nonBrisable) {
+    return { item, valeurNaturel: 0, meilleurFocus: null, valeurMeilleure: 0, prixManquants: false };
+  }
   const lignes = lignesDepuisItem(item, jet);
   const base: EntreeBrisage = { niveau: item.niveau, lignes, coefficient, focus: null };
   const naturel = calculerBrisage(base, ctx);
@@ -51,5 +55,5 @@ export function evaluerItem(item: Item, ctx: Contexte, jet: JetChoisi = 'max', c
 }
 
 export function evaluerCatalogue(items: readonly Item[], ctx: Contexte, jet: JetChoisi = 'max'): EvaluationItem[] {
-  return items.map((it) => evaluerItem(it, ctx, jet));
+  return items.filter((it) => !it.nonBrisable).map((it) => evaluerItem(it, ctx, jet));
 }

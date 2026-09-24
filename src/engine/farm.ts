@@ -69,7 +69,7 @@ export function evaluerMonstre(
   for (const d of monstre.drops) {
     if (!dropAccessible(d.plMin, d.plMax, options.niveauJoueur)) continue;
     const item = parId.get(d.itemId);
-    if (!item || item.stats.length === 0) continue;
+    if (!item || item.stats.length === 0 || item.nonBrisable) continue;
     const taux = Math.min(100, d.taux * facteurProspection);
     const ev = evaluerItem(item, ctx, options.jet, options.coefficient);
     const valeurObjet = ev.valeurMeilleure * facteurNet;

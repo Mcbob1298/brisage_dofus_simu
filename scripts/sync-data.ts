@@ -336,6 +336,7 @@ async function main() {
     }
     const iconId = iconIdFromUrl(raw.image_urls?.icon);
     if (iconId) iconByItem.set(raw.ankama_id, iconId);
+    const effets = raw.effects ?? [];
     const item: Item = {
       id: raw.ankama_id,
       nom: raw.name,
@@ -347,6 +348,10 @@ async function main() {
     };
     if (raw.parent_set) item.panoplieId = raw.parent_set.id;
     item.recetteConnue = (raw.recipe?.length ?? 0) > 0;
+    // #81 « Lié au personnage » et #83 « Fabrication coopérative impossible »
+    // (objets de quête) : le concasseur les refuse.
+    if (effets.some((e) => e.type.id === 81 || e.type.id === 83)) item.nonBrisable = true;
+    if (effets.some((e) => e.type.id === 0)) item.echangesLimites = true;
     if (droppableIds) item.droppable = droppableIds.has(raw.ankama_id);
     items.push(item);
   }
@@ -437,6 +442,7 @@ async function main() {
     `Monstres à drops    : ${monstres.length} (${monstres.reduce((n, m) => n + m.drops.length, 0)} couples monstre/objet, dont ${monstres.filter((m) => m.archimonstre).length} archimonstres)`,
   );
   console.log(`Sans aucune stat    : ${items.filter((i) => i.stats.length === 0).length} objets`);
+  console.log(`Non brisables       : ${items.filter((i) => i.nonBrisable).length} objets (liés ou de quête)`);
   console.log(`Effets mappés       : ${effectReport.filter((r) => r.status === 'mapped').length}`);
   console.log(`Effets ignorés      : ${effectReport.filter((r) => r.status === 'ignored').length}`);
   if (unmapped.length) {

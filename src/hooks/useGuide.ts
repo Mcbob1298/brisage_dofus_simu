@@ -17,7 +17,7 @@ import { coutRetenu, dernierCoef, useNotes, type SourceCout } from '../store/not
 import { useSimu } from '../store/simu.ts';
 import { useContexte } from './useSimulation.ts';
 
-export type EtatCandidat = 'ecarte' | 'manquePrix' | 'tropCher' | 'aTester' | 'perte' | 'pret';
+export type EtatCandidat = 'ecarte' | 'nonBrisable' | 'manquePrix' | 'tropCher' | 'aTester' | 'perte' | 'pret';
 
 export type CandidatEvalue = {
   candidat: Candidat;
@@ -224,6 +224,7 @@ export function useCandidatsEvalues(): CandidatEvalue[] {
 
       let etat: EtatCandidat;
       if (c.statut === 'ecarte') etat = 'ecarte';
+      else if (item.nonBrisable) etat = 'nonBrisable';
       else if (prix === null) etat = 'manquePrix';
       else if (budget !== null && prix > budget && coef === null) etat = 'tropCher';
       else if (coef === null) etat = 'aTester';

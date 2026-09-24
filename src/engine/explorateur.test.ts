@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Item } from '../data/types.ts';
-import { evaluerItem, lignesDepuisItem } from './explorateur.ts';
+import { evaluerCatalogue, evaluerItem, lignesDepuisItem } from './explorateur.ts';
 import { calculerBrisage } from './brisage.ts';
 import { contexte, prixTest } from './fixtures.test-utils.ts';
 
@@ -51,5 +51,20 @@ describe('evaluerItem', () => {
     const ev = evaluerItem(objet, contexte('toutSimple', {}), 'max');
     expect(ev.prixManquants).toBe(true);
     expect(ev.valeurNaturel).toBe(0);
+  });
+});
+
+describe('objets non brisables', () => {
+  it('evaluerItem rend 0 sur un objet lié ou de quête', () => {
+    const ev = evaluerItem({ ...objet, nonBrisable: true }, contexte('toutSimple'), 'max');
+    expect(ev.valeurNaturel).toBe(0);
+    expect(ev.valeurMeilleure).toBe(0);
+    expect(ev.meilleurFocus).toBeNull();
+  });
+
+  it('evaluerCatalogue les sort de la liste', () => {
+    const ctx = contexte('toutSimple');
+    const evalues = evaluerCatalogue([objet, { ...objet, id: 99, nom: 'Katana', nonBrisable: true }], ctx, 'max');
+    expect(evalues.map((e) => e.item.id)).toEqual([objet.id]);
   });
 });
