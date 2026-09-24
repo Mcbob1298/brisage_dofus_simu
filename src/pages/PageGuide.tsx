@@ -22,7 +22,7 @@ function Etape({ n, titre, actif, children, aide }: { n: number; titre: string; 
   return (
     <section className={`carte p-4 transition-opacity ${actif ? '' : 'opacity-50'}`}>
       <h2 className="mb-3 flex items-center gap-2.5 text-base font-semibold">
-        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${actif ? 'bg-accent text-white dark:text-[#1a1208]' : 'bg-fond-2 text-encre-2'}`}>{n}</span>
+        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${actif ? 'bg-accent text-white' : 'bg-fond-2 text-encre-2'}`}>{n}</span>
         {titre}
         {aide && <span className="ml-1 text-xs font-normal text-encre-2">{aide}</span>}
       </h2>
@@ -401,7 +401,7 @@ export function PageGuide({ aller }: { aller: (o: Onglet) => void }) {
                 <button
                   key={n}
                   onClick={() => g.setNiveauMaxSuggestions(n)}
-                  className={`rounded border px-1.5 py-0.5 ${suggestions.niveauMax === n ? 'border-accent bg-accent text-white dark:text-[#1a1208]' : 'border-bord-fort text-encre-2'}`}
+                  className={`rounded border px-1.5 py-0.5 ${suggestions.niveauMax === n ? 'border-accent bg-accent text-white' : 'border-bord-fort text-encre-2'}`}
                 >
                   {n}
                 </button>

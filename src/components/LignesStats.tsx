@@ -30,7 +30,7 @@ export function LignesStats() {
               onClick={() => setJetMode(m.id)}
               className={`px-2.5 py-1 text-xs first:rounded-l last:rounded-r ${
                 jetMode === m.id
-                  ? 'bg-accent text-white dark:text-[#1a1208]'
+                  ? 'bg-accent text-white'
                   : 'text-encre-2 hover:bg-surface-2'
               }`}
             >

@@ -10,7 +10,7 @@ Spécification complète : [spec_brisage.md](spec_brisage.md).
 |---|---|
 | `npm install` | dépendances |
 | `npm run sync-data` | télécharge le catalogue (DofusDude), les icônes WebP 48×48, le flag « droppable » et les drops détaillés — monstres, zones, taux, restrictions de niveau — (DofusDB) dans `public/data/` et `public/img/` ; logue les caractéristiques non mappées |
-| `npm run dev` | serveur de développement (http://localhost:5173) |
+| `npm run dev` | serveur de développement sur **http://localhost:5174** (port fixe : le `localStorage` est lié à l'origine, donc au port — en changer ferait disparaître les prix saisis) |
 | `npm test` | tests vitest (moteur, mapping sur les données synchronisées, index de recherche) |
 | `npm run build` | `tsc --noEmit` + build de production dans `dist/` |
 
@@ -24,4 +24,4 @@ Spécification complète : [spec_brisage.md](spec_brisage.md).
 
 ## Données persistées (localStorage)
 
-`brisage.guide`, `brisage.simu`, `brisage.prix` (exportable/importable en JSON depuis l'écran Prix), `brisage.reglages`, `brisage.notes`, `brisage.theme`.
+`brisage.guide`, `brisage.simu`, `brisage.prix`, `brisage.reglages`, `brisage.notes`, `brisage.theme`. L'écran Prix propose un export/import des prix de runes et une **sauvegarde complète** (toutes les clés) — à faire avant de changer de port, de navigateur ou de machine.

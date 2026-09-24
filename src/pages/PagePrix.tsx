@@ -5,6 +5,7 @@ import { ChampNombre } from '../components/ChampNombre.tsx';
 import { RuneImage } from '../components/RuneImage.tsx';
 import { formatDate, joursDepuis } from '../lib/format.ts';
 import { normaliser } from '../lib/normaliser.ts';
+import { Sauvegarde } from '../components/Sauvegarde.tsx';
 import { useCatalogue } from '../store/catalogue.ts';
 import { JOURS_PERIME, useStorePrix } from '../store/prix.ts';
 import { useSimu } from '../store/simu.ts';
@@ -143,7 +144,7 @@ export function PagePrix() {
             aria-selected={onglet === 'objet'}
             onClick={() => setOnglet('objet')}
             disabled={!item}
-            className={`rounded-l px-3 py-1 text-sm disabled:opacity-40 ${onglet === 'objet' ? 'bg-accent text-white dark:text-[#1a1208]' : ''}`}
+            className={`rounded-l px-3 py-1 text-sm disabled:opacity-40 ${onglet === 'objet' ? 'bg-accent text-white' : ''}`}
           >
             {item ? `Runes de « ${item.nom} »` : 'Objet en cours'}
           </button>
@@ -151,7 +152,7 @@ export function PagePrix() {
             role="tab"
             aria-selected={onglet === 'toutes'}
             onClick={() => setOnglet('toutes')}
-            className={`rounded-r px-3 py-1 text-sm ${onglet === 'toutes' ? 'bg-accent text-white dark:text-[#1a1208]' : ''}`}
+            className={`rounded-r px-3 py-1 text-sm ${onglet === 'toutes' ? 'bg-accent text-white' : ''}`}
           >
             Toutes les runes
           </button>
@@ -212,6 +213,10 @@ export function PagePrix() {
           </table>
         </div>
       )}
+
+      <div className="carte p-3">
+        <Sauvegarde />
+      </div>
 
       <p className="text-xs text-encre-2">
         Les prix sont enregistrés immédiatement dans ce navigateur uniquement. Tab passe au champ suivant ;

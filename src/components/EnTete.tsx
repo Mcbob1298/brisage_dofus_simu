@@ -41,7 +41,7 @@ export function EnTete({ onglet, onChange }: { onglet: Onglet; onChange: (o: Ong
               onClick={() => onChange(o.id)}
               aria-current={onglet === o.id ? 'page' : undefined}
               className={`whitespace-nowrap rounded-full px-3 py-1 text-sm transition-colors ${
-                onglet === o.id ? 'bg-accent font-medium text-white dark:text-[#1a1208]' : 'text-encre-2 hover:bg-surface-2 hover:text-encre'
+                onglet === o.id ? 'bg-accent font-medium text-white' : 'text-encre-2 hover:bg-surface-2 hover:text-encre'
               }`}
             >
               {o.label}

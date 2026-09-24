@@ -4,54 +4,54 @@
    sinon on suit prefers-color-scheme (géré en JS dans le store thème). */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ---------- Palette : parchemin chaud + ambre (clair), ardoise profonde + ambre (sombre) ---------- */
+/* ---------- Palette : violet néon sur ardoise (sombre) et sur blanc (clair) ---------- */
 :root {
-  --fond: #f4efe6;
-  --fond-2: #ebe4d7;
-  --surface: #fffdf9;
-  --surface-2: #f7f2ea;
-  --bord: #e3dacb;
-  --bord-fort: #cfc3ad;
-  --encre: #221c14;
-  --encre-2: #6b604f;
-  --encre-3: #9c917f;
-  --accent: #b8741a;
-  --accent-fort: #8f5a12;
-  --accent-doux: #fbe9c9;
-  --lien: #9a5f0f;
-  --ok: #1f7a4d;
-  --ok-doux: #dcf3e5;
-  --ko: #b3261e;
-  --ko-doux: #fbe1de;
+  --fond: #f7f5fb;
+  --fond-2: #efeaf9;
+  --surface: #ffffff;
+  --surface-2: #f5f1fc;
+  --bord: #e5def4;
+  --bord-fort: #cdc2e6;
+  --encre: #1b1524;
+  --encre-2: #5d5470;
+  --encre-3: #8c84a0;
+  --accent: #7c3aed;
+  --accent-fort: #6d28d9;
+  --accent-doux: #ede4fe;
+  --lien: #6d28d9;
+  --ok: #15803d;
+  --ok-doux: #dcfce7;
+  --ko: #b91c1c;
+  --ko-doux: #fee2e2;
   --alerte: #b45309;
-  --alerte-doux: #fde9cf;
-  --info: #1d5f8a;
-  --info-doux: #dcecf7;
-  --ombre: 0 1px 2px rgb(60 40 10 / 0.06), 0 4px 16px -8px rgb(60 40 10 / 0.12);
+  --alerte-doux: #fef3c7;
+  --info: #1d4ed8;
+  --info-doux: #dbeafe;
+  --ombre: 0 1px 2px rgb(60 30 90 / 0.07), 0 4px 16px -8px rgb(60 30 90 / 0.16);
 }
 .dark {
-  --fond: #14110e;
-  --fond-2: #1b1713;
-  --surface: #1f1a16;
-  --surface-2: #27211c;
-  --bord: #342c25;
-  --bord-fort: #4a3f34;
-  --encre: #f1e9dc;
-  --encre-2: #b3a48f;
-  --encre-3: #7d7060;
-  --accent: #e0a13a;
-  --accent-fort: #f2bb5c;
-  --accent-doux: #3a2a12;
-  --lien: #e6ac4e;
-  --ok: #4ccb86;
-  --ok-doux: #15311f;
-  --ko: #ff7b70;
-  --ko-doux: #3b1a17;
-  --alerte: #f5a54a;
-  --alerte-doux: #3b2a12;
-  --info: #6fb4e6;
-  --info-doux: #14283a;
-  --ombre: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 20px -8px rgb(0 0 0 / 0.6);
+  --fond: #121212;
+  --fond-2: #191919;
+  --surface: #1e1e1e;
+  --surface-2: #262626;
+  --bord: #2f2f2f;
+  --bord-fort: #3f3f46;
+  --encre: #ededf2;
+  --encre-2: #a3a3ad;
+  --encre-3: #71717a;
+  --accent: #a855f7;
+  --accent-fort: #c084fc;
+  --accent-doux: #2b1b45;
+  --lien: #c084fc;
+  --ok: #4ade80;
+  --ok-doux: #13301f;
+  --ko: #ff6b6b;
+  --ko-doux: #3a1a1a;
+  --alerte: #fbbf24;
+  --alerte-doux: #3a2a10;
+  --info: #60a5fa;
+  --info-doux: #16253a;
+  --ombre: 0 1px 2px rgb(0 0 0 / 0.5), 0 6px 22px -10px rgb(138 43 226 / 0.45);
 }
 
 @theme inline {
@@ -90,7 +90,7 @@
   }
   body {
     background:
-      radial-gradient(1200px 500px at 10% -10%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 60%),
+      radial-gradient(1100px 480px at 12% -12%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 62%),
       var(--fond);
     min-height: 100vh;
   }
@@ -170,7 +170,7 @@
     border-color: var(--accent-fort);
   }
   .dark .btn-primaire {
-    color: #1a1208;
+    box-shadow: 0 0 12px -2px color-mix(in oklab, var(--accent) 60%, transparent);
   }
   .btn-petit {
     height: 1.5rem;
@@ -218,10 +218,6 @@
   .segment > button[aria-selected="true"] {
     background: var(--accent);
     color: #fff;
-  }
-  .dark .segment > button[aria-checked="true"],
-  .dark .segment > button[aria-selected="true"] {
-    color: #1a1208;
   }
   .tableau thead th {
     font-size: 0.6875rem;

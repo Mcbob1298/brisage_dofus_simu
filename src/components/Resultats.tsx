@@ -112,7 +112,7 @@ export function BilanDetaille({ sim }: { sim: Simulation }) {
               role="radio"
               aria-checked={cle === k}
               onClick={() => setVue(k)}
-              className={`px-2 py-0.5 first:rounded-l last:rounded-r ${cle === k ? 'bg-accent text-white dark:text-[#1a1208]' : 'text-encre-2'}`}
+              className={`px-2 py-0.5 first:rounded-l last:rounded-r ${cle === k ? 'bg-accent text-white' : 'text-encre-2'}`}
               title={k === 'garanti' ? 'Runes entières uniquement' : 'Runes entières + probabilité des restes'}
             >
               {k === 'garanti' ? 'Garanti' : 'Espérance'}
