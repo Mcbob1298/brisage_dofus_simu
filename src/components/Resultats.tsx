@@ -3,6 +3,8 @@ import { STAT_BY_ID } from '../data/statMapping.ts';
 import type { Simulation } from '../hooks/useSimulation.ts';
 import { formatKamas, formatNombre, formatPct } from '../lib/format.ts';
 import { RuneImage } from './RuneImage.tsx';
+import { prixAchatMax } from '../engine/index.ts';
+import { useGuide } from '../store/guide.ts';
 
 /** Runes obtenues, ligne par ligne, avec le reste exprimé en probabilité. */
 export function Butin({ sim, onVoirPrix }: { sim: Simulation; onVoirPrix: () => void }) {
@@ -96,6 +98,7 @@ function Ligne({ label, valeur, fort, ton }: { label: string; valeur: string; fo
 /** Bilan chiffré, avec bascule garanti / espérance. */
 export function BilanDetaille({ sim }: { sim: Simulation }) {
   const { bilan, seuil, entree } = sim;
+  const roiVise = useGuide((s) => s.roiVise);
   const [vue, setVue] = useState<'garanti' | 'espere' | null>(null);
   const cle = vue ?? bilan.retenu;
   const v = bilan[cle];
@@ -129,8 +132,19 @@ export function BilanDetaille({ sim }: { sim: Simulation }) {
         valeur={seuil === null ? 'jamais rentable (≤ 4000 %)' : seuil <= 1 ? '≤ 1 %' : formatPct(seuil, 1)}
         ton={seuil !== null && entree.coefficient >= seuil ? 'ok' : 'ko'}
       />
+      <Ligne
+        label="Prix d'achat max (seuil)"
+        valeur={formatKamas(prixAchatMax(v.valeurNette / Math.max(1, bilan.nbObjets)))}
+        fort
+        ton={bilan.coutTotal > 0 && v.benefice > 0 ? 'ok' : bilan.coutTotal > 0 ? 'ko' : undefined}
+      />
+      <Ligne
+        label={`Prix d'achat max (marge ${formatPct(roiVise, 0)})`}
+        valeur={formatKamas(prixAchatMax(v.valeurNette / Math.max(1, bilan.nbObjets), roiVise))}
+      />
       <p className="pt-1 text-xs text-encre-2">
-        Le seuil est calculé sur l'espérance : en dessous, on brise à perte avec ces prix. Compare-le au coefficient affiché par le concasseur.
+        Le seuil est calculé sur l'espérance : en dessous, on brise à perte avec ces prix. Compare-le au coefficient affiché par le concasseur. Le prix d'achat max
+        dit la même chose en kamas : au-dessus, l'objet ne se rembourse pas à ce coefficient (marge visée réglable dans le Guide).
       </p>
     </div>
   );

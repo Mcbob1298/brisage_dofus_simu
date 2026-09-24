@@ -12,6 +12,7 @@ export {
   calculerBilan,
   coefficientSeuil,
   comparerFocus,
+  prixAchatMax,
   SEUIL_MIN,
   SEUIL_MAX,
 } from './brisage.ts';

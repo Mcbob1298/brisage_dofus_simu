@@ -129,6 +129,15 @@ export function calculerBilan(resultat: ResultatBrisage, options: OptionsBilan):
   };
 }
 
+/**
+ * Prix d'achat à ne pas dépasser pour un objet, au coefficient simulé.
+ * Avec `roiPct = 0` c'est le seuil de rentabilité (bénéfice nul) ; au-delà, le
+ * prix qui laisse la marge visée.
+ */
+export function prixAchatMax(valeurNetteUnitaire: number, roiPct = 0): number {
+  return valeurNetteUnitaire / (1 + Math.max(0, roiPct) / 100);
+}
+
 export const SEUIL_MIN = 1;
 export const SEUIL_MAX = 4000;
 

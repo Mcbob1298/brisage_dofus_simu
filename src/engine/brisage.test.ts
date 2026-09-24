@@ -5,6 +5,7 @@ import {
   calculerPoints,
   coefficientSeuil,
   comparerFocus,
+  prixAchatMax,
   POIDS_DEFAUT,
   SEUIL_MAX,
   SEUIL_MIN,
@@ -224,5 +225,28 @@ describe('comparerFocus', () => {
     for (let i = 1; i < comp.length; i++) {
       expect(comp[i - 1].bilan.garanti.benefice).toBeGreaterThanOrEqual(comp[i].bilan.garanti.benefice);
     }
+  });
+});
+
+describe('prixAchatMax', () => {
+  it('sans marge visée, c’est la valeur nette : le bénéfice est alors nul', () => {
+    const res = calculerBrisage(entree({ niveau: 65, lignes: [{ statId: 'pctCritique', jet: 10 }] }), contexte('toutSimple'));
+    const options = { prixRevient: 0, taxePct: 2, nbObjets: 1 };
+    const nette = calculerBilan(res, options).espere.valeurNette;
+    const max = prixAchatMax(nette);
+    expect(max).toBeCloseTo(nette, 9);
+    const auMax = calculerBilan(res, { ...options, prixRevient: max });
+    expect(auMax.espere.benefice).toBeCloseTo(0, 6);
+  });
+
+  it('une marge visée abaisse le prix maximum', () => {
+    expect(prixAchatMax(100_000, 30)).toBeCloseTo(76_923.08, 2);
+    expect(prixAchatMax(100_000, 100)).toBe(50_000);
+  });
+
+  it('acheter au prix maximum donne exactement le ROI visé', () => {
+    const nette = 100_000;
+    const max = prixAchatMax(nette, 30);
+    expect(((nette - max) / max) * 100).toBeCloseTo(30, 9);
   });
 });
