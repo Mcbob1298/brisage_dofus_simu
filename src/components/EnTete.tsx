@@ -1,10 +1,11 @@
 import { useTheme } from '../store/theme.ts';
 
-export type Onglet = 'guide' | 'objet' | 'prix' | 'comparateur' | 'explorateur';
+export type Onglet = 'guide' | 'objet' | 'rune' | 'prix' | 'comparateur' | 'explorateur';
 
 const ONGLETS: { id: Onglet; label: string }[] = [
   { id: 'guide', label: 'Guide' },
   { id: 'objet', label: 'Objet' },
+  { id: 'rune', label: 'Cibler une rune' },
   { id: 'prix', label: 'Prix des runes' },
   { id: 'comparateur', label: 'Comparateur' },
   { id: 'explorateur', label: 'Explorateur' },
