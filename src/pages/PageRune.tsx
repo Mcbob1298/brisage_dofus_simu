@@ -17,6 +17,7 @@ import { useSimu } from '../store/simu.ts';
 import { useStorePrix } from '../store/prix.ts';
 
 type Acquisition = 'tout' | 'drop' | 'craft';
+type Tri = 'runes' | 'sansFocus' | 'niveau' | 'cout' | 'parRune' | 'nom';
 
 /** Partir d'une rune et trouver les objets à briser pour l'obtenir. */
 export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
@@ -35,6 +36,10 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
   const [jet, setJet] = useState<JetChoisi>('moyen');
   const [niveauMax, setNiveauMax] = useState<number | null>(null);
   const [acquisition, setAcquisition] = useState<Acquisition>('tout');
+  const [typeObjet, setTypeObjet] = useState('');
+  const [rechercheObjet, setRechercheObjet] = useState('');
+  const [tri, setTri] = useState<Tri>('runes');
+  const [desc, setDesc] = useState(true);
   const [limite, setLimite] = useState(25);
 
   // Runes triées par prix renseigné : les plus chères d'abord, ce sont les cibles.
@@ -66,10 +71,64 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
       couts,
       prospection: g.prospection,
     }, monstres);
-    if (acquisition === 'drop') return toutes.filter((p) => p.drops.length > 0);
-    if (acquisition === 'craft') return toutes.filter((p) => p.craftable);
     return toutes;
-  }, [rune, items, ctx, g.coefSuppose, g.prospection, jet, niveauMax, couts, monstres, acquisition]);
+  }, [rune, items, ctx, g.coefSuppose, g.prospection, jet, niveauMax, couts, monstres]);
+
+  /** Types présents dans les résultats, pour ne proposer que des filtres utiles. */
+  const typesDisponibles = useMemo(
+    () => [...new Set(pistes.map((p) => p.item.type))].sort((a, b) => a.localeCompare(b, 'fr')),
+    [pistes],
+  );
+
+  const visibles = useMemo(() => {
+    const q = normaliser(rechercheObjet);
+    const filtrees = pistes.filter((p) => {
+      if (acquisition === 'drop' && p.drops.length === 0) return false;
+      if (acquisition === 'craft' && !p.craftable) return false;
+      if (typeObjet && p.item.type !== typeObjet) return false;
+      if (q && !normaliser(p.item.nom).includes(q)) return false;
+      return true;
+    });
+    const cle = (p: (typeof pistes)[number]): number | string => {
+      switch (tri) {
+        case 'sansFocus':
+          return p.quantiteNaturel;
+        case 'niveau':
+          return p.item.niveau;
+        case 'cout':
+          return p.cout ?? Infinity;
+        case 'parRune':
+          // Un coût inconnu ne doit pas passer devant : il part en fin de tri.
+          return p.coutParRune ?? (desc ? -Infinity : Infinity);
+        case 'nom':
+          return p.item.nom;
+        default:
+          return p.quantiteFocus;
+      }
+    };
+    return [...filtrees].sort((a, b) => {
+      const ka = cle(a);
+      const kb = cle(b);
+      const c = typeof ka === 'string' ? ka.localeCompare(kb as string, 'fr') : ka - (kb as number);
+      return (desc ? -c : c) || a.item.nom.localeCompare(b.item.nom, 'fr');
+    });
+  }, [pistes, acquisition, typeObjet, rechercheObjet, tri, desc]);
+
+  const trierPar = (t: Tri) => {
+    if (tri === t) setDesc((d) => !d);
+    else {
+      setTri(t);
+      // Le nom se lit de A à Z, les chiffres du plus grand au plus petit — sauf un coût, qu'on veut bas.
+      setDesc(t !== 'nom' && t !== 'cout' && t !== 'parRune');
+    }
+  };
+
+  const EnTeteTri = ({ t, label, title }: { t: Tri; label: string; title?: string }) => (
+    <button onClick={() => trierPar(t)} className="hover:underline" title={title}>
+      {label}
+      {tri === t && <span className="ml-0.5">{desc ? '▼' : '▲'}</span>}
+    </button>
+  );
 
   const prixRune = rune ? prix[rune.id]?.prix : undefined;
 
@@ -112,22 +171,6 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
             Niveau max
             <ChampNombre value={niveauMax} onChange={setNiveauMax} vide placeholder="tous" className="w-20" />
           </label>
-          <span className="flex flex-col gap-0.5">
-            Acquisition
-            <span className="segment" role="radiogroup" aria-label="Mode d'acquisition">
-              {(
-                [
-                  ['tout', 'Tout'],
-                  ['drop', 'Dropable'],
-                  ['craft', 'Craftable'],
-                ] as [Acquisition, string][]
-              ).map(([id, label]) => (
-                <button key={id} role="radio" aria-checked={acquisition === id} onClick={() => setAcquisition(id)}>
-                  {label}
-                </button>
-              ))}
-            </span>
-          </span>
           <span className="tnum pb-2">coef. supposé {formatPct(g.coefSuppose, 0)}</span>
         </div>
 
@@ -151,31 +194,88 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
       </section>
 
       {rune && (
-        <section className="carte overflow-x-auto">
+        <section className="carte">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-bord px-3 py-2 text-xs text-encre-2">
+            <input
+              type="search"
+              value={rechercheObjet}
+              onChange={(e) => setRechercheObjet(e.target.value)}
+              placeholder="Filtrer par nom d'objet…"
+              className="champ h-7 w-52"
+              aria-label="Filtrer par nom d'objet"
+            />
+            <label className="flex items-center gap-1">
+              Type
+              <select value={typeObjet} onChange={(e) => setTypeObjet(e.target.value)} className="champ h-7" aria-label="Filtrer par type d'objet">
+                <option value="">tous</option>
+                {typesDisponibles.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className="segment" role="radiogroup" aria-label="Où le trouver">
+              {(
+                [
+                  ['tout', 'Tout'],
+                  ['drop', 'Dropable'],
+                  ['craft', 'Craftable'],
+                ] as [Acquisition, string][]
+              ).map(([id, label]) => (
+                <button key={id} role="radio" aria-checked={acquisition === id} onClick={() => setAcquisition(id)}>
+                  {label}
+                </button>
+              ))}
+            </span>
+            <span className="tnum ml-auto">
+              {formatNombre(visibles.length)} objet(s)
+              {visibles.length !== pistes.length && <span className="text-encre-3"> sur {formatNombre(pistes.length)}</span>}
+            </span>
+            {(typeObjet || rechercheObjet || acquisition !== 'tout') && (
+              <button
+                onClick={() => {
+                  setTypeObjet('');
+                  setRechercheObjet('');
+                  setAcquisition('tout');
+                }}
+                className="lien"
+              >
+                ↺ tout afficher
+              </button>
+            )}
+          </div>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-encre-2">
               <tr className="border-b border-bord">
-                <th className="px-2 py-1.5 font-medium">Objet</th>
-                <th className="px-2 py-1.5 text-right font-medium">Niv.</th>
+                <th className="px-2 py-1.5 font-medium">
+                  <EnTeteTri t="nom" label="Objet" />
+                </th>
+                <th className="px-2 py-1.5 text-right font-medium">
+                  <EnTeteTri t="niveau" label="Niv." />
+                </th>
                 <th className="px-2 py-1.5 text-right font-medium" title="Jet de la ligne ciblée">
                   Ligne
                 </th>
-                <th className="px-2 py-1.5 text-right font-medium" title={`Runes obtenues en focalisant sur ${STAT_BY_ID[rune.statId].label}`}>
-                  Runes (focus)
+                <th className="px-2 py-1.5 text-right font-medium">
+                  <EnTeteTri t="runes" label="Runes (focus)" title={`Runes obtenues en focalisant sur ${STAT_BY_ID[rune.statId].label}`} />
                 </th>
-                <th className="px-2 py-1.5 text-right font-medium" title="Sans focus, le reste de l'objet est aussi converti">
-                  Sans focus
+                <th className="px-2 py-1.5 text-right font-medium">
+                  <EnTeteTri t="sansFocus" label="Sans focus" title="Sans focus, le reste de l'objet est aussi converti" />
                 </th>
-                <th className="px-2 py-1.5 text-right font-medium">Coût noté</th>
-                <th className="px-2 py-1.5 text-right font-medium" title="Coût d'acquisition ÷ runes obtenues">
-                  Par rune
+                <th className="px-2 py-1.5 text-right font-medium">
+                  <EnTeteTri t="cout" label="Coût noté" title="Prix relevé, ou estimation d'après tes relevés" />
+                </th>
+                <th className="px-2 py-1.5 text-right font-medium">
+                  <EnTeteTri t="parRune" label="Par rune" title="Coût d'acquisition ÷ runes obtenues" />
                 </th>
                 <th className="px-2 py-1.5 font-medium">Où le trouver</th>
                 <th className="px-2 py-1.5"></th>
               </tr>
             </thead>
             <tbody>
-              {pistes.slice(0, limite).map((p) => {
+              {visibles.slice(0, limite).map((p) => {
                 const gagnant = prixRune !== undefined && p.coutParRune !== null && p.coutParRune < prixRune;
                 const note = estimateur.coutNote(p.item);
                 const estime = note === null && p.cout !== null;
@@ -240,14 +340,15 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
               })}
             </tbody>
           </table>
-          {pistes.length > limite && (
+          </div>
+          {visibles.length > limite && (
             <div className="border-t border-bord p-2 text-center">
               <button onClick={() => setLimite((l) => l + 25)} className="lien text-xs">
-                Afficher 25 de plus ({formatNombre(pistes.length - limite)} restants)
+                Afficher 25 de plus ({formatNombre(visibles.length - limite)} restants)
               </button>
             </div>
           )}
-          {pistes.length === 0 && <p className="p-3 text-sm text-encre-2">Aucun objet brisable ne porte cette caractéristique avec ces filtres.</p>}
+          {visibles.length === 0 && <p className="p-3 text-sm text-encre-2">Aucun objet ne correspond à ces filtres.</p>}
         </section>
       )}
 
