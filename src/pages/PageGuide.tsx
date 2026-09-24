@@ -6,6 +6,7 @@ import { Courbe } from '../components/Courbe.tsx';
 import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
 import { RechercheObjet } from '../components/RechercheObjet.tsx';
+import { useEstimation } from '../hooks/useEstimation.ts';
 import { strategieRetenue, useCandidatsEvalues, useKamasParPoint, useSuggestions, type CandidatEvalue, type EtatCandidat, type Suggestion } from '../hooks/useGuide.ts';
 import { formatDate, formatKamas, formatNombre, formatPct, joursDepuis } from '../lib/format.ts';
 import { JOURS_PERIME } from '../store/prix.ts';
@@ -159,7 +160,9 @@ function LigneCandidat({ e, ouvrir }: { e: CandidatEvalue; ouvrir: (item: Item) 
 function LigneSuggestion({ s, onAjouter }: { s: Suggestion; onAjouter: () => void }) {
   const setPrixConstate = useNotes((st) => st.setPrixConstate);
   const setCoutCraft = useNotes((st) => st.setCoutCraft);
+  const estimateur = useEstimation();
   const item = s.eval.item;
+  const estimation = s.prixHdv === null && s.coutCraft === null ? estimateur.estimer(item) : null;
   return (
     <li className="flex items-center gap-2 px-2 py-1.5 text-sm">
       <span className="flex min-w-0 flex-1 items-start gap-2">
@@ -197,8 +200,8 @@ function LigneSuggestion({ s, onAjouter }: { s: Suggestion; onAjouter: () => voi
           value={s.prixHdv}
           onChange={(v) => setPrixConstate(item.id, v)}
           vide
-          placeholder="HDV"
-          className={`w-22 [&>input]:h-6 [&>input]:text-xs ${s.source === 'hdv' ? '[&>input]:border-accent' : ''}`}
+          placeholder={estimation ? `≈ ${formatNombre(estimation.prix)}` : 'HDV'}
+          className={`w-22 [&>input]:h-6 [&>input]:text-xs ${s.source === 'hdv' ? '[&>input]:border-accent' : ''} ${estimation ? '[&>input]:placeholder:text-encre-3' : ''}`}
           aria-label={`Prix HDV ${item.nom}`}
           title="Prix vu en HDV : au-dessus du prix max il disparaît, en dessous il passe en bonne affaire"
         />

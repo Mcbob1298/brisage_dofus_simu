@@ -6,12 +6,13 @@ import { ChampNombre } from '../components/ChampNombre.tsx';
 import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
 import { RuneImage } from '../components/RuneImage.tsx';
+import { useEstimation } from '../hooks/useEstimation.ts';
 import { useContexte } from '../hooks/useSimulation.ts';
 import { formatKamas, formatNombre, formatPct } from '../lib/format.ts';
 import { normaliser } from '../lib/normaliser.ts';
 import { useCatalogue } from '../store/catalogue.ts';
 import { useGuide } from '../store/guide.ts';
-import { useNotes, coutRetenu } from '../store/notes.ts';
+import { useNotes } from '../store/notes.ts';
 import { useSimu } from '../store/simu.ts';
 import { useStorePrix } from '../store/prix.ts';
 
@@ -25,7 +26,8 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
   const ctx = useContexte();
   const prix = useStorePrix((s) => s.prix);
   const g = useGuide();
-  const { prixConstates, coutsCraft, setPrixConstate } = useNotes();
+  const setPrixConstate = useNotes((s) => s.setPrixConstate);
+  const estimateur = useEstimation();
   const { choisirObjet, setChamp, setFocus } = useSimu();
 
   const [runeId, setRuneId] = useState<number | null>(null);
@@ -45,14 +47,15 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
 
   const rune: RuneDef | null = runeId !== null ? (runes.find((r) => r.id === runeId) ?? null) : null;
 
+  // Prix noté quand il existe, sinon estimé d'après les relevés de l'utilisateur.
   const couts = useMemo(() => {
     const out: Record<number, number> = {};
     for (const it of items) {
-      const c = coutRetenu(prixConstates[it.id], coutsCraft[it.id]);
+      const c = estimateur.cout(it);
       if (c) out[it.id] = c.prix;
     }
     return out;
-  }, [items, prixConstates, coutsCraft]);
+  }, [items, estimateur]);
 
   const pistes = useMemo(() => {
     if (!rune) return [];
@@ -174,6 +177,8 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
             <tbody>
               {pistes.slice(0, limite).map((p) => {
                 const gagnant = prixRune !== undefined && p.coutParRune !== null && p.coutParRune < prixRune;
+                const note = estimateur.coutNote(p.item);
+                const estime = note === null && p.cout !== null;
                 return (
                   <tr key={p.item.id} className="border-t border-bord">
                     <td className="px-2 py-1">
@@ -191,16 +196,17 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
                     <td className="tnum px-2 py-1 text-right text-encre-2">{formatNombre(p.quantiteNaturel, 1)}</td>
                     <td className="px-2 py-1 text-right">
                       <ChampNombre
-                        value={p.cout}
+                        value={note}
                         onChange={(v) => setPrixConstate(p.item.id, v)}
                         vide
-                        placeholder="HDV"
-                        className="w-24 [&>input]:h-7"
+                        placeholder={estime ? `≈ ${formatNombre(p.cout ?? 0)}` : 'HDV'}
+                        className={`w-24 [&>input]:h-7 ${estime ? '[&>input]:text-encre-3' : ''}`}
                         aria-label={`Coût ${p.item.nom}`}
+                        title={estime ? "Estimation d'après tes prix relevés — note le prix réel pour la remplacer" : undefined}
                       />
                     </td>
-                    <td className={`tnum px-2 py-1 text-right ${gagnant ? 'font-medium text-ok' : ''}`}>
-                      {p.coutParRune === null ? '—' : formatKamas(p.coutParRune)}
+                    <td className={`tnum px-2 py-1 text-right ${gagnant && !estime ? 'font-medium text-ok' : ''} ${estime ? 'text-encre-3' : ''}`}>
+                      {p.coutParRune === null ? '—' : `${estime ? '≈ ' : ''}${formatKamas(p.coutParRune)}`}
                     </td>
                     <td className="px-2 py-1 text-xs">
                       {p.drops.length > 0 ? (
@@ -253,6 +259,18 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
 
       {rune && (
         <p className="text-xs text-encre-2">
+          {estimateur.calibration.parNiveau === null ? (
+            <>
+              Aucune API ne donne les prix HDV : note quelques prix (ici ou dans le Guide) et l'app estimera les autres à partir de tes relevés.{' '}
+            </>
+          ) : (
+            <>
+              Les coûts en gris sont des <strong>estimations</strong> tirées de tes {estimateur.calibration.nbReleves} prix relevés (
+              {formatNombre(estimateur.calibration.parNiveau, 1)} kamas par niveau en médiane
+              {estimateur.calibration.parType.size > 0 ? `, affinée pour ${estimateur.calibration.parType.size} type(s)` : ''}) — un ordre de grandeur, pas
+              une cote.{' '}
+            </>
+          )}
           Quantités calculées au coefficient supposé ({formatPct(g.coefSuppose, 0)}, réglable dans le Guide) avec un focus sur {STAT_BY_ID[rune.statId].label} : les
           autres lignes sont détruites et ne reversent que la moitié de leur poids. Les décimales sont des probabilités, pas des runes garanties. Les taux de drop
           tiennent compte de ta prospection ({formatNombre(g.prospection)}).
