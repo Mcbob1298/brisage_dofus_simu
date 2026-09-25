@@ -107,3 +107,6 @@ export type DropsMeta = {
   nbMonstres: number;
   nbDrops: number;
 };
+
+/** Serveur de jeu (DofusDB /servers) : sert d'étiquette aux prix relevés. */
+export type Serveur = { id: number; nom: string };

@@ -20,6 +20,7 @@ Spécification complète : [spec_brisage.md](spec_brisage.md).
 - `src/data/statMapping.ts` — référentiel des caractéristiques (`StatId`), mapping des effets API, effets ignorés, types conservés.
 - `src/engine/` — moteur pur : formule du brisage, focus, conversion points → runes (3 modes), bilan, coefficient seuil, comparateur, évaluation du catalogue, valeur de farm par monstre, recherche inverse par rune, plan de progression.
 - `src/store/` — état zustand : catalogue, simulation, prix des runes, réglages (poids, mode), notes (journal des coefficients, prix constatés), thème.
+- `src/components/CarteObjet.tsx` — carte de brisage : coûts, résultat, coefficient, détail des lignes avec et sans focus.
 - `src/pages/` — Guide (objectif → farm gratuit → achat HDV → stratégie → suivi), Objet, Cibler une rune (recherche inverse : quels objets briser pour une rune donnée), Prix des runes, Comparateur, Explorateur.
 
 ## Données persistées (localStorage)

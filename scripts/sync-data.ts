@@ -23,6 +23,7 @@ import type {
   Item,
   Monstre,
   DropItem,
+  Serveur,
   RuneDef,
   RuneTier,
   StatLine,
@@ -110,6 +111,18 @@ async function fetchFeathers<T>(chemin: string, select: string[], filtre = ''): 
   }
   process.stdout.write('\n');
   return out;
+}
+
+/**
+ * Serveurs de jeu, hors éphémères (tournois, Speed Rush) : ils servent
+ * d'étiquette aux prix relevés, qui dépendent du serveur.
+ */
+async function fetchServeurs(): Promise<Serveur[]> {
+  const bruts = await fetchFeathers<{ id: number; name: { fr: string } }>('servers', ['id', 'name']);
+  return bruts
+    .filter((b) => b.name?.fr && !/tournoi|speed rush/i.test(b.name.fr))
+    .map((b) => ({ id: b.id, nom: b.name.fr }))
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
 }
 
 // ---------- Drops (DofusDB) ----------
@@ -388,6 +401,9 @@ async function main() {
       tierOrder[a.tier] - tierOrder[b.tier],
   );
 
+  // --- Serveurs ---
+  const serveurs = await fetchServeurs();
+
   // --- Drops ---
   console.log('▶ Drops détaillés (monstres, zones, taux)…');
   let monstres: Monstre[] = [];
@@ -426,6 +442,7 @@ async function main() {
   await writeFile(path.join(DATA_DIR, 'effect-types.json'), JSON.stringify(effectReport, null, 1));
   await writeFile(path.join(DATA_DIR, 'meta.json'), JSON.stringify(meta, null, 1));
   await writeFile(path.join(DATA_DIR, 'monstres.json'), JSON.stringify(monstres));
+  await writeFile(path.join(DATA_DIR, 'serveurs.json'), JSON.stringify(serveurs));
 
   // --- Rapport ---
   const unmapped = effectReport.filter((r) => r.status === 'unmapped');
@@ -443,6 +460,7 @@ async function main() {
   );
   console.log(`Sans aucune stat    : ${items.filter((i) => i.stats.length === 0).length} objets`);
   console.log(`Non brisables       : ${items.filter((i) => i.nonBrisable).length} objets (liés ou de quête)`);
+  console.log(`Serveurs            : ${serveurs.length}`);
   console.log(`Effets mappés       : ${effectReport.filter((r) => r.status === 'mapped').length}`);
   console.log(`Effets ignorés      : ${effectReport.filter((r) => r.status === 'ignored').length}`);
   if (unmapped.length) {

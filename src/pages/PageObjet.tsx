@@ -1,29 +1,19 @@
-import { STAT_BY_ID, placeholderPour } from '../data/statMapping.ts';
 import { useCatalogue } from '../store/catalogue.ts';
 import { useSimu } from '../store/simu.ts';
-import { ItemImage } from '../components/ItemImage.tsx';
 import { RechercheObjet } from '../components/RechercheObjet.tsx';
-import { LignesStats } from '../components/LignesStats.tsx';
+import { CarteObjet } from '../components/CarteObjet.tsx';
 import { ParametresSimu } from '../components/ParametresSimu.tsx';
 import { BilanDetaille, Butin } from '../components/Resultats.tsx';
 import { Reglages } from '../components/Reglages.tsx';
 import { JournalCoefficients } from '../components/JournalCoefficients.tsx';
+import { STAT_BY_ID } from '../data/statMapping.ts';
 import { useComparaisonFocus, type Simulation } from '../hooks/useSimulation.ts';
 import { formatKamas } from '../lib/format.ts';
 import type { Onglet } from '../components/EnTete.tsx';
 
-function Badge({ children, ton = 'neutre' }: { children: React.ReactNode; ton?: 'neutre' | 'alerte' | 'ok' }) {
-  const cls = {
-    neutre: 'bg-surface-2 text-encre-2',
-    alerte: 'bg-alerte-doux text-alerte',
-    ok: 'bg-ok-doux text-ok',
-  }[ton];
-  return <span className={`rounded px-1.5 py-0.5 text-xs ${cls}`}>{children}</span>;
-}
-
-function Carte({ titre, children, className = '' }: { titre?: string; children: React.ReactNode; className?: string }) {
+function Carte({ titre, children }: { titre?: string; children: React.ReactNode }) {
   return (
-    <div className={`carte p-3 ${className}`}>
+    <div className="carte p-4">
       {titre && <h3 className="mb-2 titre-section">{titre}</h3>}
       {children}
     </div>
@@ -40,9 +30,9 @@ function ConseilFocus({ sim, onVoir }: { sim: Simulation; onVoir: () => void }) 
   const gain = meilleur.bilan[cle].benefice - courant.bilan[cle].benefice;
   if (meilleur.focus === sim.entree.focus || gain <= 0) return null;
   return (
-    <p className="rounded border border-info/40 bg-info-doux px-2 py-1 text-xs text-info">
+    <p className="rounded-lg border border-info/40 bg-info-doux px-3 py-2 text-sm text-info">
       {meilleur.focus === null ? 'Le brisage naturel' : `Un focus ${STAT_BY_ID[meilleur.focus].label}`} rapporterait{' '}
-      <span className="tnum font-medium">+{formatKamas(gain)}</span>.{' '}
+      <span className="tnum font-semibold">+{formatKamas(gain)}</span>.{' '}
       <button onClick={onVoir} className="underline">
         Voir le comparateur
       </button>
@@ -53,64 +43,40 @@ function ConseilFocus({ sim, onVoir }: { sim: Simulation; onVoir: () => void }) 
 export function PageObjet({ sim, aller }: { sim: Simulation | null; aller: (o: Onglet) => void }) {
   const { statut, erreur } = useCatalogue();
   const choisirObjet = useSimu((s) => s.choisirObjet);
-  const setChamp = useSimu((s) => s.setChamp);
   const item = sim?.item;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <RechercheObjet onChoisir={choisirObjet} />
 
       {statut === 'erreur' && (
-        <p className="rounded border border-ko/40 bg-ko-doux p-2 text-sm text-ko">
+        <p className="rounded-lg border border-ko/40 bg-ko-doux p-3 text-sm text-ko">
           Catalogue introuvable ({erreur}). Lance <code>npm run sync-data</code> puis recharge.
         </p>
       )}
 
       {!item && statut === 'pret' && (
-        <p className="text-sm text-encre-2">Cherche un objet pour remplir ses caractéristiques automatiquement.</p>
+        <p className="text-sm text-encre-2">Cherche un objet : ses caractéristiques se remplissent automatiquement.</p>
       )}
 
       {item && sim && (
         <>
-          <section className="grid gap-3 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <Carte>
-              <div className="mb-3 flex items-center gap-3">
-                <ItemImage src={item.imageLocale} alt="" fallback={placeholderPour(item.type, item.famille)} taille={48} />
-                <div className="min-w-0">
-                  <h2 className="truncate text-base font-semibold">{item.nom}</h2>
-                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-encre-2">
-                    <span className="tnum">niveau {item.niveau}</span>
-                    <span>·</span>
-                    <span>{item.type}</span>
-                    {item.droppable === true && <Badge ton="alerte">droppable</Badge>}
-                    {item.droppable === false && <Badge ton="ok">non droppable</Badge>}
-                    {item.recetteConnue && <Badge>recette</Badge>}
-                    {item.panoplieId !== undefined && <Badge>panoplie</Badge>}
-                  </div>
-                </div>
-              </div>
-              <LignesStats />
-            </Carte>
+          <CarteObjet sim={sim} />
+          <ConseilFocus sim={sim} onVoir={() => aller('comparateur')} />
 
-            <div className="space-y-3">
+          <section className="grid gap-4 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <Carte titre="Butin détaillé">
+              <Butin sim={sim} onVoirPrix={() => aller('prix')} />
+            </Carte>
+            <div className="space-y-4">
               <Carte titre="Paramètres">
                 <ParametresSimu />
               </Carte>
               <Carte titre="Bilan">
                 <BilanDetaille sim={sim} />
               </Carte>
-            </div>
-          </section>
-
-          <ConseilFocus sim={sim} onVoir={() => aller('comparateur')} />
-
-          <section className="grid gap-3 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-            <Carte titre="Butin">
-              <Butin sim={sim} onVoirPrix={() => aller('prix')} />
-            </Carte>
-            <div className="space-y-3">
               <Carte titre="Journal des coefficients">
-                <JournalCoefficients itemId={item.id} onAppliquer={(c) => setChamp('coefficient', c)} />
+                <JournalCoefficients itemId={item.id} onAppliquer={(c) => useSimu.getState().setChamp('coefficient', c)} />
               </Carte>
               <Carte titre="Réglages du moteur">
                 <Reglages />

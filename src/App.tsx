@@ -40,7 +40,8 @@ export default function App() {
   return (
     <div className="min-h-screen text-encre">
       <EnTete onglet={onglet} onChange={changerOnglet} />
-      {onglet !== 'guide' && onglet !== 'rune' && <BarreBilan sim={sim} />}
+      {/* La carte d'objet porte déjà le bilan : la barre ne sert que sur les autres écrans. */}
+      {onglet !== 'guide' && onglet !== 'rune' && onglet !== 'objet' && <BarreBilan sim={sim} />}
       <main className="mx-auto max-w-6xl px-3 py-4">
         {onglet === 'guide' && <PageGuide aller={changerOnglet} />}
         {onglet === 'objet' && <PageObjet sim={sim} aller={changerOnglet} />}

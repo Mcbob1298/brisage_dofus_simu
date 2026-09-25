@@ -15,7 +15,8 @@ import {
   type OptionsBilan,
   type ResultatBrisage,
 } from '../engine/index.ts';
-import type { Item } from '../data/types.ts';
+import type { Item, RuneDef } from '../data/types.ts';
+import type { StatId } from '../data/statMapping.ts';
 
 export type Simulation = {
   item: Item;
@@ -61,4 +62,50 @@ export function useSimulation(): Simulation | null {
 
 export function useComparaisonFocus(sim: Simulation | null): ComparaisonFocus[] {
   return useMemo(() => (sim ? comparerFocus(sim.entree, sim.ctx, sim.options) : []), [sim]);
+}
+
+export type DetailLigne = {
+  statId: StatId;
+  /** Jet retenu sur cette ligne. */
+  jet: number;
+  min: number;
+  max: number;
+  /** Rune simple de la caractéristique, pour l'icône et le prix. */
+  rune: RuneDef | null;
+  prixRune: number | undefined;
+  sansFocus: { runes: number; kamas: number };
+  /** Ce que rendrait l'objet en focalisant cette ligne (les autres sont détruites). */
+  avecFocus: { runes: number; kamas: number };
+};
+
+/**
+ * Détail ligne par ligne : ce que rend chaque caractéristique en brisage naturel
+ * et ce qu'elle rendrait si on focalisait dessus. Les deux colonnes se comparent
+ * directement, comme sur une fiche d'objet.
+ */
+export function useDetailLignes(sim: Simulation | null): DetailLigne[] {
+  const lignes = useSimu((s) => s.lignes);
+  return useMemo(() => {
+    if (!sim) return [];
+    const { ctx, entree } = sim;
+    const naturel = calculerBrisage({ ...entree, focus: null }, ctx);
+    return lignes.map((l): DetailLigne => {
+      const rune = ctx.runes.find((r) => r.statId === l.statId && r.tier === 'simple') ?? null;
+      const prixRune = rune ? ctx.prix[rune.id] : undefined;
+      const sans = naturel.parStat.find((p) => p.statId === l.statId);
+      const utile = l.jet > 0;
+      const avec = utile ? calculerBrisage({ ...entree, focus: l.statId }, ctx).parStat.find((p) => p.statId === l.statId) : undefined;
+      const quantite = (points: number | undefined) => (points !== undefined && rune ? points / rune.valeur : 0);
+      return {
+        statId: l.statId,
+        jet: l.jet,
+        min: l.min,
+        max: l.max,
+        rune,
+        prixRune,
+        sansFocus: { runes: quantite(sans?.points), kamas: sans?.valeurEsperee ?? 0 },
+        avecFocus: { runes: quantite(avec?.points), kamas: avec?.valeurEsperee ?? 0 },
+      };
+    });
+  }, [sim, lignes]);
 }
