@@ -95,3 +95,37 @@ describe('recommanderBrisage', () => {
     expect(o.benefice).toBeGreaterThan(0);
   });
 });
+
+describe('coefficients relevés', () => {
+  const a = obj('Testé', [{ statId: 'force', min: 100, max: 100 }]);
+
+  it('un coefficient relevé prime sur le coefficient supposé', () => {
+    const base = { ...OPT, couts: couts([a, 10_000]) };
+    const suppose = recommanderBrisage([a], contexte('toutSimple'), base)[0];
+    const mesure = recommanderBrisage([a], contexte('toutSimple'), { ...base, coefficients: new Map([[a.id, 200]]) })[0];
+    expect(suppose.coefficient).toBe(100);
+    expect(suppose.coefMesure).toBe(false);
+    expect(mesure.coefficient).toBe(200);
+    expect(mesure.coefMesure).toBe(true);
+    expect(mesure.valeurNette).toBeCloseTo(suppose.valeurNette * 2, 6);
+  });
+
+  it('un objet devient non rentable si son coefficient relevé est bas', () => {
+    const base = { ...OPT, couts: couts([a, 10_000]) };
+    expect(recommanderBrisage([a], contexte('toutSimple'), base)).toHaveLength(1);
+    expect(recommanderBrisage([a], contexte('toutSimple'), { ...base, coefficients: new Map([[a.id, 30]]) })).toEqual([]);
+  });
+
+  it('chaque objet garde son propre coefficient', () => {
+    const b = obj('Autre', [{ statId: 'force', min: 100, max: 100 }]);
+    const r = recommanderBrisage([a, b], contexte('toutSimple'), {
+      ...OPT,
+      couts: couts([a, 10_000], [b, 10_000]),
+      coefficients: new Map([[a.id, 300]]),
+    });
+    const parNom = Object.fromEntries(r.map((o) => [o.item.nom, o]));
+    expect(parNom['Testé'].coefficient).toBe(300);
+    expect(parNom['Autre'].coefficient).toBe(100);
+    expect(parNom['Testé'].benefice).toBeGreaterThan(parNom['Autre'].benefice);
+  });
+});

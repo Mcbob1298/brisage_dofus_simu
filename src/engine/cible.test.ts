@@ -114,3 +114,13 @@ describe('indexerDrops', () => {
     expect(indexerDrops([monstre(1, 60)], 500).get(42)![0].taux).toBe(100);
   });
 });
+
+describe('coefficients relevés par objet', () => {
+  it('le coefficient relevé prime sur le coefficient supposé', () => {
+    const item = obj('Anneau', [{ statId: 'pa', min: 1, max: 1 }]);
+    const ctx = contexte();
+    const [suppose] = ciblerRune(runeParNom('Rune Ga Pa'), [item], ctx, OPT);
+    const [mesure] = ciblerRune(runeParNom('Rune Ga Pa'), [item], ctx, { ...OPT, coefficients: new Map([[item.id, 50]]) });
+    expect(mesure.pointsFocus).toBeCloseTo(suppose.pointsFocus / 2, 6);
+  });
+});

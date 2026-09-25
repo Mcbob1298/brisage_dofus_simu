@@ -27,6 +27,10 @@ export type Opportunite = {
   roi: number;
   /** Stratégie retenue : `null` pour un brisage naturel. */
   focus: StatId | null;
+  /** Coefficient utilisé pour cet objet. */
+  coefficient: number;
+  /** Vrai si ce coefficient a été relevé au concasseur, faux s'il est supposé. */
+  coefMesure: boolean;
   /** Exemplaires que le budget permet d'acheter. */
   quantite: number;
   /** Bénéfice de l'opération complète, budget épuisé. */
@@ -43,6 +47,11 @@ export type OptionsRecommandation = {
   jet: JetChoisi;
   /** Coûts relevés, par id d'objet. */
   couts: ReadonlyMap<number, { prix: number; source: SourceCout }>;
+  /**
+   * Coefficients relevés au concasseur, par id d'objet. Ils priment sur
+   * `coefficient`, qui ne sert que de repli pour les objets jamais testés.
+   */
+  coefficients?: ReadonlyMap<number, number>;
   /** Marge minimale exigée, en % (0 = tout ce qui est rentable). */
   roiMin?: number;
 };
@@ -62,7 +71,9 @@ export function recommanderBrisage(items: readonly Item[], ctx: Contexte, option
     if (!cout || cout.prix <= 0 || item.nonBrisable || item.stats.length === 0) continue;
 
     const lignes = lignesDepuisItem(item, options.jet);
-    const base = { niveau: item.niveau, lignes, coefficient: options.coefficient };
+    const mesure = options.coefficients?.get(item.id);
+    const coefficient = mesure ?? options.coefficient;
+    const base = { niveau: item.niveau, lignes, coefficient };
     let focus: StatId | null = null;
     let valeur = calculerBrisage({ ...base, focus: null }, ctx).valeurEsperee;
     const vus = new Set<StatId>();
@@ -90,6 +101,8 @@ export function recommanderBrisage(items: readonly Item[], ctx: Contexte, option
       benefice,
       roi,
       focus,
+      coefficient,
+      coefMesure: mesure !== undefined,
       quantite,
       beneficeTotal: quantite * benefice,
       seuil: coefficientSeuil({ niveau: item.niveau, lignes, focus }, ctx, { prixRevient: cout.prix, taxePct: options.taxePct, nbObjets: 1 }),

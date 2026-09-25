@@ -125,3 +125,13 @@ describe('objets non brisables', () => {
     expect(m.valeurParCombat).toBe(0);
   });
 });
+
+describe('coefficients relevés par objet', () => {
+  it('un objet testé utilise son propre coefficient', () => {
+    const ctx = contexte('toutSimple');
+    const m = monstre([{ itemId: 1, taux: 50 }]);
+    const base = evaluerMonstre(m, parId, ctx, OPT);
+    const double = evaluerMonstre(m, parId, ctx, { ...OPT, coefficients: new Map([[1, 200]]) });
+    expect(double.valeurParCombat).toBeCloseTo(base.valeurParCombat * 2, 6);
+  });
+});

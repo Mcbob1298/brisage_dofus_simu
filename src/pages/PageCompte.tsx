@@ -5,6 +5,7 @@ import { ChampNombre } from '../components/ChampNombre.tsx';
 import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
 import { Sauvegarde } from '../components/Sauvegarde.tsx';
+import { useCoefficients } from '../hooks/useCoefficients.ts';
 import { useCouts } from '../hooks/useCouts.ts';
 import { COEF_VOLATIL, LOT_PRUDENT, partDuBudget } from '../lib/heuristiques.ts';
 import { useContexte } from '../hooks/useSimulation.ts';
@@ -35,6 +36,7 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
   const monstres = useCatalogue((s) => s.monstres);
   const ctx = useContexte();
   const couts = useCouts();
+  const coefficients = useCoefficients();
   const prixRunes = useStorePrix((s) => s.prix);
   const prixConstates = useNotes((s) => s.prixConstates);
   const coutsCraft = useNotes((s) => s.coutsCraft);
@@ -46,8 +48,8 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
   const { choisirObjet, setChamp, setFocus } = useSimu();
 
   const opportunites = useMemo(
-    () => recommanderBrisage(items, ctx, { budget, coefficient: coefSuppose, taxePct, jet: 'moyen', couts, roiMin }),
-    [items, ctx, budget, coefSuppose, taxePct, couts, roiMin],
+    () => recommanderBrisage(items, ctx, { budget, coefficient: coefSuppose, coefficients, taxePct, jet: 'moyen', couts, roiMin }),
+    [items, ctx, budget, coefSuppose, coefficients, taxePct, couts, roiMin],
   );
 
   const farm = useMemo(
@@ -56,11 +58,12 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
         niveauJoueur: niveau,
         prospection,
         coefficient: coefSuppose,
+        coefficients,
         taxePct,
         jet: 'moyen',
         ecartNiveauMax: 10,
       }).slice(0, 5),
-    [monstres, parId, ctx, niveau, prospection, coefSuppose, taxePct],
+    [monstres, parId, ctx, niveau, prospection, coefSuppose, coefficients, taxePct],
   );
 
   const achats = opportunites.filter((o) => o.source === 'hdv').slice(0, 8);
@@ -73,7 +76,7 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
 
   const ouvrir = (o: (typeof opportunites)[number]) => {
     choisirObjet(o.item);
-    setChamp('coefficient', coefSuppose);
+    setChamp('coefficient', o.coefficient);
     setChamp('prixRevient', o.cout);
     setFocus(o.focus);
     aller('objet');
@@ -126,6 +129,10 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
             Achète <strong className="tnum text-accent">{formatNombre(meilleur.quantite)}</strong> ×{' '}
             <strong>{meilleur.item.nom}</strong> à <span className="tnum">{formatKamas(meilleur.cout)}</span> et{' '}
             {meilleur.focus === null ? 'brise-les naturellement' : <>brise-les en <strong>focus {STAT_BY_ID[meilleur.focus].label}</strong></>}.
+          </p>
+          <p className="tnum mt-1 text-xs text-encre-2">
+            Calculé au coefficient <strong className={meilleur.coefMesure ? 'text-accent' : ''}>{formatPct(meilleur.coefficient, 0)}</strong>{' '}
+            {meilleur.coefMesure ? 'que tu as relevé sur cet objet' : 'supposé — relève le vrai au concasseur pour fiabiliser'}
           </p>
           <p className="tnum mt-1 text-sm text-encre-2">
             Gain attendu <strong className="text-ok">+{formatKamas(meilleur.beneficeTotal)}</strong> ({formatKamas(meilleur.benefice)} par objet, ROI{' '}
@@ -214,7 +221,10 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{o.item.nom}</span>
                     <span className="tnum block text-[11px] text-encre-2">
-                      {formatKamas(o.cout)} · ×{formatNombre(o.quantite)} · {o.focus === null ? 'naturel' : `focus ${STAT_BY_ID[o.focus].label}`}
+                      {formatKamas(o.cout)} · ×{formatNombre(o.quantite)} · {o.focus === null ? 'naturel' : `focus ${STAT_BY_ID[o.focus].label}`} ·{' '}
+                      <span className={o.coefMesure ? 'text-accent' : ''} title={o.coefMesure ? 'Coefficient relevé sur cet objet' : 'Coefficient supposé, pas encore testé'}>
+                        {formatPct(o.coefficient, 0)}{o.coefMesure ? '' : ' ?'}
+                      </span>
                     </span>
                   </span>
                   <span className="tnum shrink-0 text-right">
@@ -246,7 +256,8 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{o.item.nom}</span>
                     <span className="tnum block text-[11px] text-encre-2">
-                      craft {formatKamas(o.cout)} · ×{formatNombre(o.quantite)}
+                      craft {formatKamas(o.cout)} · ×{formatNombre(o.quantite)} ·{' '}
+                      <span className={o.coefMesure ? 'text-accent' : ''}>{formatPct(o.coefficient, 0)}{o.coefMesure ? '' : ' ?'}</span>
                     </span>
                   </span>
                   <span className="tnum shrink-0 font-medium text-ok">+{formatKamas(o.beneficeTotal)}</span>

@@ -6,6 +6,7 @@ import { ChampNombre } from '../components/ChampNombre.tsx';
 import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
 import { RuneImage } from '../components/RuneImage.tsx';
+import { useCoefficients } from '../hooks/useCoefficients.ts';
 import { useEstimation } from '../hooks/useEstimation.ts';
 import { useContexte } from '../hooks/useSimulation.ts';
 import { formatKamas, formatNombre, formatPct } from '../lib/format.ts';
@@ -29,6 +30,7 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
   const g = useReglages();
   const setPrixConstate = useNotes((s) => s.setPrixConstate);
   const estimateur = useEstimation();
+  const coefficients = useCoefficients();
   const { choisirObjet, setChamp, setFocus } = useSimu();
 
   const [runeId, setRuneId] = useState<number | null>(null);
@@ -66,12 +68,13 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
     if (!rune) return [];
     const toutes = ciblerRune(rune, items, ctx, {
       coefficient: g.coefSuppose,
+      coefficients,
       jet,
       niveauMax: niveauMax ?? undefined,
       couts,
     }, monstres);
     return toutes;
-  }, [rune, items, ctx, g.coefSuppose, jet, niveauMax, couts, monstres]);
+  }, [rune, items, ctx, g.coefSuppose, coefficients, jet, niveauMax, couts, monstres]);
 
   /** Types présents dans les résultats, pour ne proposer que des filtres utiles. */
   const typesDisponibles = useMemo(

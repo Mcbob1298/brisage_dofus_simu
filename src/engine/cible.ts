@@ -37,7 +37,10 @@ export type PisteRune = {
 };
 
 export type OptionsCible = {
+  /** Coefficient supposé, pour les objets jamais testés. */
   coefficient: number;
+  /** Coefficients relevés par objet : ils priment sur le précédent. */
+  coefficients?: ReadonlyMap<number, number>;
   jet: JetChoisi;
   /** Niveau maximum des objets retenus. */
   niveauMax?: number;
@@ -84,7 +87,8 @@ export function ciblerRune(
     const ciblees = lignes.filter((l) => l.statId === statId && l.jet > 0);
     if (ciblees.length === 0) continue;
 
-    const base = { niveau: item.niveau, lignes, coefficient: options.coefficient };
+    const coefficient = options.coefficients?.get(item.id) ?? options.coefficient;
+    const base = { niveau: item.niveau, lignes, coefficient };
     const pointsFocus = calculerPoints({ ...base, focus: statId }, ctx.poids)[statId] ?? 0;
     const pointsNaturel = calculerPoints({ ...base, focus: null }, ctx.poids)[statId] ?? 0;
     if (pointsFocus <= 0 && pointsNaturel <= 0) continue;

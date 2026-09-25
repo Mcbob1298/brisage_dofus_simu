@@ -35,8 +35,10 @@ export type OptionsFarm = {
   niveauJoueur: number;
   /** Prospection du personnage (100 = prospection de départ, taux de base). */
   prospection: number;
-  /** Coefficient supposé au concasseur. */
+  /** Coefficient supposé au concasseur, pour les objets jamais testés. */
   coefficient: number;
+  /** Coefficients relevés par objet : ils priment sur le précédent. */
+  coefficients?: ReadonlyMap<number, number>;
   /** Taxe de vente en %. */
   taxePct: number;
   /** Jets supposés des objets lâchés (moyens par défaut : un drop n'est pas un craft). */
@@ -71,7 +73,7 @@ export function evaluerMonstre(
     const item = parId.get(d.itemId);
     if (!item || item.stats.length === 0 || item.nonBrisable) continue;
     const taux = Math.min(100, d.taux * facteurProspection);
-    const ev = evaluerItem(item, ctx, options.jet, options.coefficient);
+    const ev = evaluerItem(item, ctx, options.jet, options.coefficients?.get(item.id) ?? options.coefficient);
     const valeurObjet = ev.valeurMeilleure * facteurNet;
     drops.push({ item, taux, valeurObjet, valeurParCombat: (taux / 100) * valeurObjet });
     sommeTaux += taux;

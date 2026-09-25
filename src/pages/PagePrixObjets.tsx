@@ -96,9 +96,9 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
     </th>
   );
 
-  const ouvrir = (item: Item, prix: number | null) => {
+  const ouvrir = (item: Item, prix: number | null, coef: number) => {
     choisirObjet(item);
-    setChamp('coefficient', coefSuppose);
+    setChamp('coefficient', coef);
     if (prix !== null) setChamp('prixRevient', prix);
     aller('objet');
   };
@@ -261,7 +261,7 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-right">
-                    <button onClick={() => ouvrir(l.item, l.cout?.prix ?? null)} className="lien text-xs">
+                    <button onClick={() => ouvrir(l.item, l.cout?.prix ?? null, l.coef)} className="lien text-xs">
                       briser →
                     </button>
                   </td>
