@@ -47,11 +47,13 @@ function navigateurVide(): boolean {
 
 /** À appeler une fois au démarrage, avant que l'utilisateur ne saisisse quoi que ce soit. */
 export async function initSynchroFichier(): Promise<void> {
-  const fichier = await lireFichier();
-  if (fichier === null) return; // build statique : on reste sur le localStorage
+  const lecture = await lireFichier();
+  // Point d'entrée absent (build statique) : on reste sur le localStorage.
+  if (!lecture.disponible) return;
 
   let restaure = false;
-  if (Object.keys(fichier.donnees ?? {}).length > 0 && navigateurVide()) {
+  const fichier = lecture.sauvegarde;
+  if (fichier && Object.keys(fichier.donnees ?? {}).length > 0 && navigateurVide()) {
     importerTout(fichier);
     // Les stores ont déjà lu un localStorage vide : on les relit.
     await Promise.all([
