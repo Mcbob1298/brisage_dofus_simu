@@ -4,7 +4,7 @@ import type { Simulation } from '../hooks/useSimulation.ts';
 import { formatKamas, formatNombre, formatPct } from '../lib/format.ts';
 import { RuneImage } from './RuneImage.tsx';
 import { prixAchatMax } from '../engine/index.ts';
-import { useGuide } from '../store/guide.ts';
+import { useReglages } from '../store/reglages.ts';
 
 /** Runes obtenues, ligne par ligne, avec le reste exprimé en probabilité. */
 export function Butin({ sim, onVoirPrix }: { sim: Simulation; onVoirPrix: () => void }) {
@@ -98,7 +98,7 @@ function Ligne({ label, valeur, fort, ton }: { label: string; valeur: string; fo
 /** Bilan chiffré, avec bascule garanti / espérance. */
 export function BilanDetaille({ sim }: { sim: Simulation }) {
   const { bilan, seuil, entree } = sim;
-  const roiVise = useGuide((s) => s.roiVise);
+  const roiVise = useReglages((s) => s.roiVise);
   const [vue, setVue] = useState<'garanti' | 'espere' | null>(null);
   const cle = vue ?? bilan.retenu;
   const v = bilan[cle];

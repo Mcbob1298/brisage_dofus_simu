@@ -2,7 +2,7 @@ import { STAT_BY_ID, placeholderPour } from '../data/statMapping.ts';
 import { prixAchatMax } from '../engine/index.ts';
 import { useDetailLignes, type Simulation } from '../hooks/useSimulation.ts';
 import { formatKamas, formatNombre, formatPct } from '../lib/format.ts';
-import { useGuide } from '../store/guide.ts';
+import { useReglages } from '../store/reglages.ts';
 import { useNotes } from '../store/notes.ts';
 import { useStorePrix } from '../store/prix.ts';
 import { useSimu, type JetMode } from '../store/simu.ts';
@@ -40,7 +40,7 @@ export function CarteObjet({ sim }: { sim: Simulation }) {
   const { jetMode, setJetMode, setJet, setFocus, focus, setChamp, coefficient } = useSimu();
   const { prixConstates, coutsCraft, setPrixConstate, setCoutCraft } = useNotes();
   const setPrixRune = useStorePrix((s) => s.setPrix);
-  const roiVise = useGuide((s) => s.roiVise);
+  const roiVise = useReglages((s) => s.roiVise);
 
   const v = bilan[bilan.retenu];
   const prixHdv = prixConstates[item.id]?.prix ?? null;

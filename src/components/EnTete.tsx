@@ -2,15 +2,13 @@ import { useCatalogue } from '../store/catalogue.ts';
 import { useReglages } from '../store/reglages.ts';
 import { useTheme } from '../store/theme.ts';
 
-export type Onglet = 'guide' | 'objet' | 'rune' | 'prix' | 'comparateur' | 'explorateur';
+export type Onglet = 'objet' | 'rune' | 'prix' | 'prixObjets';
 
 const ONGLETS: { id: Onglet; label: string }[] = [
-  { id: 'guide', label: 'Guide' },
   { id: 'objet', label: 'Brisage' },
   { id: 'rune', label: 'Cibler une rune' },
   { id: 'prix', label: 'Prix des runes' },
-  { id: 'comparateur', label: 'Comparateur' },
-  { id: 'explorateur', label: 'Explorateur' },
+  { id: 'prixObjets', label: 'Prix des objets' },
 ];
 
 const ICONE_THEME = { system: '◐', light: '☀', dark: '☾' } as const;

@@ -11,7 +11,7 @@ import { useContexte } from '../hooks/useSimulation.ts';
 import { formatKamas, formatNombre, formatPct } from '../lib/format.ts';
 import { normaliser } from '../lib/normaliser.ts';
 import { useCatalogue } from '../store/catalogue.ts';
-import { useGuide } from '../store/guide.ts';
+import { useReglages } from '../store/reglages.ts';
 import { useNotes } from '../store/notes.ts';
 import { useSimu } from '../store/simu.ts';
 import { useStorePrix } from '../store/prix.ts';
@@ -26,7 +26,7 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
   const monstres = useCatalogue((s) => s.monstres);
   const ctx = useContexte();
   const prix = useStorePrix((s) => s.prix);
-  const g = useGuide();
+  const g = useReglages();
   const setPrixConstate = useNotes((s) => s.setPrixConstate);
   const estimateur = useEstimation();
   const { choisirObjet, setChamp, setFocus } = useSimu();
@@ -69,10 +69,9 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
       jet,
       niveauMax: niveauMax ?? undefined,
       couts,
-      prospection: g.prospection,
     }, monstres);
     return toutes;
-  }, [rune, items, ctx, g.coefSuppose, g.prospection, jet, niveauMax, couts, monstres]);
+  }, [rune, items, ctx, g.coefSuppose, jet, niveauMax, couts, monstres]);
 
   /** Types présents dans les résultats, pour ne proposer que des filtres utiles. */
   const typesDisponibles = useMemo(
@@ -373,8 +372,8 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
             </>
           )}
           Quantités calculées au coefficient supposé ({formatPct(g.coefSuppose, 0)}, réglable dans le Guide) avec un focus sur {STAT_BY_ID[rune.statId].label} : les
-          autres lignes sont détruites et ne reversent que la moitié de leur poids. Les décimales sont des probabilités, pas des runes garanties. Les taux de drop
-          tiennent compte de ta prospection ({formatNombre(g.prospection)}).
+          autres lignes sont détruites et ne reversent que la moitié de leur poids. Les décimales sont des probabilités, pas des runes garanties. Les taux de drop sont
+          donnés pour 100 de prospection.
         </p>
       )}
     </div>
