@@ -1,16 +1,17 @@
 import { useMemo } from 'react';
 import { STAT_BY_ID, placeholderPour } from '../data/statMapping.ts';
-import { evaluerFarm, recommanderBrisage } from '../engine/index.ts';
+import { evaluerFarm, evaluerItem, recommanderBrisage } from '../engine/index.ts';
 import { ChampNombre } from '../components/ChampNombre.tsx';
 import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
 import { Sauvegarde } from '../components/Sauvegarde.tsx';
 import { useCouts } from '../hooks/useCouts.ts';
+import { COEF_VOLATIL, LOT_PRUDENT, partDuBudget } from '../lib/heuristiques.ts';
 import { useContexte } from '../hooks/useSimulation.ts';
 import { formatKamas, formatNombre, formatPct } from '../lib/format.ts';
 import { useCatalogue } from '../store/catalogue.ts';
 import { useCompte } from '../store/compte.ts';
-import { useNotes } from '../store/notes.ts';
+import { coutRetenu, dernierCoef, useNotes } from '../store/notes.ts';
 import { useStorePrix } from '../store/prix.ts';
 import { useReglages } from '../store/reglages.ts';
 import { useSimu } from '../store/simu.ts';
@@ -37,7 +38,9 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
   const prixRunes = useStorePrix((s) => s.prix);
   const prixConstates = useNotes((s) => s.prixConstates);
   const coutsCraft = useNotes((s) => s.coutsCraft);
-  const { budget, niveau, prospection, roiMin, setBudget, setNiveau, setProspection, setRoiMin } = useCompte();
+  const coefs = useNotes((s) => s.coefs);
+  const ajouterCoef = useNotes((s) => s.ajouterCoef);
+  const { budget, niveau, prospection, roiMin, partRisque, favoris, setBudget, setNiveau, setProspection, setRoiMin, setPartRisque, basculerFavori } = useCompte();
   const { coefSuppose, setCoefSuppose, serveur } = useReglages();
   const taxePct = useSimu((s) => s.taxePct);
   const { choisirObjet, setChamp, setFocus } = useSimu();
@@ -100,6 +103,10 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
             Marge minimale
             <ChampNombre value={roiMin} onChange={(v) => setRoiMin(v ?? 0)} suffixe="%" className="w-24" />
           </label>
+          <label className="flex flex-col gap-0.5" title="Au-delà de cette part du budget pour un seul exemplaire, l'objet est signalé comme trop cher pour un simple test">
+            Risque par objet
+            <ChampNombre value={partRisque} onChange={(v) => setPartRisque(v ?? 5)} suffixe="%" className="w-24" />
+          </label>
           <label className="flex flex-col gap-0.5" title="Taxe prélevée à la vente des runes">
             Taxe de vente
             <ChampNombre value={taxePct} onChange={(v) => setChamp('taxePct', Math.min(100, Math.max(0, v ?? 0)))} suffixe="%" className="w-24" />
@@ -125,6 +132,12 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
             {formatPct(meilleur.roi)}) · rentable tant que le coefficient reste au-dessus de{' '}
             {meilleur.seuil === null ? '—' : formatPct(meilleur.seuil, 0)}
           </p>
+          {(partDuBudget(meilleur.cout, budget) ?? 0) > partRisque && (
+            <p className="mt-2 text-xs text-alerte">
+              ⚠ Un exemplaire coûte {formatPct(partDuBudget(meilleur.cout, budget) ?? 0, 0)} de ton budget : commence par un seul pour vérifier le coefficient
+              avant d'en acheter {formatNombre(meilleur.quantite)}.
+            </p>
+          )}
           <button onClick={() => ouvrir(meilleur)} className="btn btn-primaire mt-3">
             Ouvrir dans le simulateur →
           </button>
@@ -134,6 +147,54 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
           Rien de rentable avec les prix relevés, ce coefficient ({formatPct(coefSuppose, 0)}) et cette marge minimale ({formatPct(roiMin, 0)}). Renseigne plus de
           prix d'objets, baisse la marge exigée, ou vérifie ton coefficient au concasseur.
         </p>
+      )}
+
+      {favoris.length > 0 && (
+        <Bloc titre="Mes objets suivis" aide="Au concasseur : lis le coefficient, tape-le ici, la couleur répond tout de suite.">
+          <ul className="divide-y divide-bord">
+            {favoris.map((id) => parId.get(id)).filter((it): it is NonNullable<typeof it> => it !== undefined).map((it) => {
+              const cout = coutRetenu(prixConstates[it.id], coutsCraft[it.id]);
+              const releve = dernierCoef(coefs[it.id]);
+              const coef = releve?.coef ?? coefSuppose;
+              const valeur = evaluerItem(it, ctx, 'moyen', coef).valeurMeilleure * (1 - taxePct / 100);
+              const marge = cout ? valeur - cout.prix : null;
+              return (
+                <li key={it.id} className="flex flex-wrap items-center gap-2 py-1.5 text-sm">
+                  <ItemImage src={it.imageLocale} alt="" fallback={placeholderPour(it.type, it.famille)} taille={24} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{it.nom}</span>
+                    <span className="tnum block text-[11px] text-encre-2">
+                      niv. {it.niveau}
+                      {cout ? ` · ${cout.source === 'craft' ? 'craft' : 'HDV'} ${formatKamas(cout.prix)}` : ' · prix à relever'}
+                    </span>
+                  </span>
+                  <ChampNombre
+                    value={releve ? coef : null}
+                    onChange={(v) => v !== null && v > 0 && ajouterCoef(it.id, v)}
+                    vide
+                    suffixe="%"
+                    decimales={1}
+                    placeholder="coef"
+                    className={`w-24 ${releve ? '[&>input]:border-accent' : ''}`}
+                    aria-label={`Coefficient ${it.nom}`}
+                  />
+                  <span className={`tnum w-28 text-right font-medium ${marge === null ? 'text-encre-3' : marge > 0 ? 'text-ok' : 'text-ko'}`}>
+                    {marge === null ? '—' : `${marge > 0 ? '+' : ''}${formatKamas(marge)}`}
+                  </span>
+                  <button onClick={() => basculerFavori(it.id)} className="text-accent" title="Ne plus suivre" aria-label={`Ne plus suivre ${it.nom}`}>
+                    ★
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {favoris.some((id) => (dernierCoef(coefs[id])?.coef ?? 0) > COEF_VOLATIL) && (
+            <p className="mt-2 rounded-lg border border-alerte/40 bg-alerte-doux px-2 py-1 text-xs text-alerte">
+              Un coefficient dépasse {formatPct(COEF_VOLATIL, 0)} : il retombera vite dès que tu l'exploiteras. Brise par lots de {LOT_PRUDENT} et relis-le entre
+              deux. (Repère de joueurs, pas une règle du jeu.)
+            </p>
+          )}
+        </Bloc>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">

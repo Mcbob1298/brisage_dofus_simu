@@ -7,8 +7,10 @@ import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
 import { useContexte } from '../hooks/useSimulation.ts';
 import { formatDate, formatKamas, formatNombre, formatPct, joursDepuis } from '../lib/format.ts';
+import { estRecherche, partDuBudget } from '../lib/heuristiques.ts';
 import { useCatalogue } from '../store/catalogue.ts';
-import { coutRetenu, useNotes } from '../store/notes.ts';
+import { useCompte } from '../store/compte.ts';
+import { coutRetenu, dernierCoef, useNotes } from '../store/notes.ts';
 import { JOURS_PERIME } from '../store/prix.ts';
 import { useReglages } from '../store/reglages.ts';
 import { useSimu } from '../store/simu.ts';
@@ -21,7 +23,8 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
   const items = useCatalogue((s) => s.items);
   const index = useCatalogue((s) => s.index);
   const ctx = useContexte();
-  const { prixConstates, coutsCraft, setPrixConstate, setCoutCraft } = useNotes();
+  const { prixConstates, coutsCraft, coefs, setPrixConstate, setCoutCraft, ajouterCoef } = useNotes();
+  const { budget, partRisque, favoris, basculerFavori } = useCompte();
   const { coefSuppose, setCoefSuppose, serveur } = useReglages();
   const taxePct = useSimu((s) => s.taxePct);
   const choisirObjet = useSimu((s) => s.choisirObjet);
@@ -30,6 +33,9 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
   const [recherche, setRecherche] = useState('');
   const [type, setType] = useState('');
   const [seulementNotes, setSeulementNotes] = useState(true);
+  const [seulementFavoris, setSeulementFavoris] = useState(false);
+  const [niveauMin, setNiveauMin] = useState<number | null>(null);
+  const [niveauMax, setNiveauMax] = useState<number | null>(null);
   const [tri, setTri] = useState<Tri>('marge');
   const [desc, setDesc] = useState(true);
   const [limite, setLimite] = useState(PAGE);
@@ -41,12 +47,17 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
     const facteurNet = 1 - taxePct / 100;
     const out = base
       .filter((it) => !it.nonBrisable && it.stats.length > 0)
+      .filter((it) => (niveauMin === null || it.niveau >= niveauMin) && (niveauMax === null || it.niveau <= niveauMax))
       .map((it) => {
         const cout = coutRetenu(prixConstates[it.id], coutsCraft[it.id]);
-        const valeur = evaluerItem(it, ctx, 'moyen', coefSuppose).valeurMeilleure * facteurNet;
-        return { item: it, cout, valeur, marge: cout ? valeur - cout.prix : null };
+        // Un coefficient relevé au concasseur vaut mieux que le coefficient supposé.
+        const releve = dernierCoef(coefs[it.id]);
+        const coef = releve?.coef ?? coefSuppose;
+        const valeur = evaluerItem(it, ctx, 'moyen', coef).valeurMeilleure * facteurNet;
+        return { item: it, cout, coef, releve: releve !== null, valeur, marge: cout ? valeur - cout.prix : null };
       })
-      .filter((l) => !seulementNotes || l.cout !== null);
+      .filter((l) => !seulementNotes || l.cout !== null)
+      .filter((l) => !seulementFavoris || favoris.includes(l.item.id));
     const cle = (l: (typeof out)[number]): number | string => {
       switch (tri) {
         case 'valeur':
@@ -65,7 +76,7 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
       const c = typeof ka === 'string' ? ka.localeCompare(kb as string, 'fr') : ka - (kb as number);
       return (desc ? -c : c) || a.item.nom.localeCompare(b.item.nom, 'fr');
     });
-  }, [items, index, recherche, type, seulementNotes, prixConstates, coutsCraft, ctx, coefSuppose, taxePct, tri, desc]);
+  }, [items, index, recherche, type, seulementNotes, seulementFavoris, favoris, niveauMin, niveauMax, prixConstates, coutsCraft, coefs, ctx, coefSuppose, taxePct, tri, desc]);
 
   const nbNotes = new Set([...Object.keys(prixConstates), ...Object.keys(coutsCraft)]).size;
 
@@ -122,9 +133,21 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
             Coefficient
             <ChampNombre value={coefSuppose} onChange={(v) => setCoefSuppose(v ?? 100)} suffixe="%" className="w-20" />
           </label>
+          <label className="flex flex-col gap-0.5" title="Pour tester une tranche entière : crafte un exemplaire de chacun et relève son coefficient">
+            Niveau
+            <span className="flex items-center gap-1">
+              <ChampNombre value={niveauMin} onChange={setNiveauMin} vide placeholder="min" className="w-16" />
+              –
+              <ChampNombre value={niveauMax} onChange={setNiveauMax} vide placeholder="max" className="w-16" />
+            </span>
+          </label>
           <label className="flex items-center gap-1 pb-2">
             <input type="checkbox" checked={seulementNotes} onChange={(e) => setSeulementNotes(e.target.checked)} />
             Seulement mes prix notés
+          </label>
+          <label className="flex items-center gap-1 pb-2">
+            <input type="checkbox" checked={seulementFavoris} onChange={(e) => setSeulementFavoris(e.target.checked)} />
+            ★ Favoris seulement
           </label>
           <span className="tnum ml-auto pb-2">
             {formatNombre(nbNotes)} objet(s) chiffré(s) · {serveur}
@@ -138,6 +161,9 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
             <tr className="border-b border-bord">
               <En t="nom" label="Objet" right={false} />
               <En t="niveau" label="Niv." />
+              <th className="px-3 py-2 text-right font-medium" title="Coefficient relevé au concasseur : il remplace le coefficient supposé pour cette ligne">
+                Coef lu
+              </th>
               <En t="valeur" label="Runes nettes" />
               <th className="px-3 py-2 text-right font-medium">Prix HDV</th>
               <th className="px-3 py-2 text-right font-medium">Prix craft</th>
@@ -153,8 +179,26 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
                   <td className="px-3 py-1.5">
                     <span className="flex items-center gap-2">
                       <ItemImage src={l.item.imageLocale} alt="" fallback={placeholderPour(l.item.type, l.item.famille)} taille={24} />
+                      <button
+                        onClick={() => basculerFavori(l.item.id)}
+                        className={`shrink-0 text-base leading-none ${favoris.includes(l.item.id) ? 'text-accent' : 'text-encre-3 hover:text-accent'}`}
+                        title={favoris.includes(l.item.id) ? 'Retirer des favoris' : 'Suivre cet objet'}
+                        aria-pressed={favoris.includes(l.item.id)}
+                      >
+                        ★
+                      </button>
                       <span className="min-w-0">
-                        <span className="block truncate">{l.item.nom}</span>
+                        <span className="block truncate">
+                          {l.item.nom}
+                          {estRecherche(l.item) && (
+                            <span
+                              className="badge ml-1 bg-surface-2 text-encre-2"
+                              title="Donne des PA ou des PM : très recherché, donc souvent brisé en masse et coefficient écrasé (repère de joueurs, à confirmer par tes relevés)"
+                            >
+                              PA/PM
+                            </span>
+                          )}
+                        </span>
                         <span className="block text-[11px] text-encre-2">
                           {l.item.type}
                           {l.cout && (
@@ -169,6 +213,18 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
                     </span>
                   </td>
                   <td className="tnum px-3 py-1.5 text-right">{l.item.niveau}</td>
+                  <td className="px-3 py-1.5 text-right">
+                    <ChampNombre
+                      value={l.releve ? l.coef : null}
+                      onChange={(v) => v !== null && v > 0 && ajouterCoef(l.item.id, v)}
+                      vide
+                      suffixe="%"
+                      decimales={1}
+                      placeholder={formatNombre(coefSuppose)}
+                      className={`w-20 ${l.releve ? '[&>input]:border-accent' : ''}`}
+                      aria-label={`Coefficient relevé ${l.item.nom}`}
+                    />
+                  </td>
                   <td className="tnum px-3 py-1.5 text-right" title={`Valeur des runes au meilleur focus, coef. ${formatPct(coefSuppose, 0)}, taxe déduite`}>
                     {formatKamas(l.valeur)}
                   </td>
@@ -195,6 +251,14 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
                   </td>
                   <td className={`tnum px-3 py-1.5 text-right font-medium ${l.marge === null ? 'text-encre-3' : l.marge > 0 ? 'text-ok' : 'text-ko'}`}>
                     {l.marge === null ? '—' : `${l.marge > 0 ? '+' : ''}${formatKamas(l.marge)}`}
+                    {l.cout && (partDuBudget(l.cout.prix, budget) ?? 0) > partRisque && (
+                      <span
+                        className="block text-[10px] font-normal text-alerte"
+                        title={`Un exemplaire coûte ${formatPct(partDuBudget(l.cout.prix, budget) ?? 0, 0)} de ton budget : trop cher pour un simple test`}
+                      >
+                        ⚠ {formatPct(partDuBudget(l.cout.prix, budget) ?? 0, 0)} du budget
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-1.5 text-right">
                     <button onClick={() => ouvrir(l.item, l.cout?.prix ?? null)} className="lien text-xs">
