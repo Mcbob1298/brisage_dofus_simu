@@ -5,7 +5,6 @@ import { evaluerItem } from '../engine/index.ts';
 import { ChampNombre } from '../components/ChampNombre.tsx';
 import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
-import { Sauvegarde } from '../components/Sauvegarde.tsx';
 import { useContexte } from '../hooks/useSimulation.ts';
 import { formatDate, formatKamas, formatNombre, formatPct, joursDepuis } from '../lib/format.ts';
 import { useCatalogue } from '../store/catalogue.ts';
@@ -221,9 +220,6 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
         )}
       </section>
 
-      <section className="carte p-4">
-        <Sauvegarde />
-      </section>
     </div>
   );
 }

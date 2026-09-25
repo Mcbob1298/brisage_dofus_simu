@@ -18,11 +18,11 @@ Spécification complète : [spec_brisage.md](spec_brisage.md).
 
 - `scripts/sync-data.ts` — sync du catalogue (Node ≥ 22.6, TypeScript natif).
 - `src/data/statMapping.ts` — référentiel des caractéristiques (`StatId`), mapping des effets API, effets ignorés, types conservés.
-- `src/engine/` — moteur pur : formule du brisage, focus, conversion points → runes (3 modes), bilan, coefficient seuil, comparateur, évaluation du catalogue, recherche inverse par rune, estimation de prix.
+- `src/engine/` — moteur pur : formule du brisage, focus, conversion points → runes (3 modes), bilan, coefficient seuil, comparateur, évaluation du catalogue, recherche inverse par rune, estimation de prix, valeur de farm par monstre, recommandations selon le budget.
 - `src/store/` — état zustand : catalogue, simulation, prix des runes, réglages (poids, mode), notes (journal des coefficients, prix constatés), thème.
 - `src/components/CarteObjet.tsx` — carte de brisage : coûts, résultat, coefficient, détail des lignes avec et sans focus.
-- `src/pages/` — Brisage (carte d'objet + détails repliés), Cibler une rune, Prix des runes, Prix des objets.
+- `src/pages/` — Mon compte (budget, niveau, prospection → recommandations acheter / crafter / droper), Brisage (carte d'objet + détails repliés), Cibler une rune, Prix des runes, Prix des objets.
 
 ## Données persistées (localStorage)
 
-`brisage.simu`, `brisage.prix`, `brisage.reglages`, `brisage.notes`, `brisage.theme`. L'écran Prix propose un export/import des prix de runes et une **sauvegarde complète** (toutes les clés) — à faire avant de changer de port, de navigateur ou de machine.
+`brisage.compte`, `brisage.simu`, `brisage.prix`, `brisage.reglages`, `brisage.notes`, `brisage.theme`. L'écran Prix propose un export/import des prix de runes et une **sauvegarde complète** (toutes les clés) — à faire avant de changer de port, de navigateur ou de machine.

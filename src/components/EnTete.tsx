@@ -2,9 +2,10 @@ import { useCatalogue } from '../store/catalogue.ts';
 import { useReglages } from '../store/reglages.ts';
 import { useTheme } from '../store/theme.ts';
 
-export type Onglet = 'objet' | 'rune' | 'prix' | 'prixObjets';
+export type Onglet = 'compte' | 'objet' | 'rune' | 'prix' | 'prixObjets';
 
 const ONGLETS: { id: Onglet; label: string }[] = [
+  { id: 'compte', label: 'Mon compte' },
   { id: 'objet', label: 'Brisage' },
   { id: 'rune', label: 'Cibler une rune' },
   { id: 'prix', label: 'Prix des runes' },

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { EnTete, type Onglet } from './components/EnTete.tsx';
+import { PageCompte } from './pages/PageCompte.tsx';
 import { PageObjet } from './pages/PageObjet.tsx';
 import { PageRune } from './pages/PageRune.tsx';
 import { PagePrix } from './pages/PagePrix.tsx';
@@ -8,11 +9,11 @@ import { useCatalogue } from './store/catalogue.ts';
 import { initTheme } from './store/theme.ts';
 import { useSimulation } from './hooks/useSimulation.ts';
 
-const ONGLETS: Onglet[] = ['objet', 'rune', 'prix', 'prixObjets'];
+const ONGLETS: Onglet[] = ['compte', 'objet', 'rune', 'prix', 'prixObjets'];
 
 function ongletDepuisHash(): Onglet {
   const h = location.hash.replace('#', '') as Onglet;
-  return ONGLETS.includes(h) ? h : 'objet';
+  return ONGLETS.includes(h) ? h : 'compte';
 }
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
     <div className="min-h-screen text-encre">
       <EnTete onglet={onglet} onChange={changerOnglet} />
       <main className="mx-auto max-w-6xl px-3 py-4">
+        {onglet === 'compte' && <PageCompte aller={changerOnglet} />}
         {onglet === 'objet' && <PageObjet sim={sim} aller={changerOnglet} />}
         {onglet === 'rune' && <PageRune aller={changerOnglet} />}
         {onglet === 'prix' && <PagePrix />}
