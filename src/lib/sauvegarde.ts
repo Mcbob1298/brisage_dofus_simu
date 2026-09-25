@@ -8,7 +8,7 @@
 export const CLES_SAUVEGARDE = [
   'brisage.prix',
   'brisage.notes',
-  'brisage.guide',
+  'brisage.compte',
   'brisage.simu',
   'brisage.reglages',
   'brisage.theme',

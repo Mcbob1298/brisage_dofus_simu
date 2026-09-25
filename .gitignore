@@ -2,3 +2,8 @@ node_modules
 dist
 *.log
 .DS_Store
+
+# Miroir local des prix et relevés (voir vite-plugin-donnees.ts).
+# Retire cette ligne pour versionner tes données et pouvoir revenir en arrière —
+# elles partiront alors sur GitHub avec le reste du dépôt.
+donnees/

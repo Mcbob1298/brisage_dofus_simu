@@ -23,6 +23,8 @@ Spécification complète : [spec_brisage.md](spec_brisage.md).
 - `src/components/CarteObjet.tsx` — carte de brisage : coûts, résultat, coefficient, détail des lignes avec et sans focus.
 - `src/pages/` — Mon compte (budget, niveau, prospection → recommandations acheter / crafter / droper), Brisage (carte d'objet + détails repliés), Cibler une rune, Prix des runes, Prix des objets.
 
-## Données persistées (localStorage)
+## Données persistées
 
-`brisage.compte`, `brisage.simu`, `brisage.prix`, `brisage.reglages`, `brisage.notes`, `brisage.theme`. L'écran Prix propose un export/import des prix de runes et une **sauvegarde complète** (toutes les clés) — à faire avant de changer de port, de navigateur ou de machine.
+`brisage.compte`, `brisage.simu`, `brisage.prix`, `brisage.reglages`, `brisage.notes`, `brisage.theme` dans le `localStorage` du navigateur.
+
+Pendant `npm run dev` (et `npm run preview`), tout est recopié dans **`donnees/sauvegarde.json`** à chaque modification, et restauré au démarrage si le navigateur est vide : les données survivent à un changement de port, de navigateur ou à un vidage du cache. Ce fichier est ignoré par git par défaut ; retire `donnees/` du `.gitignore` pour les versionner. Un build statique n'a pas ce miroir : l'export/import manuel de l'onglet Mon compte prend le relais.

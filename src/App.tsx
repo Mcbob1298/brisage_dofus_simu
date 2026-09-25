@@ -7,6 +7,7 @@ import { PagePrix } from './pages/PagePrix.tsx';
 import { PagePrixObjets } from './pages/PagePrixObjets.tsx';
 import { useCatalogue } from './store/catalogue.ts';
 import { initTheme } from './store/theme.ts';
+import { initSynchroFichier } from './lib/synchroFichier.ts';
 import { useSimulation } from './hooks/useSimulation.ts';
 
 const ONGLETS: Onglet[] = ['compte', 'objet', 'rune', 'prix', 'prixObjets'];
@@ -23,7 +24,8 @@ export default function App() {
 
   useEffect(() => {
     initTheme();
-    void charger();
+    // Restaure depuis le fichier du projet avant tout, puis charge le catalogue.
+    void initSynchroFichier().then(charger);
     const onHash = () => setOnglet(ongletDepuisHash());
     addEventListener('hashchange', onHash);
     return () => removeEventListener('hashchange', onHash);
