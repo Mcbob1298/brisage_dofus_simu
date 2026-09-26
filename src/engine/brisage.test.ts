@@ -6,6 +6,7 @@ import {
   coefficientSeuil,
   comparerFocus,
   prixAchatMax,
+  CONSTANTE_BRISAGE,
   POIDS_DEFAUT,
   SEUIL_MAX,
   SEUIL_MIN,
@@ -335,5 +336,67 @@ describe('ligne sans valeur chiffrée — non focalisable', () => {
     expect(strategies[0].resultat.valeurEsperee).toBeCloseTo(2323.368, 3);
     // Le focus fictif sur « Arme de chasse » valait 1,26 Chas, soit 11 084 kamas.
     for (const s of strategies) expect(s.resultat.valeurEsperee).toBeLessThan(11_000);
+  });
+});
+
+describe('ancrage sur un brisage réel', () => {
+  /**
+   * Relevé en jeu par Mathias le 2026-09-26 sur Draconiros :
+   * 4 Scaracoiffes Dorées (niveau 58) brisées à 42 % de coefficient ont rendu
+   * 12 Runes Cri. Le brisage naturel n'en aurait rendu que 3 à 4,5 : c'était
+   * donc un focus sur % Critique.
+   *
+   * C'est la SEULE mesure directe dont on dispose sur la constante du
+   * concasseur. Le contrôle DoFocus de l'Arc de Chasse portait sur un jet nul,
+   * donc sur le plancher seul, et ne testait pas 0,015.
+   *
+   * Ce relevé met en jeu six lignes de poids très différents (1, 3, 6, 10, 30),
+   * il teste donc aussi la table des poids et le transfert de 50 % au focus.
+   */
+  const SCARACOIFFE_DOREE = [
+    { statId: 'intelligence' as const, min: 21, max: 25 },
+    { statId: 'agilite' as const, min: 21, max: 25 },
+    { statId: 'prospection' as const, min: 4, max: 5 },
+    { statId: 'pctResNeutre' as const, min: 2, max: 3 },
+    { statId: 'invocation' as const, min: 1, max: 1 },
+    { statId: 'pctCritique' as const, min: 2, max: 3 },
+  ];
+  const NB_OBJETS = 4;
+  const COEFFICIENT = 42;
+
+  const runesCri = (jet: 'min' | 'moyen' | 'max') => {
+    const lignes = SCARACOIFFE_DOREE.map((s) => ({
+      statId: s.statId,
+      jet: jet === 'min' ? s.min : jet === 'max' ? s.max : Math.round((s.min + s.max) / 2),
+    }));
+    // La Rune Cri vaut 1 point de % Critique : points = runes.
+    const pts = calculerPoints({ niveau: 58, lignes, coefficient: COEFFICIENT, focus: 'pctCritique' }, POIDS_DEFAUT);
+    return (pts.pctCritique ?? 0) * NB_OBJETS;
+  };
+
+  it('encadre les 12 Runes Cri observées', () => {
+    // Les jets des exemplaires brisés sont inconnus : la prédiction doit
+    // encadrer l'observation entre le jet minimum et le jet maximum.
+    expect(runesCri('min')).toBeLessThan(12);
+    expect(runesCri('max')).toBeGreaterThan(12);
+    expect(runesCri('min')).toBeCloseTo(10.53, 1);
+    expect(runesCri('moyen')).toBeCloseTo(12.94, 1);
+    expect(runesCri('max')).toBeCloseTo(13.23, 1);
+  });
+
+  it('exclut les constantes concurrentes', () => {
+    // Le rendement est quasi proportionnel à la constante (le plancher ne pèse
+    // que quelques pour cent ici). Une constante de 0,01 donnerait ~8,8 runes,
+    // 0,02 en donnerait ~17 : ni l'une ni l'autre n'est compatible avec 12.
+    const moyen = runesCri('moyen');
+    expect(moyen * (0.01 / CONSTANTE_BRISAGE)).toBeLessThan(11);
+    expect(moyen * (0.02 / CONSTANTE_BRISAGE)).toBeGreaterThan(15);
+    expect(CONSTANTE_BRISAGE).toBe(0.015);
+  });
+
+  it('le brisage naturel ne pouvait pas rendre 12 Runes Cri', () => {
+    const lignes = SCARACOIFFE_DOREE.map((s) => ({ statId: s.statId, jet: s.max }));
+    const pts = calculerPoints({ niveau: 58, lignes, coefficient: COEFFICIENT, focus: null }, POIDS_DEFAUT);
+    expect((pts.pctCritique ?? 0) * NB_OBJETS).toBeLessThan(5);
   });
 });

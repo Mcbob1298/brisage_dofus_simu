@@ -85,8 +85,22 @@ export const POIDS_DEFAUT: Readonly<PoidsTable> = {
 
 /**
  * Constante du concasseur : points restitués = poids × niveau × 0,015 × coef.
- * Source : https://github.com/KamelAkar/Calculateur_Brisage_Dofus (0,0150) et
- * https://papycha.fr/taux-de-brisage/ (formule niveau × poids × coefficient).
+ *
+ * Sources écrites concordantes :
+ *  - https://github.com/KamelAkar/Calculateur_Brisage_Dofus (0,0150) ;
+ *  - https://dofus-portals.fr/outils/calculateur-brisage/ qui donne la formule
+ *    complète « poids de ligne = (valeur × poids de la rune × niveau × 0,015) + 1 » ;
+ *  - https://papycha.fr/taux-de-brisage/ (mêmes variables).
+ *
+ * MESURÉE EN JEU le 2026-09-26 sur Draconiros : 4 Scaracoiffes Dorées
+ * (niveau 58) brisées en focus % Critique à 42 % de coefficient ont rendu
+ * 12 Runes Cri. Le modèle prédit 10,5 (jets minimums) à 13,2 (jets maximums),
+ * 12,9 aux jets moyens — l'observation tombe dans l'intervalle. Une constante
+ * de 0,01 aurait donné ~8,8 runes, 0,02 en aurait donné ~17 : toutes deux
+ * incompatibles avec le relevé. Voir le test « ancrage sur un brisage réel ».
+ *
+ * Ce relevé engage six lignes de poids 1, 3, 6, 10 et 30, il valide donc aussi
+ * la table des poids et le transfert de 50 % au focus, pas seulement 0,015.
  */
 export const CONSTANTE_BRISAGE = 0.015;
 

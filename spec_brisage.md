@@ -128,8 +128,14 @@ niveau et en coefficient.
 >
 > **Confirmé en jeu le 2026-09-26** : le brisage de Baguettes de Liriel a rendu des Runes
 > Chas, alors que leur ligne « Arme de chasse » n'a aucune valeur. Sans plancher cette ligne
-> ne rendrait rien — le plancher existe donc bel et bien. Reste à valider sa **quantité**
-> (un comptage runes obtenues ÷ objets brisés suffirait).
+> ne rendrait rien — le plancher existe donc bel et bien.
+>
+> **La constante 0,015 est elle aussi mesurée depuis le 2026-09-26** : 4 Scaracoiffes Dorées
+> (niveau 58) brisées en focus % Critique à 42 % de coefficient ont rendu **12 Runes Cri**.
+> Le modèle prédit 10,5 à 13,2 selon les jets (12,9 aux jets moyens). Une constante de 0,01
+> donnerait 8,8 runes, 0,02 en donnerait 17 : le relevé les exclut. Comme l'objet porte six
+> lignes de poids 1, 3, 6, 10 et 30, ce contrôle valide aussi la table des poids et la règle
+> des 50 % au focus. Voir le test « ancrage sur un brisage réel ».
 >
 > L'écart est négligeable en haut niveau (+1 % au-dessus du niveau 100) mais décisif en bas
 > niveau : **+71 % de valeur médiane sur les objets de niveau 1 à 20**, +10 % de 21 à 50.
