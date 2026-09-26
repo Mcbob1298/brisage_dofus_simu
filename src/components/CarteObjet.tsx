@@ -1,5 +1,5 @@
 import { STAT_BY_ID, placeholderPour } from '../data/statMapping.ts';
-import { prixAchatMax } from '../engine/index.ts';
+import { focalisable, prixAchatMax } from '../engine/index.ts';
 import { useDetailLignes, type Simulation } from '../hooks/useSimulation.ts';
 import { formatDate, formatKamas, formatNombre, formatPct } from '../lib/format.ts';
 import { useCoefObjet } from '../hooks/useCoefficients.ts';
@@ -202,12 +202,14 @@ export function CarteObjet({ sim }: { sim: Simulation }) {
           </thead>
           <tbody>
             {lignes.map((l, i) => {
-              // Un jet nul n'est pas un malus : c'est une valeur absente de la
-              // source (drapeau « Arme de chasse »). La ligne pèse son plancher
-              // et reste donc focalisable.
+              // Trois états : malus (ne rend rien), ligne sans valeur chiffrée
+              // (rend son plancher en naturel mais le concasseur ne la propose
+              // pas au focus), et ligne normale.
               const malus = l.max < 0;
+              const peutFocus = focalisable(l.jet);
+              const sansValeur = !malus && !peutFocus;
               const estFocus = focus === l.statId;
-              const meilleur = meilleureLigne?.statId === l.statId && !malus;
+              const meilleur = meilleureLigne?.statId === l.statId && peutFocus;
               return (
                 <tr
                   key={`${l.statId}-${i}`}
@@ -215,13 +217,22 @@ export function CarteObjet({ sim }: { sim: Simulation }) {
                 >
                   <td className="px-3 py-1.5">
                     <button
-                      onClick={() => !malus && setFocus(estFocus ? null : l.statId)}
-                      disabled={malus}
+                      onClick={() => peutFocus && setFocus(estFocus ? null : l.statId)}
+                      disabled={!peutFocus}
                       className="text-left hover:text-accent disabled:hover:text-inherit"
-                      title={malus ? 'Un malus ne rend rien' : estFocus ? 'Retirer le focus' : 'Focaliser sur cette ligne'}
+                      title={
+                        malus
+                          ? 'Un malus ne rend rien'
+                          : sansValeur
+                            ? 'Sans valeur chiffrée : le concasseur ne propose pas de focus sur cette ligne'
+                            : estFocus
+                              ? 'Retirer le focus'
+                              : 'Focaliser sur cette ligne'
+                      }
                     >
                       {STAT_BY_ID[l.statId].label}
                       {malus && <span className="ml-1 text-xs">(malus)</span>}
+                      {sansValeur && <span className="ml-1 text-xs text-encre-3">(sans valeur, focus impossible)</span>}
                     </button>
                   </td>
                   <td className="px-3 py-1.5">

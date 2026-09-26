@@ -84,7 +84,9 @@ export function ciblerRune(
   for (const item of items) {
     if (item.nonBrisable || item.niveau > (options.niveauMax ?? Infinity)) continue;
     const lignes = lignesDepuisItem(item, options.jet);
-    // Jet nul accepté : la ligne pèse son plancher et rend donc des runes.
+    // Jet nul accepté : la ligne pèse son plancher et rend donc des runes en
+    // brisage naturel. Elle n'est simplement pas focalisable (cf. `focalisable`),
+    // auquel cas `pointsFocus` vaut 0 et seul le naturel compte.
     const ciblees = lignes.filter((l) => l.statId === statId && l.jet >= 0);
     if (ciblees.length === 0) continue;
 
@@ -111,5 +113,8 @@ export function ciblerRune(
     });
   }
 
-  return pistes.sort((a, b) => b.quantiteFocus - a.quantiteFocus);
+  // Classement sur ce qu'on peut réellement obtenir : le focus quand il est
+  // possible, le brisage naturel sinon.
+  const rendement = (p: PisteRune) => Math.max(p.quantiteFocus, p.quantiteNaturel);
+  return pistes.sort((a, b) => rendement(b) - rendement(a));
 }

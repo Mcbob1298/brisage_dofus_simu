@@ -8,7 +8,7 @@
  */
 import type { StatId } from '../data/statMapping.ts';
 import type { Item } from '../data/types.ts';
-import { calculerBrisage, coefficientSeuil } from './brisage.ts';
+import { calculerBrisage, coefficientSeuil, focalisable } from './brisage.ts';
 import { lignesDepuisItem, type JetChoisi } from './explorateur.ts';
 import type { Contexte } from './types.ts';
 
@@ -78,8 +78,8 @@ export function recommanderBrisage(items: readonly Item[], ctx: Contexte, option
     let valeur = calculerBrisage({ ...base, focus: null }, ctx).valeurEsperee;
     const vus = new Set<StatId>();
     for (const l of lignes) {
-      // Un jet nul reste focalisable (il pèse son plancher) ; un malus, non.
-      if (l.jet < 0 || vus.has(l.statId)) continue;
+      // Seules les caractéristiques chiffrées sont focalisables (cf. `focalisable`).
+      if (!focalisable(l.jet) || vus.has(l.statId)) continue;
       vus.add(l.statId);
       const v = calculerBrisage({ ...base, focus: l.statId }, ctx).valeurEsperee;
       if (v > valeur) {

@@ -285,3 +285,50 @@ describe('ancrage sur une référence externe', () => {
     expect(Math.round(pts.armeDeChasse! * 8870)).toBe(266);
   });
 });
+
+describe('ligne sans valeur chiffrée — non focalisable', () => {
+  // Baguette de Liriel (niveau 20) : % Critique 3, Arme de chasse 0, Agilité 15.
+  // Le drapeau « Arme de chasse » n'a pas de valeur dans les deux API. Il pèse
+  // son plancher en brisage naturel, mais le concasseur ne l'offre PAS au focus
+  // — constaté en jeu le 2026-09-26 : seuls % Critique et Agilité sont proposés.
+  // Sans ce garde-fou, un focus fictif sur cette ligne convertissait tout le
+  // poids de l'objet en Rune Chas (8 797 kamas pièce) et faisait passer un objet
+  // à perte pour une affaire à +4 733 kamas.
+  const liriel = entree({
+    niveau: 20,
+    coefficient: 72,
+    lignes: [
+      { statId: 'pctCritique', jet: 3 },
+      { statId: 'armeDeChasse', jet: 0 },
+      { statId: 'agilite', jet: 15 },
+    ],
+  });
+
+  it('rend quand même son plancher en brisage naturel', () => {
+    const pts = calculerPoints(liriel, POIDS_DEFAUT);
+    expect(pts.armeDeChasse).toBeCloseTo((1 * 0.72) / 5, 10); // 0,144 point
+  });
+
+  it('ne peut pas servir de cible de focus', () => {
+    expect(calculerPoints({ ...liriel, focus: 'armeDeChasse' }, POIDS_DEFAUT)).toEqual({});
+  });
+
+  it('n’est pas proposée parmi les stratégies comparées', () => {
+    const strategies = comparerFocus(liriel, contexte('toutSimple'), OPTIONS_1);
+    expect(strategies.map((s) => s.focus)).toEqual(
+      expect.arrayContaining([null, 'pctCritique', 'agilite']),
+    );
+    expect(strategies.map((s) => s.focus)).not.toContain('armeDeChasse');
+  });
+
+  it('la meilleure stratégie reste le brisage naturel, pas un focus fictif', () => {
+    // Sur un lot, le bilan compare les espérances (sur un seul objet il
+    // comparerait les runes garanties, ce qui avantage la ligne la plus fournie).
+    const strategies = comparerFocus(liriel, contexte('toutSimple'), { prixRevient: 0, taxePct: 0, nbObjets: 10 });
+    expect(strategies[0].focus).toBeNull();
+    // 0,72 Cri × 1000 + 0,144 Chas × 8797 + 3,96 Age × 85 ≈ 2 323 kamas.
+    expect(strategies[0].resultat.valeurEsperee).toBeCloseTo(2323.368, 3);
+    // Le focus fictif sur « Arme de chasse » valait 1,26 Chas, soit 11 084 kamas.
+    for (const s of strategies) expect(s.resultat.valeurEsperee).toBeLessThan(11_000);
+  });
+});

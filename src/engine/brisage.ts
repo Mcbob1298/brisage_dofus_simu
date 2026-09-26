@@ -54,6 +54,15 @@ export function jetsParStat(lignes: readonly LigneBrisage[]): Map<StatId, number
   return out;
 }
 
+/**
+ * Une ligne ne peut servir de cible de focus que si elle porte une valeur.
+ * Un jet nul pèse son plancher en brisage naturel, mais le concasseur ne
+ * l'affiche pas comme caractéristique focalisable.
+ */
+export function focalisable(jet: number | undefined): boolean {
+  return jet !== undefined && jet > 0;
+}
+
 /** Poids d'une ligne au sens du concasseur, plancher compris. */
 function poidsLigne(jet: number, poidsUnitaire: number, niveau: number): number {
   return jet * poidsUnitaire * niveau * CONSTANTE_BRISAGE + PLANCHER_LIGNE;
@@ -76,8 +85,12 @@ export function calculerPoints(entree: EntreeBrisage, poids: Readonly<PoidsTable
 
   const focus = entree.focus;
   const poidsFocus = poids[focus];
-  // Un focus sur une stat absente de l'objet est impossible en jeu : on ne rend rien.
-  if (!(poidsFocus > 0) || !jets.has(focus)) return points;
+  // Le concasseur ne propose de focaliser que sur les caractéristiques CHIFFRÉES
+  // de l'objet. Une stat absente, ou présente sans valeur (drapeau « Arme de
+  // chasse », jet 0), n'apparaît pas dans son menu : on ne rend rien.
+  // Constaté en jeu le 2026-09-26 sur la Baguette de Liriel, qui porte le
+  // drapeau « Arme de chasse » et n'offre que % Critique et Agilité au focus.
+  if (!(poidsFocus > 0) || !focalisable(jets.get(focus))) return points;
 
   // poids_effectif = poids_ligne(focus) + Σ autres poids_ligne / 2
   let poidsEffectif = 0;
@@ -199,7 +212,10 @@ export function coefficientSeuil(
  * bénéfice (vue retenue) décroissant. Le premier élément est le gagnant.
  */
 export function comparerFocus(entree: EntreeBrisage, ctx: Contexte, options: OptionsBilan): ComparaisonFocus[] {
-  const candidats: (StatId | null)[] = [null, ...jetsParStat(entree.lignes).keys()];
+  const candidats: (StatId | null)[] = [null];
+  for (const [statId, jet] of jetsParStat(entree.lignes)) {
+    if (focalisable(jet)) candidats.push(statId);
+  }
   const resultats = candidats.map((focus): ComparaisonFocus => {
     const e = { ...entree, focus };
     const resultat = calculerBrisage(e, ctx);

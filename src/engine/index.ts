@@ -12,6 +12,7 @@ export {
   calculerBilan,
   coefficientSeuil,
   comparerFocus,
+  focalisable,
   prixAchatMax,
   SEUIL_MIN,
   SEUIL_MAX,

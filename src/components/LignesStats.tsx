@@ -2,6 +2,7 @@ import { STAT_BY_ID } from '../data/statMapping.ts';
 import { useSimu, type JetMode } from '../store/simu.ts';
 import { ChampNombre } from './ChampNombre.tsx';
 import { formatNombre } from '../lib/format.ts';
+import { focalisable } from '../engine/index.ts';
 
 const MODES: { id: JetMode; label: string }[] = [
   { id: 'min', label: 'Jet min' },
@@ -63,8 +64,10 @@ export function LignesStats() {
         </thead>
         <tbody>
           {lignes.map((l, i) => {
-            // Jet nul ≠ malus : la ligne pèse son plancher et rend des runes.
+            // Une ligne sans valeur chiffrée rend son plancher en brisage
+            // naturel, mais n'est pas focalisable (cf. `focalisable`).
             const malus = l.max < 0;
+            const peutFocus = focalisable(l.jet);
             const estFocus = focus === l.statId;
             return (
               <tr
@@ -77,15 +80,17 @@ export function LignesStats() {
                   <input
                     type="checkbox"
                     checked={estFocus}
-                    disabled={malus}
+                    disabled={!peutFocus}
                     onChange={(e) => setFocus(e.target.checked ? l.statId : null)}
                     aria-label={`Focus ${STAT_BY_ID[l.statId].label}`}
+                    title={peutFocus ? undefined : 'Le concasseur ne propose pas de focus sur cette ligne'}
                     className="accent-accent"
                   />
                 </td>
                 <td className="py-1">
                   {STAT_BY_ID[l.statId].label}
                   {malus && <span className="ml-1 text-xs">(malus, ne rend rien)</span>}
+                  {!malus && !peutFocus && <span className="ml-1 text-xs text-encre-3">(sans valeur, focus impossible)</span>}
                 </td>
                 <td className="tnum py-1 text-right text-xs whitespace-nowrap text-encre-2">
                   {l.min === l.max ? formatNombre(l.min) : `${formatNombre(l.min)} à ${formatNombre(l.max)}`}

@@ -5,7 +5,7 @@
  */
 import type { Item } from '../data/types.ts';
 import type { StatId } from '../data/statMapping.ts';
-import { calculerBrisage } from './brisage.ts';
+import { calculerBrisage, focalisable } from './brisage.ts';
 import type { Contexte, EntreeBrisage, LigneBrisage } from './types.ts';
 
 export type JetChoisi = 'min' | 'moyen' | 'max';
@@ -42,8 +42,8 @@ export function evaluerItem(item: Item, ctx: Contexte, jet: JetChoisi = 'max', c
   let prixManquants = naturel.prixManquants.length > 0;
   const vus = new Set<StatId>();
   for (const l of lignes) {
-    // Un jet nul reste focalisable (il pèse son plancher) ; un malus, non.
-    if (l.jet < 0 || vus.has(l.statId)) continue;
+    // Seules les caractéristiques chiffrées sont focalisables (cf. `focalisable`).
+    if (!focalisable(l.jet) || vus.has(l.statId)) continue;
     vus.add(l.statId);
     const r = calculerBrisage({ ...base, focus: l.statId }, ctx);
     if (r.valeurEsperee > valeurMeilleure) {

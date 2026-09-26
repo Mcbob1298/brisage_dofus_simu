@@ -27,6 +27,9 @@ export const RUNES_TEST: RuneDef[] = [
   rune('initiative', 'simple', 10, 'Rune Ini'),
   rune('initiative', 'pa', 30, 'Rune Pa Ini'),
   rune('initiative', 'ra', 100, 'Rune Ra Ini'),
+  // Lignes de la Baguette de Liriel, pour la régression « focus impossible ».
+  rune('armeDeChasse', 'simple', 1, 'Rune Chas'),
+  rune('agilite', 'simple', 1, 'Rune Age'),
 ];
 
 export function runeParNom(nom: string): RuneDef {
@@ -59,6 +62,9 @@ export function prixTest(overrides: Record<string, number> = {}): PrixRunes {
     'Rune Ini': 10,
     'Rune Pa Ini': 30,
     'Rune Ra Ini': 100,
+    // Prix relevés sur Draconiros le 2026-09-26.
+    'Rune Chas': 8797,
+    'Rune Age': 85,
   };
   const prix: Partial<Record<number, number>> = {};
   for (const [nom, p] of Object.entries({ ...base, ...overrides })) prix[runeParNom(nom).id] = p;
