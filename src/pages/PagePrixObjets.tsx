@@ -16,7 +16,9 @@ import { useReglages } from '../store/reglages.ts';
 import { useSimu } from '../store/simu.ts';
 
 const PAGE = 40;
-type Tri = 'marge' | 'valeur' | 'niveau' | 'nom';
+type Tri = 'marge' | 'valeur' | 'niveau' | 'coef' | 'nom';
+/** Filtre sur le coefficient relevé au concasseur. */
+type EtatCoef = 'tous' | 'releve' | 'aTester';
 
 /** Prix des équipements : ce que tu relèves en HDV ou au craft, face à ce que l'objet rend en runes. */
 export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
@@ -34,6 +36,8 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
   const [type, setType] = useState('');
   const [seulementNotes, setSeulementNotes] = useState(true);
   const [seulementFavoris, setSeulementFavoris] = useState(false);
+  const [etatCoef, setEtatCoef] = useState<EtatCoef>('tous');
+  const [coefMin, setCoefMin] = useState<number | null>(null);
   const [niveauMin, setNiveauMin] = useState<number | null>(null);
   const [niveauMax, setNiveauMax] = useState<number | null>(null);
   const [tri, setTri] = useState<Tri>('marge');
@@ -57,13 +61,18 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
         return { item: it, cout, coef, releve: releve !== null, valeur, marge: cout ? valeur - cout.prix : null };
       })
       .filter((l) => !seulementNotes || l.cout !== null)
-      .filter((l) => !seulementFavoris || favoris.includes(l.item.id));
+      .filter((l) => !seulementFavoris || favoris.includes(l.item.id))
+      .filter((l) => (etatCoef === 'releve' ? l.releve : etatCoef === 'aTester' ? !l.releve : true))
+      // Un coefficient minimum ne peut se juger que sur un relevé : un objet non testé est écarté.
+      .filter((l) => coefMin === null || (l.releve && l.coef >= coefMin));
     const cle = (l: (typeof out)[number]): number | string => {
       switch (tri) {
         case 'valeur':
           return l.valeur;
         case 'niveau':
           return l.item.niveau;
+        case 'coef':
+          return l.releve ? l.coef : -Infinity;
         case 'nom':
           return l.item.nom;
         default:
@@ -76,7 +85,7 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
       const c = typeof ka === 'string' ? ka.localeCompare(kb as string, 'fr') : ka - (kb as number);
       return (desc ? -c : c) || a.item.nom.localeCompare(b.item.nom, 'fr');
     });
-  }, [items, index, recherche, type, seulementNotes, seulementFavoris, favoris, niveauMin, niveauMax, prixConstates, coutsCraft, coefs, ctx, coefSuppose, taxePct, tri, desc]);
+  }, [items, index, recherche, type, seulementNotes, seulementFavoris, favoris, etatCoef, coefMin, niveauMin, niveauMax, prixConstates, coutsCraft, coefs, ctx, coefSuppose, taxePct, tri, desc]);
 
   const nbNotes = new Set([...Object.keys(prixConstates), ...Object.keys(coutsCraft)]).size;
 
@@ -149,6 +158,34 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
             <input type="checkbox" checked={seulementFavoris} onChange={(e) => setSeulementFavoris(e.target.checked)} />
             ★ Favoris seulement
           </label>
+          <span className="flex flex-col gap-0.5">
+            Coef lu
+            <span className="flex items-center gap-1">
+              <span className="segment" role="radiogroup" aria-label="Filtrer sur le coefficient relevé">
+                {(
+                  [
+                    ['tous', 'Tous'],
+                    ['releve', 'Relevé'],
+                    ['aTester', 'À tester'],
+                  ] as [EtatCoef, string][]
+                ).map(([id, label]) => (
+                  <button key={id} role="radio" aria-checked={etatCoef === id} onClick={() => setEtatCoef(id)}>
+                    {label}
+                  </button>
+                ))}
+              </span>
+              <ChampNombre
+                value={coefMin}
+                onChange={setCoefMin}
+                vide
+                suffixe="%"
+                placeholder="≥"
+                className="w-20"
+                aria-label="Coefficient relevé minimum"
+                title="Ne garder que les objets dont le coefficient relevé atteint ce seuil"
+              />
+            </span>
+          </span>
           <span className="tnum ml-auto pb-2">
             {formatNombre(nbNotes)} objet(s) chiffré(s) · {serveur}
           </span>
@@ -161,9 +198,7 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
             <tr className="border-b border-bord">
               <En t="nom" label="Objet" right={false} />
               <En t="niveau" label="Niv." />
-              <th className="px-3 py-2 text-right font-medium" title="Coefficient relevé au concasseur : il remplace le coefficient supposé pour cette ligne">
-                Coef lu
-              </th>
+              <En t="coef" label="Coef lu" />
               <En t="valeur" label="Runes nettes" />
               <th className="px-3 py-2 text-right font-medium">Prix HDV</th>
               <th className="px-3 py-2 text-right font-medium">Prix craft</th>
