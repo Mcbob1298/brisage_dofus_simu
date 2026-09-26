@@ -793,7 +793,8 @@
  {
   "apiId": 108,
   "apiName": "% Résistance distance",
-  "status": "unmapped",
+  "status": "mapped",
+  "statId": "pctResDistance",
   "count": 20,
   "exemples": [
    "Jadis",
@@ -804,7 +805,8 @@
  {
   "apiId": 65,
   "apiName": "% Résistance mêlée",
-  "status": "unmapped",
+  "status": "mapped",
+  "statId": "pctResMelee",
   "count": 19,
   "exemples": [
    "Bouclistik",

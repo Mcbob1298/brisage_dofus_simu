@@ -27,10 +27,7 @@ const effets = lire<EffectTypeReport[]>('effect-types.json');
  * faute de poids vérifié (voir rapport de sync). À vider dès qu'une source
  * fiable donne leur poids.
  */
-const NON_MAPPEES_EN_ATTENTE = new Set([
-  108, // % Résistance distance (Rune Ré Per Di existe en jeu)
-  65, // % Résistance mêlée (Rune Ré Per Mé existe en jeu)
-]);
+const NON_MAPPEES_EN_ATTENTE = new Set<number>([]);
 
 describe('cohérence interne du référentiel', () => {
   it('chaque StatId a un libellé et un poids par défaut', () => {
@@ -118,5 +115,44 @@ describe('runes synchronisées', () => {
       expect(vus.has(k), `doublon ${k} (${r.nom})`).toBe(false);
       vus.add(k);
     }
+  });
+});
+
+/**
+ * Ancrage externe de la table des poids.
+ *
+ * Le poids d'une rune vaut son poids unitaire × les points qu'elle rend. Les
+ * poids de rune ci-dessous sont publiés par plusieurs tables communautaires
+ * indépendantes (dofustool.com, onlygames.fr, console-retro.net,
+ * dofus-portals.fr, relevées le 2026-09-26), et les points rendus viennent de
+ * l'API (runes.json). Le produit doit retomber sur le poids publié.
+ *
+ * C'est ce test qui a tranché la Vitalité : à 0,25 les runes Vi / Pa Vi / Ra Vi
+ * auraient pesé 1,25 / 3,75 / 12,5, valeurs qu'aucune source ne rapporte.
+ */
+describe('poids unitaires — recoupement avec les poids de rune publiés', () => {
+  const POIDS_RUNE_PUBLIES: [string, number][] = [
+    ['Rune Vi', 1],
+    ['Rune Pa Vi', 3],
+    ['Rune Ra Vi', 10],
+    ['Rune Fo', 1],
+    ['Rune Pa Fo', 3],
+    ['Rune Ra Fo', 10],
+    ['Rune Sa', 3],
+    ['Rune Pa Sa', 9],
+    ['Rune Ini', 1],
+    ['Rune Cri', 10],
+    ['Rune Ga Pa', 100],
+    ['Rune Ga Pme', 90],
+    ['Rune Po', 51],
+    ['Rune Invo', 30],
+    ['Rune Do', 20],
+    ['Rune de chasse', 5],
+  ];
+
+  it.each(POIDS_RUNE_PUBLIES)('%s pèse %i', (nom, poidsPublie) => {
+    const rune = runes.find((r) => r.nom === nom);
+    expect(rune, `rune « ${nom} » absente de runes.json`).toBeDefined();
+    expect(POIDS_DEFAUT[rune!.statId] * rune!.valeur).toBeCloseTo(poidsPublie, 10);
   });
 });

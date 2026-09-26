@@ -54,9 +54,9 @@ describe('calculerPoints — formule de base', () => {
   it('la part de jet ignore le poids, le plancher vaut 1 ÷ poids unitaire', () => {
     // 300 vitalité niveau 200, poids unitaire 0,25 :
     //   part de jet = 300 × 200 × 0,015 = 900 points (le poids se simplifie)
-    //   plancher    = 1 ÷ 0,25 = 4 points, soit une rune Vi (valeur 5) pour 0,8
+    //   plancher    = 1 ÷ 0,2 = 5 points, soit exactement une rune Vi (valeur 5)
     const pts = calculerPoints(entree({ niveau: 200, lignes: [{ statId: 'vitalite', jet: 300 }] }), POIDS_DEFAUT);
-    expect(pts.vitalite).toBeCloseTo(904, 10);
+    expect(pts.vitalite).toBeCloseTo(905, 10);
 
     // Une stat lourde a un plancher plus léger : 1 ÷ 100 pour les PA.
     const pa = calculerPoints(entree({ niveau: 200, lignes: [{ statId: 'pa', jet: 1 }] }), POIDS_DEFAUT);
@@ -112,17 +112,17 @@ describe('calculerPoints — focus', () => {
   it('transfère la moitié du poids des autres lignes sur la ligne focus', () => {
     const pts = calculerPoints({ ...objet, focus: 'force' }, POIDS_DEFAUT);
     // poids des lignes (plancher compris), niveau 100 → échelle 1,5 :
-    //   force    = 100×1×1,5    + 1 = 151
-    //   sagesse  =  20×3×1,5    + 1 =  91
-    //   vitalité = 200×0,25×1,5 + 1 =  76
-    // poids_effectif = 151 + (91 + 76) / 2 = 234,5 ; points = 234,5 ÷ 1
-    expect(pts.force).toBeCloseTo(234.5, 10);
+    //   force    = 100×1×1,5   + 1 = 151
+    //   sagesse  =  20×3×1,5   + 1 =  91
+    //   vitalité = 200×0,2×1,5 + 1 =  61
+    // poids_effectif = 151 + (91 + 61) / 2 = 227 ; points = 227 ÷ 1
+    expect(pts.force).toBeCloseTo(227, 10);
   });
 
   it('divise par le poids de la stat focus', () => {
     const pts = calculerPoints({ ...objet, focus: 'sagesse' }, POIDS_DEFAUT);
-    // poids_effectif = 91 + (151 + 76) / 2 = 204,5 ; points = 204,5 ÷ 3
-    expect(pts.sagesse).toBeCloseTo(204.5 / 3, 10);
+    // poids_effectif = 91 + (151 + 61) / 2 = 197 ; points = 197 ÷ 3
+    expect(pts.sagesse).toBeCloseTo(197 / 3, 10);
   });
 
   it('focus sur une stat seule = brisage naturel de cette ligne', () => {

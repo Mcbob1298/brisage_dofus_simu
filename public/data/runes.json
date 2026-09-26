@@ -48,6 +48,14 @@
   "imageLocale": "/img/items/78033.webp"
  },
  {
+  "id": 18724,
+  "nom": "Rune Ré Per Di",
+  "statId": "pctResDistance",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78096.webp"
+ },
+ {
   "id": 7560,
   "nom": "Rune Ré Per Eau",
   "statId": "pctResEau",
@@ -62,6 +70,14 @@
   "tier": "simple",
   "valeur": 1,
   "imageLocale": "/img/items/78029.webp"
+ },
+ {
+  "id": 18723,
+  "nom": "Rune Ré Per Mé",
+  "statId": "pctResMelee",
+  "tier": "simple",
+  "valeur": 1,
+  "imageLocale": "/img/items/78095.webp"
  },
  {
   "id": 7460,

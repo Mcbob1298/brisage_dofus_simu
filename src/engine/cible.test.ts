@@ -33,20 +33,20 @@ describe('ciblerRune', () => {
     const [p] = ciblerRune(runeParNom('Rune Ga Pa'), [item], contexte(), OPT);
     expect(p.pointsFocus).toBeGreaterThan(p.pointsNaturel);
     // poids des lignes, plancher compris : PA = 1×100×1,5 + 1 = 151
-    //                                      Vi = 100×0,25×1,5 + 1 = 38,5
-    // focus PA : (151 + 38,5/2) ÷ 100 = 1,7025 point ; naturel : 151 ÷ 100
-    expect(p.pointsFocus).toBeCloseTo(1.7025, 6);
+    //                                      Vi = 100×0,2×1,5 + 1 = 31
+    // focus PA : (151 + 31/2) ÷ 100 = 1,665 point ; naturel : 151 ÷ 100
+    expect(p.pointsFocus).toBeCloseTo(1.665, 6);
     expect(p.pointsNaturel).toBeCloseTo(1.51, 6);
   });
 
   it('convertit les points en runes selon la valeur de la rune visée', () => {
     const item = obj('Vitalité', [{ statId: 'vitalite', min: 400, max: 400 }]);
-    // 400 × 100 × 0,015 = 600 points, + plancher 1 ÷ 0,25 = 4 → 604 points
-    // Rune Ra Vi = 50 points → 12,08 runes ; Rune Vi = 5 points → 120,8
+    // 400 × 100 × 0,015 = 600 points, + plancher 1 ÷ 0,2 = 5 → 605 points
+    // Rune Ra Vi = 50 points → 12,1 runes ; Rune Vi = 5 points → 121
     const [ra] = ciblerRune(runeParNom('Rune Ra Vi'), [item], contexte(), OPT);
     const [simple] = ciblerRune(runeParNom('Rune Vi'), [item], contexte(), OPT);
-    expect(ra.quantiteFocus).toBeCloseTo(12.08, 6);
-    expect(simple.quantiteFocus).toBeCloseTo(120.8, 6);
+    expect(ra.quantiteFocus).toBeCloseTo(12.1, 6);
+    expect(simple.quantiteFocus).toBeCloseTo(121, 6);
   });
 
   it('calcule le coût de revient d’une rune', () => {

@@ -26,6 +26,8 @@ export type StatId =
   | 'esquivePa'
   | 'esquivePm'
   | 'pctResNeutre'
+  | 'pctResDistance'
+  | 'pctResMelee'
   | 'pctResTerre'
   | 'pctResFeu'
   | 'pctResEau'
@@ -94,6 +96,8 @@ export const STATS: readonly StatDef[] = [
   { id: 'retraitPm', label: 'Retrait PM', abbr: 'RetPM', famille: 'retrait' },
   { id: 'esquivePa', label: 'Esquive PA', abbr: 'EsqPA', famille: 'retrait' },
   { id: 'esquivePm', label: 'Esquive PM', abbr: 'EsqPM', famille: 'retrait' },
+  { id: 'pctResDistance', label: '% Résistance distance', abbr: 'Ré%Di', famille: 'resistances' },
+  { id: 'pctResMelee', label: '% Résistance mêlée', abbr: 'Ré%Mé', famille: 'resistances' },
   { id: 'pctResNeutre', label: '% Résistance Neutre', abbr: 'Ré%N', famille: 'resistances' },
   { id: 'pctResTerre', label: '% Résistance Terre', abbr: 'Ré%T', famille: 'resistances' },
   { id: 'pctResFeu', label: '% Résistance Feu', abbr: 'Ré%F', famille: 'resistances' },
@@ -158,6 +162,10 @@ export const API_EFFECT_TO_STAT: Readonly<Record<number, StatId>> = {
   50: 'retraitPm',
   75: 'esquivePa',
   39: 'esquivePm',
+  // Runes Ré Per Di / Ré Per Mé, poids 15 (dofustool.com et millenium.org,
+  // relevés le 2026-09-26). Elles existent à l'encyclopédie officielle.
+  108: 'pctResDistance',
+  65: 'pctResMelee',
   34: 'pctResNeutre',
   63: 'pctResTerre',
   37: 'pctResFeu',

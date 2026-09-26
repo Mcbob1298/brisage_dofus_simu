@@ -4,13 +4,29 @@ import type { StatId } from '../data/statMapping.ts';
 export type PoidsTable = Record<StatId, number>;
 
 /**
- * Valeurs de départ, issues de la spec §3 (source : tables communautaires 2026,
- * https://dafous.app/guides/poids-runes-fm.html).
+ * Poids unitaire (par point) de chaque caractéristique.
  *
- * Désaccords connus entre sources, d'où la possibilité de modifier ces valeurs
- * dans l'interface :
- *  - Vitalité : 0,25 ou 0,2 selon les auteurs ;
- *  - Ré Critiques / Ré Poussée : 2 ou 5.
+ * Recoupé le 2026-09-26 sur quatre tables communautaires indépendantes :
+ *  - https://www.dofustool.com/poids-runes-dofus/
+ *  - https://dofus-portals.fr/forgemagie/
+ *  - https://www.onlygames.fr/poids-runes-dofus/
+ *  - https://dafous.app/guides/poids-runes-fm.html (source d'origine de la spec)
+ * Elles s'accordent sur toute la table sauf la Vitalité (cf. ci-dessous).
+ *
+ * VITALITÉ = 0,2 et non 0,25 comme l'annonçait la spec §3. Trois sources sur
+ * quatre donnent 0,2, et le recoupement structurel tranche : les poids publiés
+ * des runes Vi / Pa Vi / Ra Vi valent 1 / 3 / 10, or ces runes rendent 5 / 15 /
+ * 50 points de vitalité (valeurs lues dans l'API, cf. runes.json). 0,2 × ces
+ * valeurs donne exactement 1 / 3 / 10 ; 0,25 donnerait 1,25 / 3,75 / 12,5, que
+ * personne ne rapporte. Le même test passe pour toutes les autres lignes.
+ *
+ * RESTE INCERTAIN : les Pods. Trois sources donnent 0,25 par point, mais aucune
+ * ne publie le poids de la Rune Pod (qui rend 10 pods), donc le test structurel
+ * ci-dessus ne peut pas s'appliquer. À 0,25 la Rune Pod pèserait 2,5, là où les
+ * deux autres runes multi-points (Vi et Ini) pèsent 1. Un calculateur de
+ * référence divise d'ailleurs les pods par 2,5, ce qui revient à un poids de
+ * 0,1. On garde 0,25, valeur majoritaire et modifiable dans l'interface, mais
+ * les pods sont la seule ligne de cette table non recoupée.
  */
 export const POIDS_DEFAUT: Readonly<PoidsTable> = {
   pa: 100,
@@ -22,6 +38,8 @@ export const POIDS_DEFAUT: Readonly<PoidsTable> = {
   pctDommagesDistance: 15,
   pctDommagesMelee: 15,
   pctDommagesSorts: 15,
+  pctResDistance: 15,
+  pctResMelee: 15,
   soins: 10,
   pctCritique: 10,
   renvoiDommages: 10,
@@ -60,7 +78,7 @@ export const POIDS_DEFAUT: Readonly<PoidsTable> = {
   intelligence: 1,
   chance: 1,
   agilite: 1,
-  vitalite: 0.25,
+  vitalite: 0.2,
   pods: 0.25,
   initiative: 0.1,
 };
