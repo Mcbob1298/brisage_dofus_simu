@@ -34,19 +34,19 @@ describe('recommanderBrisage', () => {
 
   it('calcule bénéfice, ROI et quantité achetable avec le budget', () => {
     const a = obj('Bon', [{ statId: 'force', min: 100, max: 100 }]);
-    // 100 Force niv 100 → 150 points → 150 runes Fo × 100 = 15 000 kamas
+    // 100 Force niv 100 → 150 points + plancher 1 → 151 runes Fo × 100 = 15 100
     const [o] = recommanderBrisage([a], contexte('toutSimple'), { ...OPT, couts: couts([a, 10_000]) });
-    expect(o.valeurNette).toBeCloseTo(15_000, 6);
-    expect(o.benefice).toBeCloseTo(5_000, 6);
-    expect(o.roi).toBeCloseTo(50, 6);
+    expect(o.valeurNette).toBeCloseTo(15_100, 6);
+    expect(o.benefice).toBeCloseTo(5_100, 6);
+    expect(o.roi).toBeCloseTo(51, 6);
     expect(o.quantite).toBe(10);
-    expect(o.beneficeTotal).toBeCloseTo(50_000, 6);
+    expect(o.beneficeTotal).toBeCloseTo(51_000, 6);
   });
 
   it('déduit la taxe de vente', () => {
     const a = obj('Bon', [{ statId: 'force', min: 100, max: 100 }]);
     const [o] = recommanderBrisage([a], contexte('toutSimple'), { ...OPT, taxePct: 2, couts: couts([a, 10_000]) });
-    expect(o.valeurNette).toBeCloseTo(14_700, 6);
+    expect(o.valeurNette).toBeCloseTo(14_798, 6); // 15 100 × 0,98
   });
 
   it('classe par gain total du budget, pas par marge unitaire', () => {

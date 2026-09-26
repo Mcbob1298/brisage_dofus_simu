@@ -74,3 +74,22 @@ export const CONSTANTE_BRISAGE = 0.015;
 
 /** Part du poids des autres lignes reversée sur la ligne focus (spec §3, forum Dofus). */
 export const PART_FOCUS = 0.5;
+
+/**
+ * Terme plancher ajouté au poids de CHAQUE ligne de caractéristique :
+ *   poids_ligne = jet × poids_unitaire × niveau × 0,015 + 1
+ * Le poids d'une rune simple valant exactement son poids unitaire, ce « + 1 »
+ * revient à garantir une rune par ligne à 100 % de coefficient.
+ *
+ * Il est absent de la spec §3, dont le cas de contrôle (niveau 65, +10 %
+ * Critiques → 9,75 runes) correspond à la formule sans plancher ; avec le
+ * plancher on obtient 9,85. Trois sources concordantes l'emportent :
+ *  - https://github.com/KamelAkar/Calculateur_Brisage_Dofus
+ *    → `poids = ((value * poids_rune * level * 0.0150) + 1)` ;
+ *  - https://papycha.fr/taux-de-brisage/ → poids de ligne = Stat × Poid_u, + 1 ;
+ *  - DoFocus, relevé le 2026-09-26 sur Draconiros : Arc de Chasse (niveau 1,
+ *    ligne « Arme de chasse » de jet 0, poids unitaire 5, coefficient 15 %)
+ *    affiche 0,03 rune soit 266 kamas à 8 870 la rune. Le plancher seul donne
+ *    1 × 0,15 ÷ 5 = 0,03 ✓ ; la formule sans plancher donnait 0.
+ */
+export const PLANCHER_LIGNE = 1;

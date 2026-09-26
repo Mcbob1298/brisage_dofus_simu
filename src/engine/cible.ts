@@ -84,7 +84,8 @@ export function ciblerRune(
   for (const item of items) {
     if (item.nonBrisable || item.niveau > (options.niveauMax ?? Infinity)) continue;
     const lignes = lignesDepuisItem(item, options.jet);
-    const ciblees = lignes.filter((l) => l.statId === statId && l.jet > 0);
+    // Jet nul accepté : la ligne pèse son plancher et rend donc des runes.
+    const ciblees = lignes.filter((l) => l.statId === statId && l.jet >= 0);
     if (ciblees.length === 0) continue;
 
     const coefficient = options.coefficients?.get(item.id) ?? options.coefficient;

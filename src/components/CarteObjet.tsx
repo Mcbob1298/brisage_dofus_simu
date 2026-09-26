@@ -192,7 +192,10 @@ export function CarteObjet({ sim }: { sim: Simulation }) {
           </thead>
           <tbody>
             {lignes.map((l, i) => {
-              const malus = l.max <= 0;
+              // Un jet nul n'est pas un malus : c'est une valeur absente de la
+              // source (drapeau « Arme de chasse »). La ligne pèse son plancher
+              // et reste donc focalisable.
+              const malus = l.max < 0;
               const estFocus = focus === l.statId;
               const meilleur = meilleureLigne?.statId === l.statId && !malus;
               return (

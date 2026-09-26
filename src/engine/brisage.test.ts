@@ -21,20 +21,25 @@ function entree(partial: Partial<EntreeBrisage> & Pick<EntreeBrisage, 'niveau' |
 }
 
 describe('calculerPoints — formule de base', () => {
-  it('cas de contrôle : niveau 65, 10 % Critique, coef 100 % → 9,75', () => {
+  it('cas de contrôle : niveau 65, 10 % Critique, coef 100 % → 9,85', () => {
+    // poids_ligne = 10 × 10 (poids Cri) × 65 × 0,015 + 1 = 97,5 + 1 = 98,5
+    // points = 98,5 ÷ 10 = 9,85
+    // La spec §3 annonce 9,75 : elle omet le plancher, cf. PLANCHER_LIGNE.
     const pts = calculerPoints(
       entree({ niveau: 65, lignes: [{ statId: 'pctCritique', jet: 10 }] }),
       POIDS_DEFAUT,
     );
-    expect(pts.pctCritique).toBeCloseTo(9.75, 10);
+    expect(pts.pctCritique).toBeCloseTo(9.85, 10);
   });
 
-  it('est linéaire en niveau : niveau 130 → 19,5', () => {
+  it('seule la part de jet suit le niveau, le plancher est constant : niveau 130 → 19,6', () => {
+    // 10 × 10 × 130 × 0,015 + 1 = 195 + 1 = 196 → ÷ 10 = 19,6
+    // (et non le double de 9,85 : le plancher ne double pas avec le niveau)
     const pts = calculerPoints(
       entree({ niveau: 130, lignes: [{ statId: 'pctCritique', jet: 10 }] }),
       POIDS_DEFAUT,
     );
-    expect(pts.pctCritique).toBeCloseTo(19.5, 10);
+    expect(pts.pctCritique).toBeCloseTo(19.6, 10);
   });
 
   it('est linéaire en coefficient : 200 % → le double, 50 % → la moitié', () => {
@@ -46,13 +51,19 @@ describe('calculerPoints — formule de base', () => {
     expect(p50).toBeCloseTo(p100 / 2, 10);
   });
 
-  it('ne dépend pas du poids en brisage naturel (poids_rune = poids_unitaire)', () => {
-    // 300 vitalité niveau 200 → 300 × 200 × 0,015 = 900 points de vitalité
+  it('la part de jet ignore le poids, le plancher vaut 1 ÷ poids unitaire', () => {
+    // 300 vitalité niveau 200, poids unitaire 0,25 :
+    //   part de jet = 300 × 200 × 0,015 = 900 points (le poids se simplifie)
+    //   plancher    = 1 ÷ 0,25 = 4 points, soit une rune Vi (valeur 5) pour 0,8
     const pts = calculerPoints(entree({ niveau: 200, lignes: [{ statId: 'vitalite', jet: 300 }] }), POIDS_DEFAUT);
-    expect(pts.vitalite).toBeCloseTo(900, 10);
+    expect(pts.vitalite).toBeCloseTo(904, 10);
+
+    // Une stat lourde a un plancher plus léger : 1 ÷ 100 pour les PA.
+    const pa = calculerPoints(entree({ niveau: 200, lignes: [{ statId: 'pa', jet: 1 }] }), POIDS_DEFAUT);
+    expect(pa.pa).toBeCloseTo(1 * 200 * 0.015 + 1 / 100, 10);
   });
 
-  it('ignore les lignes de malus (jet ≤ 0)', () => {
+  it('ignore les lignes de malus (jet < 0), mais garde les jets nuls', () => {
     const pts = calculerPoints(
       entree({
         niveau: 100,
@@ -64,15 +75,21 @@ describe('calculerPoints — formule de base', () => {
       POIDS_DEFAUT,
     );
     expect(pts.sagesse).toBeUndefined();
-    expect(pts.force).toBeCloseTo(75, 10);
+    expect(pts.force).toBeCloseTo(76, 10); // 50 × 100 × 0,015 + 1
+
+    // Un jet nul n'est pas un malus : la ligne pèse son plancher.
+    // Cas réel : Arc de Chasse, drapeau « Arme de chasse » sans valeur.
+    const nul = calculerPoints(entree({ niveau: 100, lignes: [{ statId: 'armeDeChasse', jet: 0 }] }), POIDS_DEFAUT);
+    expect(nul.armeDeChasse).toBeCloseTo(1 / 5, 10);
   });
 
-  it('additionne deux lignes de la même stat', () => {
+  it('additionne deux lignes de la même stat sans compter deux planchers', () => {
     const pts = calculerPoints(
       entree({ niveau: 100, lignes: [{ statId: 'force', jet: 10 }, { statId: 'force', jet: 20 }] }),
       POIDS_DEFAUT,
     );
-    expect(pts.force).toBeCloseTo(45, 10);
+    // (10 + 20) × 100 × 0,015 + 1 = 46, et non 45 + 2 planchers
+    expect(pts.force).toBeCloseTo(46, 10);
   });
 });
 
@@ -94,21 +111,23 @@ describe('calculerPoints — focus', () => {
 
   it('transfère la moitié du poids des autres lignes sur la ligne focus', () => {
     const pts = calculerPoints({ ...objet, focus: 'force' }, POIDS_DEFAUT);
-    // poids_effectif = 100×1 + (20×3 + 200×0,25) / 2 = 100 + 55 = 155
-    // points = 155 × 100 × 0,015 × 1 ÷ 1 = 232,5
-    expect(pts.force).toBeCloseTo(232.5, 10);
+    // poids des lignes (plancher compris), niveau 100 → échelle 1,5 :
+    //   force    = 100×1×1,5    + 1 = 151
+    //   sagesse  =  20×3×1,5    + 1 =  91
+    //   vitalité = 200×0,25×1,5 + 1 =  76
+    // poids_effectif = 151 + (91 + 76) / 2 = 234,5 ; points = 234,5 ÷ 1
+    expect(pts.force).toBeCloseTo(234.5, 10);
   });
 
   it('divise par le poids de la stat focus', () => {
     const pts = calculerPoints({ ...objet, focus: 'sagesse' }, POIDS_DEFAUT);
-    // poids_effectif = 20×3 + (100×1 + 200×0,25) / 2 = 60 + 75 = 135
-    // points = 135 × 100 × 0,015 ÷ 3 = 67,5
-    expect(pts.sagesse).toBeCloseTo(67.5, 10);
+    // poids_effectif = 91 + (151 + 76) / 2 = 204,5 ; points = 204,5 ÷ 3
+    expect(pts.sagesse).toBeCloseTo(204.5 / 3, 10);
   });
 
   it('focus sur une stat seule = brisage naturel de cette ligne', () => {
     const seul = entree({ niveau: 65, lignes: [{ statId: 'pctCritique', jet: 10 }] });
-    expect(calculerPoints({ ...seul, focus: 'pctCritique' }, POIDS_DEFAUT).pctCritique).toBeCloseTo(9.75, 10);
+    expect(calculerPoints({ ...seul, focus: 'pctCritique' }, POIDS_DEFAUT).pctCritique).toBeCloseTo(9.85, 10);
   });
 
   it('focus sur une stat absente de l’objet ne rend rien', () => {
@@ -125,13 +144,13 @@ describe('calculerPoints — focus', () => {
 });
 
 describe('calculerBrisage — valeurs et restes', () => {
-  it('9,75 Cri → 9 runes garanties + 75 % de chance d’une de plus', () => {
+  it('9,85 Cri → 9 runes garanties + 85 % de chance d’une de plus', () => {
     const res = calculerBrisage(entree({ niveau: 65, lignes: [{ statId: 'pctCritique', jet: 10 }] }), contexte());
     const cri = res.parStat[0];
     expect(cri.runes).toEqual([{ rune: runeParNom('Rune Cri'), quantite: 9, prixUnitaire: 1000 }]);
-    expect(cri.reste).toBeCloseTo(0.75, 9);
+    expect(cri.reste).toBeCloseTo(0.85, 9);
     expect(res.valeurGarantie).toBe(9000);
-    expect(res.valeurEsperee).toBeCloseTo(9750, 6);
+    expect(res.valeurEsperee).toBeCloseTo(9850, 6);
   });
 
   it('signale les runes sans prix et les compte à 0', () => {
@@ -158,9 +177,9 @@ describe('calculerBilan', () => {
   it('utilise l’espérance sur un lot de N objets', () => {
     const b = calculerBilan(res, { prixRevient: 5000, taxePct: 0, nbObjets: 10 });
     expect(b.retenu).toBe('espere');
-    expect(b.espere.valeurBrute).toBeCloseTo(97500, 6);
+    expect(b.espere.valeurBrute).toBeCloseTo(98500, 6); // 9,85 × 1000 × 10
     expect(b.coutTotal).toBe(50000);
-    expect(b.espere.benefice).toBeCloseTo(47500, 6);
+    expect(b.espere.benefice).toBeCloseTo(48500, 6);
   });
 
   it('ROI null si le coût est nul', () => {
@@ -173,12 +192,12 @@ describe('coefficientSeuil', () => {
 
   it('le bénéfice espéré est nul au seuil, positif juste au-dessus, négatif juste en dessous', () => {
     // toutSimple : valeur espérée strictement linéaire en coef → seuil analytique.
-    // valeur(coef) = 9,75 × coef/100 × 1000 kamas ; taxe 2 % ; prix de revient 5000
-    // 9750 × c × 0,98 = 5000 → c = 0,52328… → 52,33 %
+    // valeur(coef) = 9,85 × coef/100 × 1000 kamas ; taxe 2 % ; prix de revient 5000
+    // 9850 × c × 0,98 = 5000 → c = 0,51797… → 51,80 %
     const ctx = contexte('toutSimple');
     const options = { prixRevient: 5000, taxePct: 2, nbObjets: 1 };
     const seuil = coefficientSeuil(objet, ctx, options, 1e-6)!;
-    expect(seuil).toBeCloseTo((5000 / (9750 * 0.98)) * 100, 3);
+    expect(seuil).toBeCloseTo((5000 / (9850 * 0.98)) * 100, 3);
 
     const benef = (c: number) => calculerBilan(calculerBrisage({ ...objet, coefficient: c }, ctx), options).espere.benefice;
     expect(Math.abs(benef(seuil))).toBeLessThan(0.05);
@@ -248,5 +267,21 @@ describe('prixAchatMax', () => {
     const nette = 100_000;
     const max = prixAchatMax(nette, 30);
     expect(((nette - max) / max) * 100).toBeCloseTo(30, 9);
+  });
+});
+
+describe('ancrage sur une référence externe', () => {
+  it('reproduit le relevé DoFocus de l’Arc de Chasse', () => {
+    // DoFocus, serveur Draconiros, relevé le 2026-09-26 : Arc de Chasse
+    // (niveau 1), ligne « Arme de chasse » sans valeur dans les deux API
+    // (jet 0, poids unitaire 5), coefficient mesuré 15 %.
+    // Affiché : 0,03 rune, soit 266 kamas à 8 870 la Rune de chasse.
+    // Tout vient du plancher : 1 × 0,15 ÷ 5 = 0,03.
+    const pts = calculerPoints(
+      entree({ niveau: 1, coefficient: 15, lignes: [{ statId: 'armeDeChasse', jet: 0 }] }),
+      POIDS_DEFAUT,
+    );
+    expect(pts.armeDeChasse).toBeCloseTo(0.03, 10);
+    expect(Math.round(pts.armeDeChasse! * 8870)).toBe(266);
   });
 });

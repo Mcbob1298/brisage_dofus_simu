@@ -93,7 +93,8 @@ export function useDetailLignes(sim: Simulation | null): DetailLigne[] {
       const rune = ctx.runes.find((r) => r.statId === l.statId && r.tier === 'simple') ?? null;
       const prixRune = rune ? ctx.prix[rune.id] : undefined;
       const sans = naturel.parStat.find((p) => p.statId === l.statId);
-      const utile = l.jet > 0;
+      // Jet nul accepté : la ligne pèse son plancher, donc elle est focalisable.
+      const utile = l.jet >= 0;
       const avec = utile ? calculerBrisage({ ...entree, focus: l.statId }, ctx).parStat.find((p) => p.statId === l.statId) : undefined;
       const quantite = (points: number | undefined) => (points !== undefined && rune ? points / rune.valeur : 0);
       return {

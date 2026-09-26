@@ -105,6 +105,31 @@ runes Cri effectivement rapportées en jeu. Un objet niveau 130 dans les mêmes 
 doit donner ~19,5. Coefficient 200 % → le double. La relation est strictement linéaire en
 niveau et en coefficient.
 
+> **Correction du 2026-09-26 — plancher par ligne.** La formule ci-dessus est incomplète :
+> il manque un terme constant de **+ 1 sur le poids de chaque ligne**, avant application du
+> coefficient et conversion en runes :
+>
+> ```
+> poids_ligne = jet × poids_unitaire × niveau_objet × 0,015 + 1
+> points      = poids_ligne × (coefficient / 100) ÷ poids_unitaire
+> ```
+>
+> Le poids d'une rune simple valant son poids unitaire, ce « + 1 » garantit **une rune par
+> ligne à 100 % de coefficient**. Le cas de contrôle devient donc **9,85** et non 9,75, et
+> le rendement n'est plus strictement linéaire en niveau (le plancher, lui, est constant) —
+> il le reste en coefficient. Trois sources concordantes contre la rédaction initiale :
+>
+> - https://github.com/KamelAkar/Calculateur_Brisage_Dofus →
+>   `poids = ((value * poids_rune * level * 0.0150) + 1)` ;
+> - https://papycha.fr/taux-de-brisage/ → poids de ligne = Stat × Poid_u, puis + 1 ;
+> - DoFocus, Draconiros, 2026-09-26 : Arc de Chasse (niveau 1, ligne « Arme de chasse » sans
+>   valeur, coefficient 15 %) affiche 0,03 rune soit 266 kamas. Le plancher seul rend
+>   `1 × 0,15 ÷ 5 = 0,03` ✓ ; la formule sans plancher rendait 0.
+>
+> L'écart est négligeable en haut niveau (+1 % au-dessus du niveau 100) mais décisif en bas
+> niveau : **+71 % de valeur médiane sur les objets de niveau 1 à 20**, +10 % de 21 à 50.
+> Le test d'ancrage `reproduit le relevé DoFocus de l'Arc de Chasse` verrouille ce cas.
+
 ### Focus
 
 Le focus détruit toutes les autres lignes et n'en reverse que **50 % du poids** sur la
@@ -256,7 +281,7 @@ joueurs brisent et remonte quand l'objet est délaissé — voir sa tendance vau
 ## 8. Tests
 
 `vitest` sur le moteur uniquement, mais sérieusement :
-- le cas de contrôle niveau 65 / 10 % critique / coef 100 % → 9,75
+- le cas de contrôle niveau 65 / 10 % critique / coef 100 % → 9,85 (cf. correction §3)
 - linéarité en niveau et en coefficient
 - focus : vérifier que les autres lignes ne produisent rien et que la moitié de leur poids
   est bien transférée

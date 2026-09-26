@@ -1,18 +1,26 @@
 /**
  * Moteur de calcul du brisage — aucune dépendance UI.
  *
- * Formule (spec §3) : pour chaque ligne,
- *   points = jet × poids_unitaire × niveau × 0,015 × (coef / 100) ÷ poids_rune
- * Comme poids_rune = poids_unitaire × valeur_rune, le nombre de POINTS de
- * caractéristique restitués ne dépend pas du poids :
- *   points = jet × niveau × 0,015 × (coef / 100)
- * Le poids n'intervient que pour le focus (transfert de 50 % du poids des
- * autres lignes) — et la conversion points → runes divise par la valeur de la
- * rune simple (1 pour la plupart, 5 pour Vi, 10 pour Ini et Pod, cf. runes.json).
+ * Le concasseur raisonne en POIDS. Chaque caractéristique de l'objet pèse
+ *   poids_ligne = jet × poids_unitaire × niveau × 0,015 + 1
+ * le « + 1 » étant un plancher par ligne (cf. PLANCHER_LIGNE). Ce poids est
+ * ensuite modulé par le coefficient du serveur puis converti en runes :
+ *   runes = poids_ligne × (coef / 100) ÷ poids_rune
+ *
+ * On expose des POINTS de caractéristique plutôt que des runes, car une même
+ * stat se décline en plusieurs runes (Ga, Pa…) : poids_rune valant
+ * poids_unitaire × valeur_rune, on a
+ *   points = poids_ligne × (coef / 100) ÷ poids_unitaire
+ * et `repartirRunes` divise ensuite par la valeur de la rune simple (1 pour la
+ * plupart, 5 pour Vi, 10 pour Ini et Pod, cf. runes.json).
+ *
+ * Le poids intervient donc à deux endroits : le plancher (qui pèse d'autant
+ * plus que la stat est légère) et le focus (transfert de 50 % du poids des
+ * autres lignes).
  */
 import type { StatId } from '../data/statMapping.ts';
 import type { RuneDef } from '../data/types.ts';
-import { CONSTANTE_BRISAGE, PART_FOCUS, type PoidsTable } from './poids.ts';
+import { CONSTANTE_BRISAGE, PART_FOCUS, PLANCHER_LIGNE, type PoidsTable } from './poids.ts';
 import { repartirRunes } from './runes.ts';
 import type {
   Bilan,
@@ -27,43 +35,60 @@ import type {
   ResultatStat,
 } from './types.ts';
 
-/** Les lignes de malus (jet ≤ 0) ne produisent rien et ne transfèrent rien. */
-function lignesUtiles(lignes: readonly LigneBrisage[]): LigneBrisage[] {
-  return lignes.filter((l) => l.jet > 0 && Number.isFinite(l.jet));
+/**
+ * Jets cumulés par caractéristique : le concasseur voit UNE ligne par stat, et
+ * le plancher se compte une fois par ligne — deux lignes de Force ne valent
+ * donc pas deux planchers.
+ *
+ * Les malus (jet < 0) ne rendent rien et ne transfèrent rien. Une ligne de jet
+ * nul est en revanche conservée : ce n'est pas un malus mais une valeur absente
+ * (drapeau « Arme de chasse »), et elle pèse son plancher — c'est ce que fait
+ * DoFocus, cf. PLANCHER_LIGNE.
+ */
+export function jetsParStat(lignes: readonly LigneBrisage[]): Map<StatId, number> {
+  const out = new Map<StatId, number>();
+  for (const l of lignes) {
+    if (!Number.isFinite(l.jet) || l.jet < 0) continue;
+    out.set(l.statId, (out.get(l.statId) ?? 0) + l.jet);
+  }
+  return out;
+}
+
+/** Poids d'une ligne au sens du concasseur, plancher compris. */
+function poidsLigne(jet: number, poidsUnitaire: number, niveau: number): number {
+  return jet * poidsUnitaire * niveau * CONSTANTE_BRISAGE + PLANCHER_LIGNE;
 }
 
 /** Points de caractéristique restitués par stat, avant conversion en runes. */
 export function calculerPoints(entree: EntreeBrisage, poids: Readonly<PoidsTable>): PointsParStat {
-  const facteur = entree.niveau * CONSTANTE_BRISAGE * (entree.coefficient / 100);
-  const lignes = lignesUtiles(entree.lignes);
+  const coef = entree.coefficient / 100;
+  const jets = jetsParStat(entree.lignes);
   const points: PointsParStat = {};
 
   if (entree.focus === null) {
-    for (const l of lignes) {
-      points[l.statId] = (points[l.statId] ?? 0) + l.jet * facteur;
+    for (const [statId, jet] of jets) {
+      const poidsUnitaire = poids[statId];
+      if (!(poidsUnitaire > 0)) continue;
+      points[statId] = (poidsLigne(jet, poidsUnitaire, entree.niveau) * coef) / poidsUnitaire;
     }
     return points;
   }
 
   const focus = entree.focus;
   const poidsFocus = poids[focus];
-  if (!(poidsFocus > 0)) return points;
-
-  // poids_effectif = jet_focus × poids_focus + Σ autres (jet × poids) / 2
-  let poidsEffectif = 0;
-  let aLigneFocus = false;
-  for (const l of lignes) {
-    if (l.statId === focus) {
-      poidsEffectif += l.jet * poidsFocus;
-      aLigneFocus = true;
-    } else {
-      poidsEffectif += l.jet * poids[l.statId] * PART_FOCUS;
-    }
-  }
   // Un focus sur une stat absente de l'objet est impossible en jeu : on ne rend rien.
-  if (!aLigneFocus) return points;
+  if (!(poidsFocus > 0) || !jets.has(focus)) return points;
 
-  points[focus] = (poidsEffectif * facteur) / poidsFocus;
+  // poids_effectif = poids_ligne(focus) + Σ autres poids_ligne / 2
+  let poidsEffectif = 0;
+  for (const [statId, jet] of jets) {
+    const poidsUnitaire = poids[statId];
+    if (!(poidsUnitaire > 0)) continue;
+    const p = poidsLigne(jet, poidsUnitaire, entree.niveau);
+    poidsEffectif += statId === focus ? p : p * PART_FOCUS;
+  }
+
+  points[focus] = (poidsEffectif * coef) / poidsFocus;
   return points;
 }
 
@@ -174,10 +199,7 @@ export function coefficientSeuil(
  * bénéfice (vue retenue) décroissant. Le premier élément est le gagnant.
  */
 export function comparerFocus(entree: EntreeBrisage, ctx: Contexte, options: OptionsBilan): ComparaisonFocus[] {
-  const candidats: (StatId | null)[] = [null];
-  for (const l of lignesUtiles(entree.lignes)) {
-    if (!candidats.includes(l.statId)) candidats.push(l.statId);
-  }
+  const candidats: (StatId | null)[] = [null, ...jetsParStat(entree.lignes).keys()];
   const resultats = candidats.map((focus): ComparaisonFocus => {
     const e = { ...entree, focus };
     const resultat = calculerBrisage(e, ctx);

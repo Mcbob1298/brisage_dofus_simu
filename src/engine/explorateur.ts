@@ -42,7 +42,8 @@ export function evaluerItem(item: Item, ctx: Contexte, jet: JetChoisi = 'max', c
   let prixManquants = naturel.prixManquants.length > 0;
   const vus = new Set<StatId>();
   for (const l of lignes) {
-    if (l.jet <= 0 || vus.has(l.statId)) continue;
+    // Un jet nul reste focalisable (il pèse son plancher) ; un malus, non.
+    if (l.jet < 0 || vus.has(l.statId)) continue;
     vus.add(l.statId);
     const r = calculerBrisage({ ...base, focus: l.statId }, ctx);
     if (r.valeurEsperee > valeurMeilleure) {

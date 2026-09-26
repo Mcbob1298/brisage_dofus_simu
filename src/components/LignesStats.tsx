@@ -63,7 +63,8 @@ export function LignesStats() {
         </thead>
         <tbody>
           {lignes.map((l, i) => {
-            const malus = l.max <= 0;
+            // Jet nul ≠ malus : la ligne pèse son plancher et rend des runes.
+            const malus = l.max < 0;
             const estFocus = focus === l.statId;
             return (
               <tr

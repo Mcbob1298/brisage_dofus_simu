@@ -78,7 +78,8 @@ export function recommanderBrisage(items: readonly Item[], ctx: Contexte, option
     let valeur = calculerBrisage({ ...base, focus: null }, ctx).valeurEsperee;
     const vus = new Set<StatId>();
     for (const l of lignes) {
-      if (l.jet <= 0 || vus.has(l.statId)) continue;
+      // Un jet nul reste focalisable (il pèse son plancher) ; un malus, non.
+      if (l.jet < 0 || vus.has(l.statId)) continue;
       vus.add(l.statId);
       const v = calculerBrisage({ ...base, focus: l.statId }, ctx).valeurEsperee;
       if (v > valeur) {
