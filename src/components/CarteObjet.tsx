@@ -125,10 +125,20 @@ export function CarteObjet({ sim }: { sim: Simulation }) {
               {formatKamas(v.benefice)}
             </div>
             <div className="tnum text-xs text-encre-2">
-              {formatKamas(v.valeurNette)} de runes − {formatKamas(bilan.coutTotal)} d'achat
-              {bilan.nbObjets > 1 && ` · lot de ${bilan.nbObjets}`}
+              {formatKamas(v.valeurNette)} de runes − {formatKamas(bilan.coutTotal)} d'achat · en moyenne
+              {bilan.nbObjets > 1 && ` sur un lot de ${bilan.nbObjets}`}
             </div>
           </div>
+          {/* Une espérance ne se réalise que sur un lot : le dire quand un
+              exemplaire seul ne garantit aucune rune entière. */}
+          {bilan.garanti.valeurBrute <= 0 && (
+            <p className="text-center text-xs text-alerte">
+              ⚠ Aucun brisage ne garantit de rune ici : chaque essai ne rend que des décimales, c'est-à-dire une probabilité.
+              {bilan.nbObjets === 1
+                ? ' Sur un seul exemplaire, le plus probable est de ne rien récupérer.'
+                : ` Le chiffre ci-dessus est une moyenne sur ${bilan.nbObjets} brisages, pas un gain acquis.`}
+            </p>
+          )}
           <div className="tnum flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-encre-2">
             <span title="Prix à ne pas dépasser pour rentrer dans ses frais">
               Achat max <strong className="text-encre">{formatKamas(prixAchatMax(v.valeurNette / Math.max(1, bilan.nbObjets)))}</strong>

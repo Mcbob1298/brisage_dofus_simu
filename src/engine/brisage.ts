@@ -163,7 +163,17 @@ export function calculerBilan(resultat: ResultatBrisage, options: OptionsBilan):
     coutTotal: options.prixRevient * options.nbObjets,
     garanti: valeurs(resultat.valeurGarantie, options),
     espere: valeurs(resultat.valeurEsperee, options),
-    retenu: options.nbObjets > 1 ? 'espere' : 'garanti',
+    // Vue qui sert aux DÉCISIONS : toujours l'espérance.
+    //
+    // Elle basculait sur « garanti » à un seul exemplaire, et c'était une
+    // contradiction : un objet à 0,14 rune espérée affichait −100 % sur la
+    // carte (0 rune entière) pendant que « Mon compte » le donnait à +90 % de
+    // ROI. Les deux chiffres étaient justes mais ne répondaient pas à la même
+    // question, sans que rien ne le dise. Pire, `comparerFocus` triait alors
+    // les stratégies sur les runes entières d'un seul objet, donc la carte
+    // pouvait recommander un focus différent de celui de la recommandation.
+    // Le garanti reste calculé et affiché, mais comme information de risque.
+    retenu: 'espere',
   };
 }
 

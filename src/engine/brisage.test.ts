@@ -166,7 +166,10 @@ describe('calculerBilan', () => {
 
   it('applique la taxe et le prix de revient', () => {
     const b = calculerBilan(res, { prixRevient: 5000, taxePct: 2, nbObjets: 1 });
-    expect(b.retenu).toBe('garanti');
+    // La vue de décision est toujours l'espérance, même sur un exemplaire : le
+    // garanti reste calculé, mais il ne pilote plus ni l'affichage ni le choix
+    // de la stratégie (il donnait des conclusions opposées à « Mon compte »).
+    expect(b.retenu).toBe('espere');
     expect(b.garanti.valeurBrute).toBe(9000);
     expect(b.garanti.taxe).toBeCloseTo(180, 9);
     expect(b.garanti.valeurNette).toBeCloseTo(8820, 9);

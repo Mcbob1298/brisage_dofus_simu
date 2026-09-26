@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Item } from '../data/types.ts';
 import { recommanderBrisage, type SourceCout } from './recommandation.ts';
-import { contexte } from './fixtures.test-utils.ts';
+import { comparerFocus } from './brisage.ts';
+import { lignesDepuisItem } from './explorateur.ts';
+import { contexte, prixTest } from './fixtures.test-utils.ts';
 
 let id = 1;
 const obj = (nom: string, stats: Item['stats'], niveau = 100, extra: Partial<Item> = {}): Item => ({
@@ -169,5 +171,45 @@ describe('coefficients relevés', () => {
     expect(parNom['Testé'].coefficient).toBe(300);
     expect(parNom['Autre'].coefficient).toBe(100);
     expect(parNom['Testé'].benefice).toBeGreaterThan(parNom['Autre'].benefice);
+  });
+});
+
+/**
+ * Le simulateur et « Mon compte » doivent répondre à la même question.
+ *
+ * Ils divergeaient : sur un seul exemplaire, `calculerBilan` retenait la vue
+ * « garanti » (runes entières), donc la carte annonçait −100 % de rentabilité
+ * sur un objet que la recommandation donnait à +90 % de ROI, et `comparerFocus`
+ * pouvait même élire une autre stratégie. Les deux chiffres étaient exacts mais
+ * ne répondaient pas à la même question.
+ */
+describe('cohérence entre la recommandation et le simulateur', () => {
+  const cas: [string, Item['stats'], number, number, number][] = [
+    // Cas réel : 0,13 rune Cri espérée — aucune rune entière sur un exemplaire.
+    ['Baguette de Feu Follesque', [{ statId: 'intelligence', min: 5, max: 7 }, { statId: 'pctCritique', min: 2, max: 2 }], 10, 27, 165],
+    ['Objet à une ligne', [{ statId: 'force', min: 100, max: 100 }], 100, 100, 10_000],
+    ['Objet lourd', [{ statId: 'pa', min: 1, max: 1 }, { statId: 'vitalite', min: 200, max: 200 }], 150, 80, 50_000],
+    ['Objet avec malus', [{ statId: 'agilite', min: 30, max: 40 }, { statId: 'pm', min: -1, max: -1 }], 60, 45, 800],
+  ];
+
+  it.each(cas)('%s : même stratégie et même marge des deux côtés', (nom, stats, niveau, coef, cout) => {
+    const item = obj(nom, stats, niveau);
+    // Prix relevés sur Draconiros : la Baguette de Feu Follesque n'est rentable
+    // que parce que la Rune Cri y vaut 2 389, pas aux prix fictifs par défaut.
+    const ctx = contexte('greedy', prixTest({ 'Rune Cri': 2389, 'Rune Ine': 56 }));
+    const opts = { ...OPT, budget: 10_000_000, taxePct: 2, couts: couts([item, cout]), roiMin: -1000, coefficient: coef };
+    const [o] = recommanderBrisage([item], ctx, opts);
+    expect(o, `${nom} devrait être évalué`).toBeDefined();
+
+    const lignes = lignesDepuisItem(item, 'moyen');
+    const strategies = comparerFocus(
+      { niveau, lignes, coefficient: coef, focus: null },
+      ctx,
+      { prixRevient: cout, taxePct: 2, nbObjets: 1 },
+    );
+    expect(strategies[0].focus).toBe(o.focus);
+    expect(strategies[0].bilan[strategies[0].bilan.retenu].benefice).toBeCloseTo(o.benefice, 6);
+    // Les deux doivent s'accorder sur le signe : pas de « +90 % » d'un côté et « −100 % » de l'autre.
+    expect(Math.sign(strategies[0].bilan.espere.benefice)).toBe(Math.sign(o.benefice));
   });
 });

@@ -45,7 +45,7 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
   const { budget, niveau, prospection, roiMin, partRisque, favoris, setBudget, setNiveau, setProspection, setRoiMin, setPartRisque, basculerFavori } = useCompte();
   const { coefSuppose, setCoefSuppose, serveur } = useReglages();
   const taxePct = useSimu((s) => s.taxePct);
-  const { choisirObjet, setChamp, setFocus } = useSimu();
+  const { choisirObjet, setChamp, setFocus, setJetMode } = useSimu();
 
   const opportunites = useMemo(
     () => recommanderBrisage(items, ctx, { budget, coefficient: coefSuppose, coefficients, taxePct, jet: 'moyen', couts, roiMin, partRisquePct: partRisque }),
@@ -77,6 +77,11 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
   const ouvrir = (o: (typeof opportunites)[number]) => {
     choisirObjet(o.item);
     // Pas de coefficient à transmettre : il suit l'objet via le journal.
+    // En revanche on transmet le lot et le mode de jet, sinon le simulateur
+    // répondrait à une autre question que la recommandation (un exemplaire au
+    // jet maximum) et afficherait un résultat contradictoire.
+    setJetMode('moyen');
+    setChamp('nbObjets', o.lotTest);
     setChamp('prixRevient', o.cout);
     setFocus(o.focus);
     aller('objet');
