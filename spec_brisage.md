@@ -126,6 +126,11 @@ niveau et en coefficient.
 >   valeur, coefficient 15 %) affiche 0,03 rune soit 266 kamas. Le plancher seul rend
 >   `1 × 0,15 ÷ 5 = 0,03` ✓ ; la formule sans plancher rendait 0.
 >
+> **Confirmé en jeu le 2026-09-26** : le brisage de Baguettes de Liriel a rendu des Runes
+> Chas, alors que leur ligne « Arme de chasse » n'a aucune valeur. Sans plancher cette ligne
+> ne rendrait rien — le plancher existe donc bel et bien. Reste à valider sa **quantité**
+> (un comptage runes obtenues ÷ objets brisés suffirait).
+>
 > L'écart est négligeable en haut niveau (+1 % au-dessus du niveau 100) mais décisif en bas
 > niveau : **+71 % de valeur médiane sur les objets de niveau 1 à 20**, +10 % de 21 à 50.
 > Le test d'ancrage `reproduit le relevé DoFocus de l'Arc de Chasse` verrouille ce cas.

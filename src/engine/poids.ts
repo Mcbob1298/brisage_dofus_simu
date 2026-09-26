@@ -91,5 +91,11 @@ export const PART_FOCUS = 0.5;
  *    ligne « Arme de chasse » de jet 0, poids unitaire 5, coefficient 15 %)
  *    affiche 0,03 rune soit 266 kamas à 8 870 la rune. Le plancher seul donne
  *    1 × 0,15 ÷ 5 = 0,03 ✓ ; la formule sans plancher donnait 0.
+ *
+ * CONFIRMÉ EN JEU le 2026-09-26 : le brisage de Baguettes de Liriel a bien
+ * rendu des Runes Chas, alors que leur ligne « Arme de chasse » n'a AUCUNE
+ * valeur. Sans plancher, cette ligne ne rendrait rien. C'est la seule preuve
+ * directe dont on dispose, et elle ne porte que sur l'existence du rendement,
+ * pas encore sur sa quantité.
  */
 export const PLANCHER_LIGNE = 1;

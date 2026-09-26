@@ -305,6 +305,8 @@ describe('ligne sans valeur chiffrée — non focalisable', () => {
   });
 
   it('rend quand même son plancher en brisage naturel', () => {
+    // Confirmé en jeu le 2026-09-26 : briser des Baguettes de Liriel rend bien
+    // des Runes Chas, alors que la ligne n'a aucune valeur.
     const pts = calculerPoints(liriel, POIDS_DEFAUT);
     expect(pts.armeDeChasse).toBeCloseTo((1 * 0.72) / 5, 10); // 0,144 point
   });
