@@ -48,8 +48,8 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
   const { choisirObjet, setChamp, setFocus } = useSimu();
 
   const opportunites = useMemo(
-    () => recommanderBrisage(items, ctx, { budget, coefficient: coefSuppose, coefficients, taxePct, jet: 'moyen', couts, roiMin }),
-    [items, ctx, budget, coefSuppose, coefficients, taxePct, couts, roiMin],
+    () => recommanderBrisage(items, ctx, { budget, coefficient: coefSuppose, coefficients, taxePct, jet: 'moyen', couts, roiMin, partRisquePct: partRisque }),
+    [items, ctx, budget, coefSuppose, coefficients, taxePct, couts, roiMin, partRisque],
   );
 
   const farm = useMemo(
@@ -126,23 +126,40 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
         <section className="carte border-accent/50 p-4">
           <h2 className="titre-section">À faire maintenant</h2>
           <p className="mt-1 text-lg">
-            Achète <strong className="tnum text-accent">{formatNombre(meilleur.quantite)}</strong> ×{' '}
-            <strong>{meilleur.item.nom}</strong> à <span className="tnum">{formatKamas(meilleur.cout)}</span> et{' '}
-            {meilleur.focus === null ? 'brise-les naturellement' : <>brise-les en <strong>focus {STAT_BY_ID[meilleur.focus].label}</strong></>}.
+            Achète <strong className="tnum text-accent">{formatNombre(meilleur.lotTest)}</strong> ×{' '}
+            <strong>{meilleur.item.nom}</strong> à <span className="tnum">{formatKamas(meilleur.cout)}</span>,{' '}
+            {meilleur.focus === null ? 'brise-les naturellement' : <>brise-les en <strong>focus {STAT_BY_ID[meilleur.focus].label}</strong></>}, puis{' '}
+            <strong>relis le coefficient</strong>.
           </p>
           <p className="tnum mt-1 text-xs text-encre-2">
             Calculé au coefficient <strong className={meilleur.coefMesure ? 'text-accent' : ''}>{formatPct(meilleur.coefficient, 0)}</strong>{' '}
             {meilleur.coefMesure ? 'que tu as relevé sur cet objet' : 'supposé — relève le vrai au concasseur pour fiabiliser'}
           </p>
           <p className="tnum mt-1 text-sm text-encre-2">
-            Gain attendu <strong className="text-ok">+{formatKamas(meilleur.beneficeTotal)}</strong> ({formatKamas(meilleur.benefice)} par objet, ROI{' '}
-            {formatPct(meilleur.roi)}) · rentable tant que le coefficient reste au-dessus de{' '}
-            {meilleur.seuil === null ? '—' : formatPct(meilleur.seuil, 0)}
+            Ce lot engage <strong className="text-encre">{formatKamas(meilleur.coutLot)}</strong>{' '}
+            ({formatPct(partDuBudget(meilleur.coutLot, budget) ?? 0, 0)} de ton budget) et rapporte{' '}
+            <strong className="text-ok">+{formatKamas(meilleur.beneficeLot)}</strong> si le coefficient tient —{' '}
+            {formatKamas(meilleur.benefice)} par objet, ROI {formatPct(meilleur.roi)}.
+          </p>
+
+          {/* Le point que l'app ne doit jamais taire : la mesure se périme en la consommant. */}
+          <p className="mt-2 rounded-lg border border-alerte/40 bg-alerte-doux px-3 py-2 text-xs text-alerte">
+            ⚠ Briser fait <strong>baisser</strong> le coefficient de cet objet, et on ne sait pas à quelle vitesse. Relis-le au concasseur après ce lot :
+            l'opération reste rentable tant qu'il ne passe pas sous{' '}
+            <strong className="tnum">{meilleur.seuil === null ? '—' : formatPct(meilleur.seuil, 0)}</strong>
+            {meilleur.quantite > meilleur.lotTest && (
+              <>
+                . Ton budget permettrait d'en acheter {formatNombre(meilleur.quantite)} (+{formatKamas(meilleur.beneficeTotal)}),{' '}
+                <strong>mais ce chiffre suppose que le coefficient ne bouge pas sur {formatNombre(meilleur.quantite)} brisages</strong> : ne t'en sers pas comme
+                d'une prévision
+              </>
+            )}
+            . Le prix de {formatKamas(meilleur.cout)} est un relevé unique : acheter en masse vide les lots les moins chers et fait monter le prix réel.
           </p>
           {(partDuBudget(meilleur.cout, budget) ?? 0) > partRisque && (
             <p className="mt-2 text-xs text-alerte">
-              ⚠ Un exemplaire coûte {formatPct(partDuBudget(meilleur.cout, budget) ?? 0, 0)} de ton budget : commence par un seul pour vérifier le coefficient
-              avant d'en acheter {formatNombre(meilleur.quantite)}.
+              ⚠ Un seul exemplaire coûte déjà {formatPct(partDuBudget(meilleur.cout, budget) ?? 0, 0)} de ton budget, au-delà des {formatPct(partRisque, 0)} que
+              tu acceptes de risquer. Achètes-en un et vérifie avant d'aller plus loin.
             </p>
           )}
           <button onClick={() => ouvrir(meilleur)} className="btn btn-primaire mt-3">
@@ -205,7 +222,7 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Bloc titre="Acheter puis briser" aide="Classé par gain total que ton budget permet, pas par marge unitaire.">
+        <Bloc titre="Acheter puis briser" aide="Le chiffre vert est le gain du premier lot, celui qu'on conseille d'engager avant de relire le coefficient.">
           {achats.length === 0 ? (
             <p className="text-sm text-encre-2">
               Aucun objet acheté en HDV n'est rentable pour l'instant.{' '}
@@ -221,14 +238,16 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{o.item.nom}</span>
                     <span className="tnum block text-[11px] text-encre-2">
-                      {formatKamas(o.cout)} · ×{formatNombre(o.quantite)} · {o.focus === null ? 'naturel' : `focus ${STAT_BY_ID[o.focus].label}`} ·{' '}
+                      {formatKamas(o.cout)} · lot de {formatNombre(o.lotTest)} · {o.focus === null ? 'naturel' : `focus ${STAT_BY_ID[o.focus].label}`} ·{' '}
                       <span className={o.coefMesure ? 'text-accent' : ''} title={o.coefMesure ? 'Coefficient relevé sur cet objet' : 'Coefficient supposé, pas encore testé'}>
                         {formatPct(o.coefficient, 0)}{o.coefMesure ? '' : ' ?'}
                       </span>
                     </span>
                   </span>
                   <span className="tnum shrink-0 text-right">
-                    <span className="block font-medium text-ok">+{formatKamas(o.beneficeTotal)}</span>
+                    <span className="block font-medium text-ok" title={`Gain du lot conseillé. Budget entier : +${formatKamas(o.beneficeTotal)}, à coefficient figé`}>
+                      +{formatKamas(o.beneficeLot)}
+                    </span>
                     <span className="block text-[11px] text-encre-2">ROI {formatPct(o.roi)}</span>
                   </span>
                   <button onClick={() => ouvrir(o)} className="btn btn-petit shrink-0">
@@ -256,11 +275,13 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{o.item.nom}</span>
                     <span className="tnum block text-[11px] text-encre-2">
-                      craft {formatKamas(o.cout)} · ×{formatNombre(o.quantite)} ·{' '}
+                      craft {formatKamas(o.cout)} · lot de {formatNombre(o.lotTest)} ·{' '}
                       <span className={o.coefMesure ? 'text-accent' : ''}>{formatPct(o.coefficient, 0)}{o.coefMesure ? '' : ' ?'}</span>
                     </span>
                   </span>
-                  <span className="tnum shrink-0 font-medium text-ok">+{formatKamas(o.beneficeTotal)}</span>
+                  <span className="tnum shrink-0 font-medium text-ok" title={`Gain du lot conseillé. Budget entier : +${formatKamas(o.beneficeTotal)}, à coefficient figé`}>
+                    +{formatKamas(o.beneficeLot)}
+                  </span>
                   <button onClick={() => ouvrir(o)} className="btn btn-petit shrink-0">
                     ouvrir
                   </button>

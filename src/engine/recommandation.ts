@@ -33,8 +33,22 @@ export type Opportunite = {
   coefMesure: boolean;
   /** Exemplaires que le budget permet d'acheter. */
   quantite: number;
-  /** Bénéfice de l'opération complète, budget épuisé. */
+  /**
+   * Plafond théorique si le coefficient tenait sur tout le budget. Il ne tient
+   * pas : briser fait baisser le coefficient. À n'afficher que comme tel.
+   */
   beneficeTotal: number;
+  /**
+   * Exemplaires à acheter MAINTENANT, avant de relire le coefficient. Plafonné
+   * à la part de budget qu'on accepte de risquer : on sait que le coefficient
+   * baisse à chaque brisage, on ignore à quelle vitesse, donc on n'engage pas
+   * tout sur une mesure faite avant le premier coup.
+   */
+  lotTest: number;
+  /** Ce que coûte ce premier lot. */
+  coutLot: number;
+  /** Ce que ce premier lot rapporte, au coefficient actuel. */
+  beneficeLot: number;
   /** Coefficient minimal pour que l'objet reste rentable à ce prix. */
   seuil: number | null;
 };
@@ -54,12 +68,22 @@ export type OptionsRecommandation = {
   coefficients?: ReadonlyMap<number, number>;
   /** Marge minimale exigée, en % (0 = tout ce qui est rentable). */
   roiMin?: number;
+  /**
+   * Part du budget qu'on accepte d'engager sur un premier lot, en %. Elle borne
+   * `lotTest` et sert de base au classement.
+   */
+  partRisquePct?: number;
 };
 
 /**
- * Opportunités classées par gain total : ce que le budget peut réellement
- * rapporter, pas seulement la marge unitaire. Un petit objet très rentable
- * qu'on peut acheter cent fois passe donc devant une grosse pièce unique.
+ * Opportunités classées par gain que le budget permet d'atteindre. Comme
+ * `beneficeTotal ≈ budget × roi / 100`, ce classement revient à trier par
+ * rendement, en pénalisant au passage les objets dont on ne peut s'offrir qu'un
+ * ou deux exemplaires (l'arrondi entier mord alors pour de bon).
+ *
+ * Attention : `beneficeTotal` est un PLAFOND, pas une prévision. Il suppose le
+ * coefficient constant sur tout le budget, alors que briser le fait baisser.
+ * C'est `lotTest` qui dit quoi faire maintenant.
  */
 export function recommanderBrisage(items: readonly Item[], ctx: Contexte, options: OptionsRecommandation): Opportunite[] {
   const facteurNet = 1 - options.taxePct / 100;
@@ -94,6 +118,11 @@ export function recommanderBrisage(items: readonly Item[], ctx: Contexte, option
     if (benefice <= 0 || roi < roiMin) continue;
 
     const quantite = Math.floor(options.budget / cout.prix);
+    // Conseiller un objet qu'on ne peut pas s'offrir n'a pas de sens.
+    if (quantite < 1) continue;
+
+    const budgetRisque = (options.budget * (options.partRisquePct ?? 100)) / 100;
+    const lotTest = Math.max(1, Math.min(quantite, Math.floor(budgetRisque / cout.prix)));
     out.push({
       item,
       source: cout.source,
@@ -106,6 +135,9 @@ export function recommanderBrisage(items: readonly Item[], ctx: Contexte, option
       coefMesure: mesure !== undefined,
       quantite,
       beneficeTotal: quantite * benefice,
+      lotTest,
+      coutLot: lotTest * cout.prix,
+      beneficeLot: lotTest * benefice,
       seuil: coefficientSeuil({ niveau: item.niveau, lignes, focus }, ctx, { prixRevient: cout.prix, taxePct: options.taxePct, nbObjets: 1 }),
     });
   }

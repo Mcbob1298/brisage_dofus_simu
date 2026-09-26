@@ -333,6 +333,13 @@ joueurs brisent et remonte quand l'objet est délaissé — voir sa tendance vau
 - Ne pas présenter les modes de répartition des runes comme certains : la répartition
   exacte entre Ra, Pa et simples n'est documentée nulle part publiquement.
 - Ne pas appeler d'API au runtime : le site doit fonctionner hors ligne une fois chargé.
+- **Ne jamais projeter une mesure au-delà de ce qu'elle couvre.** Un coefficient est relevé
+  avant le premier brisage, et briser le fait baisser. Multiplier une marge unitaire par le
+  budget entier produit un plafond théorique, jamais une prévision : l'interface doit
+  conseiller un premier lot borné par la part de budget qu'on accepte de risquer, dire de
+  relire le coefficient après, et afficher le chiffre budget entier comme hypothèse
+  explicite. Même prudence pour les prix : un prix HDV est un relevé unique, acheter en
+  masse vide les lots les moins chers et fait monter le prix réel.
 - Ne pas stocker les prix ailleurs que dans le navigateur.
 
 ---

@@ -87,12 +87,54 @@ describe('recommanderBrisage', () => {
     expect(recommanderBrisage([a], contexte('toutSimple'), { ...OPT, couts: couts([a, 1_000]) })).toEqual([]);
   });
 
-  it('un budget inférieur au prix donne une quantité nulle', () => {
+  it('écarte un objet rentable mais hors budget : on ne conseille pas un achat impossible', () => {
     const a = obj('Cher', [{ statId: 'force', min: 1000, max: 1000 }]);
-    const [o] = recommanderBrisage([a], contexte('toutSimple'), { ...OPT, budget: 5_000, couts: couts([a, 20_000]) });
-    expect(o.quantite).toBe(0);
-    expect(o.beneficeTotal).toBe(0);
-    expect(o.benefice).toBeGreaterThan(0);
+    expect(recommanderBrisage([a], contexte('toutSimple'), { ...OPT, budget: 5_000, couts: couts([a, 20_000]) })).toEqual([]);
+  });
+});
+
+describe('recommanderBrisage — premier lot', () => {
+  // Le coefficient baisse à chaque brisage : on n'engage pas tout le budget sur
+  // une mesure faite avant le premier coup.
+  it('borne le premier lot à la part de budget qu’on accepte de risquer', () => {
+    const a = obj('Pas cher', [{ statId: 'force', min: 100, max: 100 }]);
+    const [o] = recommanderBrisage([a], contexte('toutSimple'), {
+      ...OPT,
+      budget: 100_000,
+      partRisquePct: 5,
+      couts: couts([a, 1_000]),
+    });
+    expect(o.quantite).toBe(100); // tout le budget
+    expect(o.lotTest).toBe(5); // 5 % de 100 000, soit 5 000 ÷ 1 000
+    expect(o.coutLot).toBe(5_000);
+    expect(o.beneficeLot).toBeCloseTo(5 * o.benefice, 6);
+    // Le plafond budget entier reste calculé, mais ce n'est pas la consigne.
+    expect(o.beneficeTotal).toBeCloseTo(100 * o.benefice, 6);
+  });
+
+  it('conseille au moins un exemplaire même si un seul dépasse la part risquée', () => {
+    const a = obj('Gros', [{ statId: 'force', min: 1000, max: 1000 }]);
+    const [o] = recommanderBrisage([a], contexte('toutSimple'), {
+      ...OPT,
+      budget: 100_000,
+      partRisquePct: 1, // 1 000 kamas, soit moins qu'un exemplaire
+      couts: couts([a, 20_000]),
+    });
+    expect(o.lotTest).toBe(1);
+    expect(o.coutLot).toBe(20_000);
+  });
+
+  it('le gain budget entier reste un plafond, très au-dessus du premier lot', () => {
+    const a = obj('Pas cher', [{ statId: 'force', min: 100, max: 100 }]);
+    const [o] = recommanderBrisage([a], contexte('toutSimple'), {
+      ...OPT,
+      budget: 100_000,
+      partRisquePct: 5,
+      couts: couts([a, 1_000]),
+    });
+    // 20× l'écart entre ce qu'on conseille et ce que le budget permettrait :
+    // c'est précisément l'écart que l'interface doit rendre visible.
+    expect(o.beneficeTotal / o.beneficeLot).toBeCloseTo(20, 6);
   });
 });
 
