@@ -327,7 +327,6 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
                       <button
                         onClick={() => {
                           choisirObjet(p.item);
-                          setChamp('coefficient', g.coefSuppose);
                           if (p.cout !== null) setChamp('prixRevient', p.cout);
                           setFocus(rune.statId);
                           aller('objet');

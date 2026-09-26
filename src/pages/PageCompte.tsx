@@ -76,7 +76,7 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
 
   const ouvrir = (o: (typeof opportunites)[number]) => {
     choisirObjet(o.item);
-    setChamp('coefficient', o.coefficient);
+    // Pas de coefficient à transmettre : il suit l'objet via le journal.
     setChamp('prixRevient', o.cout);
     setFocus(o.focus);
     aller('objet');

@@ -24,7 +24,8 @@ type EtatSimu = {
   itemId: number | null;
   lignes: LigneSimu[];
   jetMode: JetMode;
-  coefficient: number;
+  // Pas de coefficient ici : c'est une donnée de l'objet, tenue par le journal
+  // des relevés (`useNotes.coefs`), sinon elle survivrait au changement d'objet.
   prixRevient: number;
   nbObjets: number;
   taxePct: number;
@@ -34,7 +35,7 @@ type EtatSimu = {
   setJet: (index: number, jet: number) => void;
   resetLignes: () => void;
   setFocus: (statId: StatId | null) => void;
-  setChamp: (champ: 'coefficient' | 'prixRevient' | 'nbObjets' | 'taxePct', valeur: number) => void;
+  setChamp: (champ: 'prixRevient' | 'nbObjets' | 'taxePct', valeur: number) => void;
 };
 
 export const useSimu = create<EtatSimu>()(
@@ -43,7 +44,6 @@ export const useSimu = create<EtatSimu>()(
       itemId: null,
       lignes: [],
       jetMode: 'max',
-      coefficient: 100,
       prixRevient: 0,
       nbObjets: 1,
       // Taxe de mise en vente à l'hôtel des ventes (réglable).
@@ -73,6 +73,15 @@ export const useSimu = create<EtatSimu>()(
       setFocus: (focus) => set({ focus }),
       setChamp: (champ, valeur) => set({ [champ]: valeur }),
     }),
-    { name: 'brisage.simu', version: 1 },
+    {
+      name: 'brisage.simu',
+      version: 2,
+      // v1 gardait un `coefficient` global ici. Il n'est pas récupérable en
+      // relevé (on ne sait pas de quel objet il venait) : on l'abandonne.
+      migrate: (p) => {
+        const { coefficient: _abandonne, ...reste } = (p ?? {}) as Record<string, unknown>;
+        return reste;
+      },
+    },
   ),
 );

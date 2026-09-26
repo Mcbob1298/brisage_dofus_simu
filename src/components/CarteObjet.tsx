@@ -1,7 +1,8 @@
 import { STAT_BY_ID, placeholderPour } from '../data/statMapping.ts';
 import { prixAchatMax } from '../engine/index.ts';
 import { useDetailLignes, type Simulation } from '../hooks/useSimulation.ts';
-import { formatKamas, formatNombre, formatPct } from '../lib/format.ts';
+import { formatDate, formatKamas, formatNombre, formatPct } from '../lib/format.ts';
+import { useCoefObjet } from '../hooks/useCoefficients.ts';
 import { useReglages } from '../store/reglages.ts';
 import { useNotes } from '../store/notes.ts';
 import { useStorePrix } from '../store/prix.ts';
@@ -37,7 +38,9 @@ function RondJet({ mode, actif, onClick }: { mode: (typeof MODES)[number]; actif
 export function CarteObjet({ sim }: { sim: Simulation }) {
   const { item, bilan, seuil } = sim;
   const lignes = useDetailLignes(sim);
-  const { jetMode, setJetMode, setJet, setFocus, focus, setChamp, coefficient } = useSimu();
+  const { jetMode, setJetMode, setJet, setFocus, focus, setChamp } = useSimu();
+  // Le coefficient appartient à l'objet : le saisir ici, c'est noter un relevé.
+  const { coef, releve, setCoef } = useCoefObjet(item.id);
   const { prixConstates, coutsCraft, setPrixConstate, setCoutCraft } = useNotes();
   const setPrixRune = useStorePrix((s) => s.setPrix);
   const roiVise = useReglages((s) => s.roiVise);
@@ -140,13 +143,20 @@ export function CarteObjet({ sim }: { sim: Simulation }) {
           <span className="titre-section">Coefficient</span>
           <span className="flex items-baseline gap-1">
             <ChampNombre
-              value={coefficient}
-              onChange={(x) => setChamp('coefficient', Math.max(1, x ?? 100))}
+              value={coef}
+              onChange={(x) => setCoef(Math.max(1, x ?? 100))}
               decimales={1}
-              className="w-24 [&>input]:h-11 [&>input]:text-2xl [&>input]:font-bold"
+              className={`w-24 [&>input]:h-11 [&>input]:text-2xl [&>input]:font-bold ${releve ? '[&>input]:text-accent' : ''}`}
               aria-label="Coefficient"
             />
             <span className="text-xl font-bold text-encre-2">%</span>
+          </span>
+          <span className="text-xs text-encre-2">
+            {releve ? (
+              <>relevé le {formatDate(releve.date)}</>
+            ) : (
+              <span title="Hypothèse globale, modifiable dans « Mon compte »">supposé — lis-le au concasseur</span>
+            )}
           </span>
           <span className={`text-sm font-semibold ${v.roi !== null && v.roi > 0 ? 'text-accent' : 'text-encre-2'}`}>
             {v.roi === null ? 'Rentabilité : indique un prix' : `Rentabilité à ${formatPct(v.roi)}`}

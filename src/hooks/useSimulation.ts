@@ -17,9 +17,13 @@ import {
 } from '../engine/index.ts';
 import type { Item, RuneDef } from '../data/types.ts';
 import type { StatId } from '../data/statMapping.ts';
+import type { EntreeCoef } from '../store/notes.ts';
+import { useCoefObjet } from './useCoefficients.ts';
 
 export type Simulation = {
   item: Item;
+  /** Relevé au concasseur utilisé, `null` si on tient l'hypothèse globale. */
+  coefReleve: EntreeCoef | null;
   entree: EntreeBrisage;
   options: OptionsBilan;
   ctx: Contexte;
@@ -40,9 +44,11 @@ export function useContexte(): Contexte {
 
 export function useSimulation(): Simulation | null {
   const parId = useCatalogue((s) => s.parId);
-  const { itemId, lignes, coefficient, prixRevient, nbObjets, taxePct, focus } = useSimu();
+  const { itemId, lignes, prixRevient, nbObjets, taxePct, focus } = useSimu();
   const ctx = useContexte();
   const item = itemId !== null ? parId.get(itemId) : undefined;
+  // Le coefficient suit l'objet : changer d'objet change de coefficient.
+  const { coef: coefficient, releve } = useCoefObjet(itemId);
 
   return useMemo(() => {
     if (!item) return null;
@@ -56,8 +62,8 @@ export function useSimulation(): Simulation | null {
     const resultat = calculerBrisage(entree, ctx);
     const bilan = calculerBilan(resultat, options);
     const seuil = coefficientSeuil(entree, ctx, options);
-    return { item, entree, options, ctx, resultat, bilan, seuil };
-  }, [item, lignes, coefficient, focus, prixRevient, taxePct, nbObjets, ctx]);
+    return { item, coefReleve: releve, entree, options, ctx, resultat, bilan, seuil };
+  }, [item, lignes, coefficient, releve, focus, prixRevient, taxePct, nbObjets, ctx]);
 }
 
 export function useComparaisonFocus(sim: Simulation | null): ComparaisonFocus[] {

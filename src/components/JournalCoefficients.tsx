@@ -5,7 +5,7 @@ import { ChampNombre } from './ChampNombre.tsx';
 import { Courbe } from './Courbe.tsx';
 
 /** Historique des coefficients lus en jeu pour un objet, avec courbe. */
-export function JournalCoefficients({ itemId, onAppliquer }: { itemId: number; onAppliquer?: (coef: number) => void }) {
+export function JournalCoefficients({ itemId }: { itemId: number }) {
   const entrees = useNotes((s) => s.coefs[itemId]) ?? [];
   const { ajouterCoef, supprimerCoef } = useNotes();
   const [coef, setCoef] = useState<number | null>(null);
@@ -71,11 +71,6 @@ export function JournalCoefficients({ itemId, onAppliquer }: { itemId: number; o
               <li key={`${e.date}-${i}`} className="flex items-center gap-2 py-0.5">
                 <span className="tnum w-20 text-encre-2">{formatDate(e.date)}</span>
                 <span className="tnum font-medium">{formatPct(e.coef, 1)}</span>
-                {onAppliquer && (
-                  <button onClick={() => onAppliquer(e.coef)} className="lien">
-                    utiliser
-                  </button>
-                )}
                 <button onClick={() => supprimerCoef(itemId, i)} className="ml-auto text-encre-3 hover:text-ko" aria-label="Supprimer ce relevé">
                   ✕
                 </button>

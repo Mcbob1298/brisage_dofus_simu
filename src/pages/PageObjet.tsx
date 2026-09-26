@@ -21,7 +21,6 @@ function Bloc({ titre, children }: { titre: string; children: React.ReactNode })
 export function PageObjet({ sim, aller }: { sim: Simulation | null; aller: (o: Onglet) => void }) {
   const { statut, erreur } = useCatalogue();
   const choisirObjet = useSimu((s) => s.choisirObjet);
-  const setChamp = useSimu((s) => s.setChamp);
   const item = sim?.item;
 
   return (
@@ -55,7 +54,7 @@ export function PageObjet({ sim, aller }: { sim: Simulation | null; aller: (o: O
                   <BilanDetaille sim={sim} />
                 </Bloc>
                 <Bloc titre="Journal des coefficients">
-                  <JournalCoefficients itemId={item.id} onAppliquer={(c) => setChamp('coefficient', c)} />
+                  <JournalCoefficients itemId={item.id} />
                 </Bloc>
                 <Bloc titre="Réglages du moteur">
                   <Reglages />
