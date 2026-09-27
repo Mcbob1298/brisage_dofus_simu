@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CatalogueMeta, Item, Monstre, RuneDef, Serveur } from '../data/types.ts';
+import type { CatalogueMeta, Item, Monstre, PrixHdv, RuneDef, Serveur } from '../data/types.ts';
 import { IndexRecherche } from '../search/index.ts';
 
 type Statut = 'idle' | 'chargement' | 'pret' | 'erreur';
@@ -13,6 +13,8 @@ type EtatCatalogue = {
   monstres: Monstre[];
   serveurs: Serveur[];
   meta: CatalogueMeta | null;
+  /** Relevé HDV déposé par le script de collecte, `null` s'il n'y en a pas. */
+  prixHdv: PrixHdv | null;
   index: IndexRecherche | null;
   charger: () => Promise<void>;
 };
@@ -33,18 +35,22 @@ export const useCatalogue = create<EtatCatalogue>((set, get) => ({
   monstres: [],
   serveurs: [],
   meta: null,
+  prixHdv: null,
   index: null,
   charger: async () => {
     if (get().statut !== 'idle') return;
     set({ statut: 'chargement' });
     try {
-      const [items, runes, meta, monstres, serveurs] = await Promise.all([
+      const [items, runes, meta, monstres, serveurs, prixHdv] = await Promise.all([
         lireJson<Item[]>('/data/items.json'),
         lireJson<RuneDef[]>('/data/runes.json'),
         lireJson<CatalogueMeta>('/data/meta.json').catch(() => null),
         // Les drops sont optionnels : l'app reste utilisable sans eux.
         lireJson<Monstre[]>('/data/monstres.json').catch(() => [] as Monstre[]),
         lireJson<Serveur[]>('/data/serveurs.json').catch(() => [] as Serveur[]),
+        // Relevé de prix optionnel : l'app fonctionne sans, avec les seules
+        // saisies manuelles.
+        lireJson<PrixHdv>('/data/prix-hdv.json').catch(() => null),
       ]);
       set({
         statut: 'pret',
@@ -54,6 +60,7 @@ export const useCatalogue = create<EtatCatalogue>((set, get) => ({
         monstres,
         serveurs,
         meta,
+        prixHdv,
         index: new IndexRecherche(items),
       });
     } catch (e) {

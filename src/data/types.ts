@@ -110,3 +110,24 @@ export type DropsMeta = {
 
 /** Serveur de jeu (DofusDB /servers) : sert d'étiquette aux prix relevés. */
 export type Serveur = { id: number; nom: string };
+
+/**
+ * Relevé de prix à l'Hôtel de Vente, produit hors de l'app par un script de
+ * collecte et déposé dans `public/data/prix-hdv.json`.
+ *
+ * `prixDuLot` est le prix AFFICHÉ EN JEU pour le lot entier, pas le prix
+ * unitaire : c'est `offreHdv()` qui divise. Une entrée réduite à un nombre vaut
+ * prix unitaire, pour les sources incapables de détailler les lots.
+ */
+export type LotHdv = { taille: number; prixDuLot: number; quantiteEnVente?: number };
+
+export type EntreeHdv = number | { nom?: string; lots?: LotHdv[]; releveLe?: string };
+
+export type PrixHdv = {
+  format: 'brisage-prix-hdv';
+  version: 1;
+  /** Les prix n'ont aucun sens hors de leur serveur. */
+  serveur: string;
+  releveLe: string;
+  prix: Record<string, EntreeHdv>;
+};

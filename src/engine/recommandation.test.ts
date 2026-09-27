@@ -213,3 +213,52 @@ describe('cohérence entre la recommandation et le simulateur', () => {
     expect(Math.sign(strategies[0].bilan.espere.benefice)).toBe(Math.sign(o.benefice));
   });
 });
+
+describe('recommanderBrisage — disponibilité réelle', () => {
+  // Le budget dit combien on peut payer, l'offre combien on peut acheter.
+  const item = obj('En vente', [{ statId: 'force', min: 100, max: 100 }]);
+  const avec = (disponible: number | null) =>
+    new Map([[item.id, { prix: 1_000, source: 'hdv' as SourceCout, disponible }]]);
+
+  it('borne la quantité par les exemplaires réellement en vente', () => {
+    const [o] = recommanderBrisage([item], contexte('toutSimple'), {
+      ...OPT,
+      budget: 100_000,
+      partRisquePct: 100,
+      couts: avec(12),
+    });
+    expect(o.quantite).toBe(12); // et non 100, que le budget permettrait
+    expect(o.disponible).toBe(12);
+    expect(o.limiteParLeMarche).toBe(true);
+    expect(o.lotTest).toBeLessThanOrEqual(12);
+  });
+
+  it('ne borne rien quand la source ne donne pas les quantités', () => {
+    const [o] = recommanderBrisage([item], contexte('toutSimple'), {
+      ...OPT,
+      budget: 100_000,
+      partRisquePct: 100,
+      couts: avec(null),
+    });
+    expect(o.quantite).toBe(100);
+    expect(o.disponible).toBeNull();
+    expect(o.limiteParLeMarche).toBe(false);
+  });
+
+  it('écarte un objet rentable dont il ne reste rien en vente', () => {
+    expect(
+      recommanderBrisage([item], contexte('toutSimple'), { ...OPT, budget: 100_000, couts: avec(0) }),
+    ).toEqual([]);
+  });
+
+  it('c’est le budget qui limite quand l’offre est abondante', () => {
+    const [o] = recommanderBrisage([item], contexte('toutSimple'), {
+      ...OPT,
+      budget: 10_000,
+      partRisquePct: 100,
+      couts: avec(500),
+    });
+    expect(o.quantite).toBe(10);
+    expect(o.limiteParLeMarche).toBe(false);
+  });
+});

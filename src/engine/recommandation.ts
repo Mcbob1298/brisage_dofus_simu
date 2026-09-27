@@ -31,8 +31,12 @@ export type Opportunite = {
   coefficient: number;
   /** Vrai si ce coefficient a été relevé au concasseur, faux s'il est supposé. */
   coefMesure: boolean;
-  /** Exemplaires que le budget permet d'acheter. */
+  /** Exemplaires achetables : le budget, borné par ce qui est réellement en vente. */
   quantite: number;
+  /** Exemplaires en vente à ce prix, `null` si la source ne le dit pas. */
+  disponible: number | null;
+  /** Vrai si c'est l'offre du marché qui limite, pas le budget. */
+  limiteParLeMarche: boolean;
   /**
    * Plafond théorique si le coefficient tenait sur tout le budget. Il ne tient
    * pas : briser fait baisser le coefficient. À n'afficher que comme tel.
@@ -59,8 +63,11 @@ export type OptionsRecommandation = {
   coefficient: number;
   taxePct: number;
   jet: JetChoisi;
-  /** Coûts relevés, par id d'objet. */
-  couts: ReadonlyMap<number, { prix: number; source: SourceCout }>;
+  /**
+   * Coûts relevés, par id d'objet. `disponible` est le nombre d'exemplaires
+   * réellement en vente à ce prix ; absent ou `null`, on ne borne pas.
+   */
+  couts: ReadonlyMap<number, { prix: number; source: SourceCout; disponible?: number | null }>;
   /**
    * Coefficients relevés au concasseur, par id d'objet. Ils priment sur
    * `coefficient`, qui ne sert que de repli pour les objets jamais testés.
@@ -117,8 +124,12 @@ export function recommanderBrisage(items: readonly Item[], ctx: Contexte, option
     const roi = (benefice / cout.prix) * 100;
     if (benefice <= 0 || roi < roiMin) continue;
 
-    const quantite = Math.floor(options.budget / cout.prix);
-    // Conseiller un objet qu'on ne peut pas s'offrir n'a pas de sens.
+    // Le budget dit combien on peut PAYER, l'offre combien on peut ACHETER.
+    // Sans la seconde borne, l'app conseille un stock qui n'existe pas.
+    const parLeBudget = Math.floor(options.budget / cout.prix);
+    const disponible = cout.disponible ?? null;
+    const quantite = disponible !== null ? Math.min(parLeBudget, disponible) : parLeBudget;
+    // Conseiller un objet qu'on ne peut ni s'offrir ni trouver n'a pas de sens.
     if (quantite < 1) continue;
 
     const budgetRisque = (options.budget * (options.partRisquePct ?? 100)) / 100;
@@ -134,6 +145,8 @@ export function recommanderBrisage(items: readonly Item[], ctx: Contexte, option
       coefficient,
       coefMesure: mesure !== undefined,
       quantite,
+      disponible,
+      limiteParLeMarche: disponible !== null && disponible < parLeBudget,
       beneficeTotal: quantite * benefice,
       lotTest,
       coutLot: lotTest * cout.prix,

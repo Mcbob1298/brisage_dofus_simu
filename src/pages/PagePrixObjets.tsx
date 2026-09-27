@@ -12,6 +12,7 @@ import { useCatalogue } from '../store/catalogue.ts';
 import { useCompte } from '../store/compte.ts';
 import { coutRetenu, dernierCoef, useNotes } from '../store/notes.ts';
 import { JOURS_PERIME } from '../store/prix.ts';
+import { useCoefSuppose } from '../hooks/useCoefSuppose.ts';
 import { useReglages } from '../store/reglages.ts';
 import { useSimu } from '../store/simu.ts';
 
@@ -27,7 +28,8 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
   const ctx = useContexte();
   const { prixConstates, coutsCraft, coefs, setPrixConstate, setCoutCraft, ajouterCoef } = useNotes();
   const { budget, partRisque, favoris, basculerFavori } = useCompte();
-  const { coefSuppose, setCoefSuppose, serveur } = useReglages();
+  const { setCoefSuppose, serveur } = useReglages();
+  const coefSuppose = useCoefSuppose().valeur;
   const taxePct = useSimu((s) => s.taxePct);
   const choisirObjet = useSimu((s) => s.choisirObjet);
   const setChamp = useSimu((s) => s.setChamp);

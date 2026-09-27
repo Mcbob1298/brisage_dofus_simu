@@ -9,6 +9,12 @@ type EtatReglages = {
   serveur: string;
   /** Coefficient supposé au concasseur, pour estimer avant d'avoir testé. */
   coefSuppose: number;
+  /**
+   * Vrai dès que l'utilisateur a fixé ce coefficient lui-même. Tant qu'il est
+   * faux, la médiane de ses propres relevés prime (cf. `useCoefSuppose`) : une
+   * constante à 100 % n'est pas une hypothèse neutre.
+   */
+  coefSupposeChoisi: boolean;
   /** Marge visée sur un achat, en %. */
   roiVise: number;
   poids: PoidsTable;
@@ -18,6 +24,8 @@ type EtatReglages = {
   setMode: (mode: ModeRepartition) => void;
   setServeur: (serveur: string) => void;
   setCoefSuppose: (coef: number) => void;
+  /** Revenir à la médiane des relevés après un réglage manuel. */
+  reprendreMedianeMesuree: () => void;
   setRoiVise: (roi: number) => void;
 };
 
@@ -27,6 +35,7 @@ export const useReglages = create<EtatReglages>()(
     (set) => ({
       serveur: 'Draconiros',
       coefSuppose: 100,
+      coefSupposeChoisi: false,
       roiVise: 30,
       poids: { ...POIDS_DEFAUT },
       mode: 'greedy',
@@ -34,7 +43,8 @@ export const useReglages = create<EtatReglages>()(
       resetPoids: () => set({ poids: { ...POIDS_DEFAUT } }),
       setMode: (mode) => set({ mode }),
       setServeur: (serveur) => set({ serveur }),
-      setCoefSuppose: (coefSuppose) => set({ coefSuppose: Math.max(1, coefSuppose) }),
+      setCoefSuppose: (coefSuppose) => set({ coefSuppose: Math.max(1, coefSuppose), coefSupposeChoisi: true }),
+      reprendreMedianeMesuree: () => set({ coefSupposeChoisi: false }),
       setRoiVise: (roiVise) => set({ roiVise: Math.max(0, roiVise) }),
     }),
     {
@@ -48,6 +58,7 @@ export const useReglages = create<EtatReglages>()(
           ...p,
           serveur: p.serveur ?? 'Draconiros',
           coefSuppose: p.coefSuppose ?? 100,
+          coefSupposeChoisi: p.coefSupposeChoisi ?? false,
           roiVise: p.roiVise ?? 30,
           poids: { ...POIDS_DEFAUT, ...(p.poids ?? {}) },
         };

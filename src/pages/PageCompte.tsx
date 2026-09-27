@@ -6,6 +6,7 @@ import type { Onglet } from '../components/EnTete.tsx';
 import { ItemImage } from '../components/ItemImage.tsx';
 import { Sauvegarde } from '../components/Sauvegarde.tsx';
 import { useCoefficients } from '../hooks/useCoefficients.ts';
+import { useCoefSuppose } from '../hooks/useCoefSuppose.ts';
 import { useCouts } from '../hooks/useCouts.ts';
 import { COEF_VOLATIL, LOT_PRUDENT, partDuBudget } from '../lib/heuristiques.ts';
 import { useContexte } from '../hooks/useSimulation.ts';
@@ -43,7 +44,11 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
   const coefs = useNotes((s) => s.coefs);
   const ajouterCoef = useNotes((s) => s.ajouterCoef);
   const { budget, niveau, prospection, roiMin, partRisque, favoris, setBudget, setNiveau, setProspection, setRoiMin, setPartRisque, basculerFavori } = useCompte();
-  const { coefSuppose, setCoefSuppose, serveur } = useReglages();
+  const { setCoefSuppose, reprendreMedianeMesuree, serveur } = useReglages();
+  // Pas de constante à 100 % : tant qu'on n'a pas choisi, on suppose ce qu'on
+  // a effectivement mesuré ailleurs.
+  const suppose = useCoefSuppose();
+  const coefSuppose = suppose.valeur;
   const taxePct = useSimu((s) => s.taxePct);
   const { choisirObjet, setChamp, setFocus, setJetMode } = useSimu();
 
@@ -103,9 +108,25 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
             Prospection
             <ChampNombre value={prospection} onChange={(v) => setProspection(v ?? 100)} className="w-20" />
           </label>
-          <label className="flex flex-col gap-0.5" title="Coefficient que tu supposes lire au concasseur">
+          <label
+            className="flex flex-col gap-0.5"
+            title={
+              suppose.source === 'mesures'
+                ? `Médiane de tes ${suppose.nbReleves} relevés : c'est la meilleure estimation pour un objet jamais testé`
+                : 'Coefficient que tu supposes lire au concasseur sur un objet jamais testé'
+            }
+          >
             Coefficient supposé
             <ChampNombre value={coefSuppose} onChange={(v) => setCoefSuppose(v ?? 100)} suffixe="%" className="w-24" />
+            {suppose.source === 'mesures' ? (
+              <span className="text-[10px] text-accent">médiane de {suppose.nbReleves} relevés</span>
+            ) : suppose.medianeMesuree !== null ? (
+              <button onClick={reprendreMedianeMesuree} className="lien text-left text-[10px]">
+                tes relevés donnent {formatPct(suppose.medianeMesuree, 0)} →
+              </button>
+            ) : (
+              <span className="text-[10px] text-encre-3">hypothèse, non mesurée</span>
+            )}
           </label>
           <label className="flex flex-col gap-0.5" title="En dessous de cette marge, un objet n'est pas proposé">
             Marge minimale
@@ -154,12 +175,27 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
             <strong className="tnum">{meilleur.seuil === null ? '—' : formatPct(meilleur.seuil, 0)}</strong>
             {meilleur.quantite > meilleur.lotTest && (
               <>
-                . Ton budget permettrait d'en acheter {formatNombre(meilleur.quantite)} (+{formatKamas(meilleur.beneficeTotal)}),{' '}
+                . Tu pourrais en prendre {formatNombre(meilleur.quantite)} (+{formatKamas(meilleur.beneficeTotal)}),{' '}
                 <strong>mais ce chiffre suppose que le coefficient ne bouge pas sur {formatNombre(meilleur.quantite)} brisages</strong> : ne t'en sers pas comme
                 d'une prévision
               </>
             )}
-            . Le prix de {formatKamas(meilleur.cout)} est un relevé unique : acheter en masse vide les lots les moins chers et fait monter le prix réel.
+            .{' '}
+            {/* Avec les quantités du relevé on peut être précis ; sans elles, il
+                faut rappeler qu'un prix seul ne dit rien de la profondeur du marché. */}
+            {meilleur.limiteParLeMarche ? (
+              <>
+                Ce n'est d'ailleurs pas ton budget qui limite ici, mais l'offre :{' '}
+                <strong className="tnum">{formatNombre(meilleur.disponible ?? 0)}</strong> exemplaires seulement sont en vente à{' '}
+                {formatKamas(meilleur.cout)}. Au-delà, il faut payer plus cher.
+              </>
+            ) : meilleur.disponible !== null ? (
+              <>
+                {formatNombre(meilleur.disponible)} exemplaires sont en vente à {formatKamas(meilleur.cout)} ; en acheter davantage fera monter le prix.
+              </>
+            ) : (
+              <>Le prix de {formatKamas(meilleur.cout)} est un relevé unique : acheter en masse vide les lots les moins chers et fait monter le prix réel.</>
+            )}
           </p>
           {(partDuBudget(meilleur.cout, budget) ?? 0) > partRisque && (
             <p className="mt-2 text-xs text-alerte">
