@@ -3,7 +3,7 @@ import type { SourceCout } from '../engine/index.ts';
 import { coutRetenu, useNotes } from '../store/notes.ts';
 import { useCatalogue } from '../store/catalogue.ts';
 import { useReglages } from '../store/reglages.ts';
-import { hdvUtilisable, indexerHdv } from '../lib/hdv.ts';
+import { hdvUtilisable, indexerHdv, type OffreHdv } from '../lib/hdv.ts';
 
 export type Cout = {
   prix: number;
@@ -12,8 +12,21 @@ export type Cout = {
   releve: boolean;
   /** Exemplaires en vente à ce prix, `null` si la source ne le dit pas. */
   disponible: number | null;
-  date: string | null;
+  date: string;
 };
+
+/**
+ * Offres du relevé HDV, par id d'objet. Vide si le fichier est absent ou s'il
+ * concerne un autre serveur que celui sélectionné.
+ */
+export function useOffresHdv(): Map<number, OffreHdv> {
+  const prixHdv = useCatalogue((s) => s.prixHdv);
+  const serveur = useReglages((s) => s.serveur);
+  return useMemo(
+    () => (hdvUtilisable(prixHdv, serveur) ? indexerHdv(prixHdv) : new Map<number, OffreHdv>()),
+    [prixHdv, serveur],
+  );
+}
 
 /**
  * Coût d'acquisition par objet : le moins cher entre l'achat en HDV et le craft.
@@ -28,10 +41,9 @@ export function useCouts(): Map<number, Cout> {
   const prixConstates = useNotes((s) => s.prixConstates);
   const coutsCraft = useNotes((s) => s.coutsCraft);
   const prixHdv = useCatalogue((s) => s.prixHdv);
-  const serveur = useReglages((s) => s.serveur);
+  const releves = useOffresHdv();
 
   return useMemo(() => {
-    const releves = hdvUtilisable(prixHdv, serveur) ? indexerHdv(prixHdv) : new Map();
     const out = new Map<number, Cout>();
     const ids = new Set<number>([
       ...Object.keys(prixConstates).map(Number),
@@ -57,5 +69,5 @@ export function useCouts(): Map<number, Cout> {
       });
     }
     return out;
-  }, [prixConstates, coutsCraft, prixHdv, serveur]);
+  }, [prixConstates, coutsCraft, prixHdv, releves]);
 }

@@ -10,7 +10,8 @@ import { formatDate, formatKamas, formatNombre, formatPct, joursDepuis } from '.
 import { estRecherche, partDuBudget } from '../lib/heuristiques.ts';
 import { useCatalogue } from '../store/catalogue.ts';
 import { useCompte } from '../store/compte.ts';
-import { coutRetenu, dernierCoef, useNotes } from '../store/notes.ts';
+import { dernierCoef, useNotes } from '../store/notes.ts';
+import { useCouts, useOffresHdv } from '../hooks/useCouts.ts';
 import { JOURS_PERIME } from '../store/prix.ts';
 import { useCoefSuppose } from '../hooks/useCoefSuppose.ts';
 import { useReglages } from '../store/reglages.ts';
@@ -30,6 +31,10 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
   const { budget, partRisque, favoris, basculerFavori } = useCompte();
   const { setCoefSuppose, serveur } = useReglages();
   const coefSuppose = useCoefSuppose().valeur;
+  // Tes saisies d'abord, le relevé automatique ensuite : la même source que
+  // « Mon compte », sinon les deux écrans ne voient pas les mêmes objets.
+  const couts = useCouts();
+  const offres = useOffresHdv();
   const taxePct = useSimu((s) => s.taxePct);
   const choisirObjet = useSimu((s) => s.choisirObjet);
   const setChamp = useSimu((s) => s.setChamp);
@@ -55,7 +60,7 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
       .filter((it) => !it.nonBrisable && it.stats.length > 0)
       .filter((it) => (niveauMin === null || it.niveau >= niveauMin) && (niveauMax === null || it.niveau <= niveauMax))
       .map((it) => {
-        const cout = coutRetenu(prixConstates[it.id], coutsCraft[it.id]);
+        const cout = couts.get(it.id) ?? null;
         // Un coefficient relevé au concasseur vaut mieux que le coefficient supposé.
         const releve = dernierCoef(coefs[it.id]);
         const coef = releve?.coef ?? coefSuppose;
@@ -87,9 +92,12 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
       const c = typeof ka === 'string' ? ka.localeCompare(kb as string, 'fr') : ka - (kb as number);
       return (desc ? -c : c) || a.item.nom.localeCompare(b.item.nom, 'fr');
     });
-  }, [items, index, recherche, type, seulementNotes, seulementFavoris, favoris, etatCoef, coefMin, niveauMin, niveauMax, prixConstates, coutsCraft, coefs, ctx, coefSuppose, taxePct, tri, desc]);
+  }, [items, index, recherche, type, seulementNotes, seulementFavoris, favoris, etatCoef, coefMin, niveauMin, niveauMax, couts, coefs, ctx, coefSuppose, taxePct, tri, desc]);
 
-  const nbNotes = new Set([...Object.keys(prixConstates), ...Object.keys(coutsCraft)]).size;
+  // Objets brisables ayant un prix, et combien de ces prix viennent de toi.
+  const brisables = useMemo(() => new Set(items.filter((i) => !i.nonBrisable && i.stats.length > 0).map((i) => i.id)), [items]);
+  const nbChiffres = [...couts.keys()].filter((id) => brisables.has(id)).length;
+  const nbSaisis = [...couts.entries()].filter(([id, c]) => brisables.has(id) && !c.releve).length;
 
   const trierPar = (t: Tri) => {
     if (tri === t) setDesc((d) => !d);
@@ -153,7 +161,7 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
           </label>
           <label className="flex items-center gap-1 pb-2">
             <input type="checkbox" checked={seulementNotes} onChange={(e) => setSeulementNotes(e.target.checked)} />
-            Seulement mes prix notés
+            Seulement les objets chiffrés
           </label>
           <label className="flex items-center gap-1 pb-2">
             <input type="checkbox" checked={seulementFavoris} onChange={(e) => setSeulementFavoris(e.target.checked)} />
@@ -188,7 +196,7 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
             </span>
           </span>
           <span className="tnum ml-auto pb-2">
-            {formatNombre(nbNotes)} objet(s) chiffré(s) · {serveur}
+            {formatNombre(nbChiffres)} objet(s) chiffré(s) · dont {formatNombre(nbSaisis)} par toi · {serveur}
           </span>
         </div>
       </section>
@@ -241,7 +249,8 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
                             <span className={perime ? 'text-alerte' : ''}>
                               {' · '}
                               {perime ? '⚠ ' : ''}
-                              {l.cout.source === 'craft' ? 'craft' : 'HDV'} · {formatDate(l.cout.date)}
+                              {l.cout.source === 'craft' ? 'craft' : l.cout.releve ? 'HDV relevé' : 'HDV'} · {formatDate(l.cout.date)}
+                              {l.cout.disponible !== null && ` · ${formatNombre(l.cout.disponible)} en vente`}
                             </span>
                           )}
                         </span>
@@ -269,7 +278,13 @@ export function PagePrixObjets({ aller }: { aller: (o: Onglet) => void }) {
                       value={prixConstates[l.item.id]?.prix ?? null}
                       onChange={(v) => setPrixConstate(l.item.id, v)}
                       vide
-                      placeholder="—"
+                      // Le relevé s'affiche en grisé : tape un prix pour le remplacer.
+                      placeholder={offres.has(l.item.id) ? formatNombre(Math.round(offres.get(l.item.id)!.prixUnitaire)) : '—'}
+                      title={
+                        offres.has(l.item.id) && prixConstates[l.item.id] === undefined
+                          ? 'Prix du relevé automatique : tape une valeur pour le remplacer par la tienne'
+                          : undefined
+                      }
                       className={`w-28 ${l.cout?.source === 'hdv' ? '[&>input]:border-accent' : ''}`}
                       aria-label={`Prix HDV ${l.item.nom}`}
                     />
