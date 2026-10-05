@@ -13,7 +13,7 @@ import { useContexte } from '../hooks/useSimulation.ts';
 import { formatKamas, formatNombre, formatPct } from '../lib/format.ts';
 import { useCatalogue } from '../store/catalogue.ts';
 import { useCompte } from '../store/compte.ts';
-import { coutRetenu, dernierCoef, useNotes } from '../store/notes.ts';
+import { dernierCoef, useNotes } from '../store/notes.ts';
 import { useStorePrix } from '../store/prix.ts';
 import { useReglages } from '../store/reglages.ts';
 import { useSimu } from '../store/simu.ts';
@@ -218,7 +218,7 @@ export function PageCompte({ aller }: { aller: (o: Onglet) => void }) {
         <Bloc titre="Mes objets suivis" aide="Au concasseur : lis le coefficient, tape-le ici, la couleur répond tout de suite.">
           <ul className="divide-y divide-bord">
             {favoris.map((id) => parId.get(id)).filter((it): it is NonNullable<typeof it> => it !== undefined).map((it) => {
-              const cout = coutRetenu(prixConstates[it.id], coutsCraft[it.id]);
+              const cout = couts.get(it.id) ?? null;
               const releve = dernierCoef(coefs[it.id]);
               const coef = releve?.coef ?? coefSuppose;
               const valeur = evaluerItem(it, ctx, 'moyen', coef).valeurMeilleure * (1 - taxePct / 100);

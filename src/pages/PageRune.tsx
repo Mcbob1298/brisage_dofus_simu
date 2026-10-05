@@ -8,11 +8,11 @@ import { ItemImage } from '../components/ItemImage.tsx';
 import { RuneImage } from '../components/RuneImage.tsx';
 import { useCoefficients } from '../hooks/useCoefficients.ts';
 import { useEstimation } from '../hooks/useEstimation.ts';
+import { useCoefSuppose } from '../hooks/useCoefSuppose.ts';
 import { useContexte } from '../hooks/useSimulation.ts';
 import { formatKamas, formatNombre, formatPct } from '../lib/format.ts';
 import { normaliser } from '../lib/normaliser.ts';
 import { useCatalogue } from '../store/catalogue.ts';
-import { useReglages } from '../store/reglages.ts';
 import { useNotes } from '../store/notes.ts';
 import { useSimu } from '../store/simu.ts';
 import { useStorePrix } from '../store/prix.ts';
@@ -27,9 +27,10 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
   const monstres = useCatalogue((s) => s.monstres);
   const ctx = useContexte();
   const prix = useStorePrix((s) => s.prix);
-  const g = useReglages();
   const setPrixConstate = useNotes((s) => s.setPrixConstate);
+  const prixConstates = useNotes((s) => s.prixConstates);
   const estimateur = useEstimation();
+  const coefSuppose = useCoefSuppose().valeur;
   const coefficients = useCoefficients();
   const { choisirObjet, setChamp, setFocus } = useSimu();
 
@@ -67,14 +68,14 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
   const pistes = useMemo(() => {
     if (!rune) return [];
     const toutes = ciblerRune(rune, items, ctx, {
-      coefficient: g.coefSuppose,
+      coefficient: coefSuppose,
       coefficients,
       jet,
       niveauMax: niveauMax ?? undefined,
       couts,
     }, monstres);
     return toutes;
-  }, [rune, items, ctx, g.coefSuppose, coefficients, jet, niveauMax, couts, monstres]);
+  }, [rune, items, ctx, coefSuppose, coefficients, jet, niveauMax, couts, monstres]);
 
   /** Types présents dans les résultats, pour ne proposer que des filtres utiles. */
   const typesDisponibles = useMemo(
@@ -173,7 +174,7 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
             Niveau max
             <ChampNombre value={niveauMax} onChange={setNiveauMax} vide placeholder="tous" className="w-20" />
           </label>
-          <span className="tnum pb-2">coef. supposé {formatPct(g.coefSuppose, 0)}</span>
+          <span className="tnum pb-2">coef. supposé {formatPct(coefSuppose, 0)}</span>
         </div>
 
         {rune && (
@@ -267,7 +268,7 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
                   <EnTeteTri t="sansFocus" label="Sans focus" title="Sans focus, le reste de l'objet est aussi converti" />
                 </th>
                 <th className="px-2 py-1.5 text-right font-medium">
-                  <EnTeteTri t="cout" label="Coût noté" title="Prix relevé, ou estimation d'après tes relevés" />
+                  <EnTeteTri t="cout" label="Coût" title="Ta saisie, sinon le prix du relevé HDV ou de ton craft (en grisé), sinon une estimation ≈" />
                 </th>
                 <th className="px-2 py-1.5 text-right font-medium">
                   <EnTeteTri t="parRune" label="Par rune" title="Coût d'acquisition ÷ runes obtenues" />
@@ -279,8 +280,12 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
             <tbody>
               {visibles.slice(0, limite).map((p) => {
                 const gagnant = prixRune !== undefined && p.coutParRune !== null && p.coutParRune < prixRune;
-                const note = estimateur.coutNote(p.item);
-                const estime = note === null && p.cout !== null;
+                // Trois états, affichés comme dans « Prix des objets » : ta saisie
+                // en noir, un prix réel connu (relevé HDV ou craft) en grisé, et
+                // à défaut une estimation « ≈ ».
+                const saisi = prixConstates[p.item.id]?.prix ?? null;
+                const reel = estimateur.coutNote(p.item);
+                const estime = reel === null && p.cout !== null;
                 return (
                   <tr key={p.item.id} className="border-t border-bord">
                     <td className="px-2 py-1">
@@ -298,13 +303,21 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
                     <td className="tnum px-2 py-1 text-right text-encre-2">{formatNombre(p.quantiteNaturel, 1)}</td>
                     <td className="px-2 py-1 text-right">
                       <ChampNombre
-                        value={note}
+                        value={saisi}
                         onChange={(v) => setPrixConstate(p.item.id, v)}
                         vide
-                        placeholder={estime ? `≈ ${formatNombre(p.cout ?? 0)}` : 'HDV'}
+                        placeholder={reel !== null ? formatNombre(Math.round(reel)) : estime ? `≈ ${formatNombre(p.cout ?? 0)}` : 'HDV'}
                         className={`w-24 [&>input]:h-7 ${estime ? '[&>input]:text-encre-3' : ''}`}
                         aria-label={`Coût ${p.item.nom}`}
-                        title={estime ? "Estimation d'après tes prix relevés — note le prix réel pour la remplacer" : undefined}
+                        title={
+                          saisi !== null
+                            ? undefined
+                            : reel !== null
+                              ? 'Prix du relevé HDV (ou de ton craft) : tape une valeur pour le remplacer'
+                              : estime
+                                ? "Estimation par niveau, faute de prix connu — note le prix réel pour la remplacer"
+                                : undefined
+                        }
                       />
                     </td>
                     <td className={`tnum px-2 py-1 text-right ${gagnant && !estime ? 'font-medium text-ok' : ''} ${estime ? 'text-encre-3' : ''}`}>
@@ -373,7 +386,7 @@ export function PageRune({ aller }: { aller: (o: Onglet) => void }) {
               une cote.{' '}
             </>
           )}
-          Quantités calculées au coefficient supposé ({formatPct(g.coefSuppose, 0)}, réglable dans le Guide) avec un focus sur {STAT_BY_ID[rune.statId].label} : les
+          Quantités calculées au coefficient supposé ({formatPct(coefSuppose, 0)}, réglable dans « Mon compte ») avec un focus sur {STAT_BY_ID[rune.statId].label} : les
           autres lignes sont détruites et ne reversent que la moitié de leur poids. Les décimales sont des probabilités, pas des runes garanties. Les taux de drop sont
           donnés pour 100 de prospection.
         </p>

@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 import type { Item } from '../data/types.ts';
 import { calibrer, estimerPrix, type Calibration, type Estimation } from '../engine/index.ts';
 import { useCatalogue } from '../store/catalogue.ts';
-import { coutRetenu, useNotes } from '../store/notes.ts';
+import { useCouts } from './useCouts.ts';
 
 export type Estimateur = {
   calibration: Calibration;
-  /** Coût réellement noté (HDV ou craft), sinon `null`. */
+  /** Coût réel (saisi, relevé HDV ou craft), sinon `null`. */
   coutNote: (item: Item) => number | null;
   /** Estimation, uniquement si aucun prix n'a été noté pour cet objet. */
   estimer: (item: Item) => Estimation | null;
@@ -14,19 +14,21 @@ export type Estimateur = {
   cout: (item: Item) => { prix: number; estime: boolean } | null;
 };
 
-/** Estimation des prix d'équipement à partir des prix que l'utilisateur a relevés. */
+/**
+ * Prix des équipements : le prix réel quand on en a un, sinon une estimation.
+ *
+ * Les prix réels viennent de `useCouts` — tes saisies, le relevé HDV et tes
+ * coûts de craft — comme partout ailleurs dans l'app. L'estimation par niveau
+ * ne sert plus qu'aux objets absents de ces trois sources, et elle est calibrée
+ * sur tous ces prix réels au lieu de tes seules saisies.
+ */
 export function useEstimation(): Estimateur {
   const parId = useCatalogue((s) => s.parId);
-  const prixConstates = useNotes((s) => s.prixConstates);
-  const coutsCraft = useNotes((s) => s.coutsCraft);
+  const couts = useCouts();
 
   return useMemo(() => {
     const notes = new Map<number, number>();
-    for (const id of new Set([...Object.keys(prixConstates), ...Object.keys(coutsCraft)])) {
-      const itemId = Number(id);
-      const c = coutRetenu(prixConstates[itemId], coutsCraft[itemId]);
-      if (c) notes.set(itemId, c.prix);
-    }
+    for (const [itemId, c] of couts) notes.set(itemId, c.prix);
     const releves = [...notes.entries()].flatMap(([itemId, prix]) => {
       const item = parId.get(itemId);
       return item ? [{ niveau: item.niveau, type: item.type, prix }] : [];
@@ -45,5 +47,5 @@ export function useEstimation(): Estimateur {
         return est ? { prix: est.prix, estime: true } : null;
       },
     };
-  }, [parId, prixConstates, coutsCraft]);
+  }, [parId, couts]);
 }
